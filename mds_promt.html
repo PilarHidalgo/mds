@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estructura del Prompt MDS - Grafo Interactivo</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        #graph {
+            width: 100%;
+            height: 800px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            background: #fafafa;
+        }
+        
+        .node {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .node:hover {
+            stroke-width: 3px;
+        }
+        
+        .node text {
+            font-size: 12px;
+            font-weight: bold;
+            text-anchor: middle;
+            dominant-baseline: middle;
+            pointer-events: none;
+        }
+        
+        .link {
+            fill: none;
+            stroke-width: 2px;
+            transition: all 0.3s ease;
+        }
+        
+        .controls {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .controls button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 0 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s ease;
+        }
+        
+        .controls button:hover {
+            background: #5a6fd8;
+        }
+        
+        .legend {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            background: rgba(255,255,255,0.9);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏗️ Estructura del Prompt MDS</h1>
+        
+        <div class="controls">
+            <button onclick="expandAll()">Expandir Todo</button>
+            <button onclick="collapseAll()">Colapsar Todo</button>
+            <button onclick="resetView()">Resetear Vista</button>
+        </div>
+        
+        <div class="legend">
+            <h4>Leyenda</h4>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #ff6b6b;"></div>
+                <span>Sección Principal</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #4ecdc4;"></div>
+                <span>Subsección</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #45b7d1;"></div>
+                <span>Elemento</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #96ceb4;"></div>
+                <span>Detalle</span>
+            </div>
+        </div>
+        
+        <svg id="graph"></svg>
+    </div>
+
+    <script>
+        // Datos de la estructura del prompt
+        const data = {
+            name: "Prompt MDS",
+            children: [
+                {
+                    name: "Description",
+                    type: "section",
+                    children: [
+                        { name: "Expert Agent Role", type: "element" },
+                        { name: "Primary Task", type: "element" },
+                        { name: "System Integration", type: "element" }
+                    ]
+                },
+                {
+                    name: "Warning",
+                    type: "section",
+                    children: [
+                        { name: "Financial Discrepancies", type: "element" },
+                        { name: "Compliance Violations", type: "element" },
+                        { name: "Data Integrity Issues", type: "element" }
+                    ]
+                },
+                {
+                    name: "Critical Client Corrections",
+                    type: "section",
+                    children: [
+                        {
+                            name: "Major Issue 1: Meditech Base Classes",
+                            type: "subsection",
+                            children: [
+                                { name: "Problem Description", type: "element" },
+                                { name: "Impact Analysis", type: "element" },
+                                { name: "Correct Implementation", type: "element" }
+                            ]
+                        },
+                        {
+                            name: "Minor Issues",
+                            type: "subsection",
+                            children: [
+                                { name: "MDS Library GUIDs", type: "element" },
+                                { name: "FieldOrder Attributes", type: "element" },
+                                { name: "FileHelpers Attributes", type: "element" },
+                                { name: "Variable Naming", type: "element" }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    name: "Agent Role",
+                    type: "section",
+                    children: [
+                        { name: "Description", type: "element" },
+                        { name: "Mission Statement", type: "element" }
+                    ]
+                },
+                {
+                    name: "Context",
+                    type: "section",
+                    children: [
+                        {
+                            name: "Project Overview",
+                            type: "subsection",
+                            children: [
+                                { name: "Enterprise System", type: "element" },
+                                { name: "Data Sources", type: "element" },
+                                { name: "Data Types", type: "element" }
+                            ]
+                        },
+                        {
+                            name: "Architecture",
+                            type: "subsection",
+                            children: [
+                                { name: "BaseConverter", type: "element" },
+                                { name: "BaseConversionClass", type: "element" },
+                                { name: "CoreUploadDS", type: "element" },
+                                { name: "FileHelpers", type: "element" },
+                                { name: "ClarionDate", type: "element" },
+                                { name: "Cuploads", type: "element" },
+                                { name: "IConverterSettings", type: "element" },
+                                { name: "MDSCommon Converters", type: "element" }
+                            ]
+                        },
+                        {
+                            name: "Key Components",
+                            type: "subsection",
+                            children: [
+                                { name: "Clarion Date Conversion", type: "element" },
+                                { name: "Input Types", type: "element" }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    name: "Specific Instructions",
+                    type: "section",
+                    children: [
+                        {
+                            name: "Task Phases",
+                            type: "subsection",
+                            children: [
+                                {
+                                    name: "Phase 1: File Analysis",
+                                    type: "element",
+                                    children: [
+                                        { name: "Request Sample Data", type: "detail" },
+                                        { name: "Reference Meditech Directory", type: "detail" },
+                                        { name: "Analyze File Format", type: "detail" },
+                                        { name: "Identify Data Category", type: "detail" },
+                                        { name: "Determine Client Info", type: "detail" }
+                                    ]
+                                },
+                                {
+                                    name: "Phase 2: Field Mapping",
+                                    type: "element",
+                                    children: [
+                                        { name: "Map to CoreUploadDS", type: "detail" },
+                                        { name: "Identify Transformations", type: "detail" },
+                                        { name: "Document Business Rules", type: "detail" }
+                                    ]
+                                },
+                                {
+                                    name: "Phase 3: Record Definitions",
+                                    type: "element",
+                                    children: [
+                                        { name: "Review Meditech Examples", type: "detail" },
+                                        { name: "Generate FileHelpers Classes", type: "detail" },
+                                        { name: "Apply Attributes", type: "detail" }
+                                    ]
+                                },
+                                {
+                                    name: "Phase 4: Conversion Logic",
+                                    type: "element",
+                                    children: [
+                                        { name: "Create Conversion Class", type: "detail" },
+                                        { name: "Implement Helper Methods", type: "detail" },
+                                        { name: "Add Error Handling", type: "detail" }
+                                    ]
+                                },
+                                {
+                                    name: "Phase 5: Main Converter",
+                                    type: "element",
+                                    children: [
+                                        { name: "Inherit BaseConverter", type: "detail" },
+                                        { name: "Implement Recall Protection", type: "detail" },
+                                        { name: "Member Code Mapping", type: "detail" },
+                                        { name: "Generate Project File", type: "detail" }
+                                    ]
+                                },
+                                {
+                                    name: "Phase 7: Documentation",
+                                    type: "element",
+                                    children: [
+                                        { name: "Code Documentation", type: "detail" },
+                                        { name: "Field Mappings", type: "detail" },
+                                        { name: "Testing Recommendations", type: "detail" },
+                                        { name: "Deployment Instructions", type: "detail" }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    name: "Mandatory Data Formatting",
+                    type: "section",
+                    children: [
+                        {
+                            name: "Required Formatters",
+                            type: "subsection",
+                            children: [
+                                {
+                                    name: "String Formatting",
+                                    type: "element",
+                                    children: [
+                                        { name: "FormatPhoneNumber", type: "detail" },
+                                        { name: "FormatSSN", type: "detail" },
+                                        { name: "FormatName", type: "detail" },
+                                        { name: "FormatAddress", type: "detail" },
+                                        { name: "FormatZipCode", type: "detail" }
+                                    ]
+                                },
+                                {
+                                    name: "Numeric Formatting",
+                                    type: "element",
+                                    children: [
+                                        { name: "FormatCurrency", type: "detail" },
+                                        { name: "ParseDecimal", type: "detail" },
+                                        { name: "FormatAccountNumber", type: "detail" }
+                                    ]
+                                },
+                                {
+                                    name: "Date Formatting",
+                                    type: "element",
+                                    children: [
+                                        { name: "ParseDate", type: "detail" },
+                                        { name: "ConvertToClarionDate", type: "detail" },
+                                        { name: "ValidateDateRange", type: "detail" }
+                                    ]
+                                },
+                                {
+                                    name: "Data Cleaning",
+                                    type: "element",
+                                    children: [
+                                        { name: "RemoveSpecialCharacters", type: "detail" },
+                                        { name: "NormalizeWhitespace", type: "detail" },
+                                        { name: "StandardizeCase", type: "detail" }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            name: "Required Business Logic",
+                            type: "subsection",
+                            children: [
+                                { name: "Balance Validation", type: "element" },
+                                { name: "Required Demographics", type: "element" },
+                                { name: "Date Sequencing", type: "element" },
+                                { name: "Duplicate Detection", type: "element" }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    name: "Error Handling",
+                    type: "section",
+                    children: [
+                        {
+                            name: "Error Types",
+                            type: "subsection",
+                            children: [
+                                { name: "File Analysis Errors", type: "element" },
+                                { name: "Field Mapping Errors", type: "element" },
+                                { name: "Date Conversion Errors", type: "element" },
+                                { name: "Business Rule Errors", type: "element" },
+                                { name: "Code Generation Errors", type: "element" }
+                            ]
+                        },
+                        {
+                            name: "Detection System",
+                            type: "subsection",
+                            children: [
+                                { name: "Self-Validation Checks", type: "element" },
+                                { name: "Critical Verifications", type: "element" }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    name: "Security",
+                    type: "section",
+                    children: [
+                        {
+                            name: "Data Privacy",
+                            type: "subsection",
+                            children: [
+                                { name: "PHI Protection", type: "element" },
+                                { name: "PII Handling", type: "element" },
+                                { name: "Encryption", type: "element" },
+                                { name: "HIPAA Compliance", type: "element" }
+                            ]
+                        },
+                        {
+                            name: "Input Validation",
+                            type: "subsection",
+                            children: [
+                                { name: "Sanitization", type: "element" },
+                                { name: "Bounds Checking", type: "element" },
+                                { name: "Date Validation", type: "element" },
+                                { name: "Malicious Content", type: "element" }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    name: "Output Checklist",
+                    type: "section",
+                    children: [
+                        { name: "File Format Analysis", type: "element" },
+                        { name: "Field Mapping Table", type: "element" },
+                        { name: "Record Definition Classes", type: "element" },
+                        { name: "Conversion Class", type: "element" },
+                        { name: "Helper Methods", type: "element" },
+                        { name: "Business Rules", type: "element" },
+                        { name: "Main Converter Class", type: "element" },
+                        { name: "Recall Protection", type: "element" },
+                        { name: "Transaction Code Mapping", type: "element" },
+                        { name: "Member Code Mapping", type: "element" },
+                        { name: "Project File", type: "element" },
+                        { name: "Documentation", type: "element" }
+                    ]
+                }
+            ]
+        };
+
+        // Configuración del SVG
+        const width = 1360;
+        const height = 800;
+        const svg = d3.select("#graph")
+            .attr("width", width)
+            .attr("height", height);
+
+        // Configuración del árbol
+        const tree = d3.tree().size([height - 100, width - 200]);
+        
+        // Colores por tipo
+        const colors = {
+            root: "#ff6b6b",
+            section: "#ff6b6b",
+            subsection: "#4ecdc4",
+            element: "#45b7d1",
+            detail: "#96ceb4"
+        };
+
+        let root = d3.hierarchy(data);
+        let treeData = tree(root);
+
+        // Crear grupos para links y nodos
+        const g = svg.append("g")
+            .attr("transform", "translate(100,50)");
+
+        const linkGroup = g.append("g").attr("class", "links");
+        const nodeGroup = g.append("g").attr("class", "nodes");
+
+        // Variables globales
+        let nodes, links;
+
+        function update() {
+            // Actualizar datos del árbol
+            treeData = tree(root);
+
+            // Links
+            links = linkGroup.selectAll(".link")
+                .data(treeData.links());
+
+            links.exit().remove();
+
+            const linkEnter = links.enter().append("path")
+                .attr("class", "link")
+                .attr("stroke", "#999")
+                .attr("stroke-opacity", 0.6);
+
+            links = linkEnter.merge(links);
+
+            links.attr("d", d3.linkHorizontal()
+                .x(d => d.y)
+                .y(d => d.x));
+
+            // Nodos
+            nodes = nodeGroup.selectAll(".node")
+                .data(treeData.descendants());
+
+            nodes.exit().remove();
+
+            const nodeEnter = nodes.enter().append("g")
+                .attr("class", "node")
+                .on("click", function(event, d) {
+                    if (d.children) {
+                        d._children = d.children;
+                        d.children = null;
+                    } else {
+                        d.children = d._children;
+                        d._children = null;
+                    }
+                    update();
+                });
+
+            nodeEnter.append("circle")
+                .attr("r", 8);
+
+            nodeEnter.append("text")
+                .attr("dy", "0.31em")
+                .attr("x", d => d.children ? -12 : 12)
+                .style("text-anchor", d => d.children ? "end" : "start");
+
+            nodes = nodeEnter.merge(nodes);
+
+            nodes.attr("transform", d => `translate(${d.y},${d.x})`);
+
+            nodes.select("circle")
+                .attr("r", d => {
+                    if (d.depth === 0) return 12;
+                    if (d.data.type === "section") return 10;
+                    if (d.data.type === "subsection") return 8;
+                    return 6;
+                })
+                .attr("fill", d => {
+                    if (d.depth === 0) return colors.root;
+                    return colors[d.data.type] || colors.element;
+                })
+                .attr("stroke", "#333")
+                .attr("stroke-width", 1.5);
+
+            nodes.select("text")
+                .text(d => {
+                    const name = d.data.name;
+                    return name.length > 25 ? name.substring(0, 25) + "..." : name;
+                })
+                .attr("x", d => d.children || d._children ? -15 : 15)
+                .style("text-anchor", d => d.children || d._children ? "end" : "start")
+                .style("font-size", d => {
+                    if (d.depth === 0) return "14px";
+                    if (d.data.type === "section") return "12px";
+                    if (d.data.type === "subsection") return "11px";
+                    return "10px";
+                })
+                .style("font-weight", d => d.depth <= 1 ? "bold" : "normal");
+        }
+
+        // Funciones de control
+        function expandAll() {
+            root.descendants().forEach(d => {
+                if (d._children) {
+                    d.children = d._children;
+                    d._children = null;
+                }
+            });
+            update();
+        }
+
+        function collapseAll() {
+            root.descendants().forEach(d => {
+                if (d.children && d.depth > 0) {
+                    d._children = d.children;
+                    d.children = null;
+                }
+            });
+            update();
+        }
+
+        function resetView() {
+            // Colapsar todo excepto el primer nivel
+            root.descendants().forEach(d => {
+                if (d.children && d.depth > 1) {
+                    d._children = d.children;
+                    d.children = null;
+                }
+            });
+            update();
+        }
+
+        // Inicializar con vista parcialmente expandida
+        resetView();
+        update();
+
+        // Agregar zoom
+        const zoom = d3.zoom()
+            .scaleExtent([0.1, 3])
+            .on("zoom", function(event) {
+                g.attr("transform", event.transform);
+            });
+
+        svg.call(zoom);
+    </script>
+</body>
+</html>
