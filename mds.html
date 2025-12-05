@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arquitectura Base de Conocimiento MDS</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.95);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            padding: 30px;
+            backdrop-filter: blur(10px);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 30px;
+            font-size: 1.2em;
+        }
+        
+        #graph {
+            width: 100%;
+            height: 900px;
+            border: 2px solid #ecf0f1;
+            border-radius: 10px;
+            background: #fafafa;
+        }
+        
+        .node {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .node:hover {
+            transform: scale(1.1);
+        }
+        
+        .node circle {
+            stroke: #fff;
+            stroke-width: 3px;
+            filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.2));
+        }
+        
+        .node text {
+            font-size: 11px;
+            font-weight: 600;
+            text-anchor: middle;
+            dominant-baseline: middle;
+            pointer-events: none;
+            fill: #2c3e50;
+        }
+        
+        .link {
+            stroke-opacity: 0.7;
+            stroke-width: 2px;
+            transition: all 0.3s ease;
+        }
+        
+        .link:hover {
+            stroke-opacity: 1;
+            stroke-width: 4px;
+        }
+        
+        .tooltip {
+            position: absolute;
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 13px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+            max-width: 350px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            z-index: 1000;
+        }
+        
+        .tooltip h4 {
+            margin: 0 0 8px 0;
+            color: #3498db;
+            font-size: 16px;
+        }
+        
+        .legend {
+            margin-top: 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .legend-color {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 3px solid #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .legend-text {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .control-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 0 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+        
+        .control-btn:hover {
+            background: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏗️ Arquitectura Base de Conocimiento MDS</h1>
+        <p class="subtitle">Medical Debt Services - CoreUpload Framework Knowledge Architecture</p>
+        
+        <div class="controls">
+            <button class="control-btn" onclick="resetSimulation()">🔄 Reset</button>
+            <button class="control-btn" onclick="togglePhysics()">⚡ Toggle Physics</button>
+            <button class="control-btn" onclick="centerGraph()">🎯 Center</button>
+        </div>
+        
+        <div id="graph"></div>
+        <div class="tooltip"></div>
+        
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(135deg, #e74c3c, #c0392b);"></div>
+                <span class="legend-text">🏛️ Core Framework</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(135deg, #3498db, #2980b9);"></div>
+                <span class="legend-text">🔧 Conversion Engine</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(135deg, #2ecc71, #27ae60);"></div>
+                <span class="legend-text">💾 Data Schema</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(135deg, #f39c12, #e67e22);"></div>
+                <span class="legend-text">🖥️ GUI Management</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(135deg, #9b59b6, #8e44ad);"></div>
+                <span class="legend-text">🏥 Healthcare Systems</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(135deg, #1abc9c, #16a085);"></div>
+                <span class="legend-text">🛡️ Security & Compliance</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(135deg, #34495e, #2c3e50);"></div>
+                <span class="legend-text">🔄 Business Logic</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(135deg, #e67e22, #d35400);"></div>
+                <span class="legend-text">📊 Data Processing</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Datos de la arquitectura basados en el conocimiento real
+        const nodes = [
+            // Core Framework (Red)
+            { id: "coreupload", name: "CoreUpload\nFramework", type: "core", size: 40, 
+              description: "Sistema empresarial principal para conversión y carga de datos de deuda médica. Maneja el flujo de trabajo completo desde análisis de archivos hasta carga en base de datos." },
+            { id: "baseconverter", name: "BaseConverter", type: "core", size: 35,
+              description: "Clase base abstracta que gestiona el flujo de conversión, escaneo de archivos, calificación y orquestación del procesamiento." },
+            { id: "baseconversionclass", name: "BaseConversion\nClass", type: "core", size: 35,
+              description: "Clase base para lógica de conversión específica, maneja lectura de registros, filtrado, mapeo y reglas de negocio." },
+            
+            // Conversion Engine (Blue)
+            { id: "filehelpers", name: "FileHelpers\nLibrary", type: "conversion", size: 30,
+              description: "Librería de terceros para lectura de archivos delimitados y de ancho fijo con definiciones de registros basadas en atributos." },
+            { id: "mdsdateconverter", name: "MDS Date\nConverter", type: "conversion", size: 25,
+              description: "Convertidor de fechas del framework MDSCommon. Convierte automáticamente strings de fecha a formato entero Clarion." },
+            { id: "mdstelephoneconverter", name: "MDS Telephone\nConverter", type: "conversion", size: 25,
+              description: "Convertidor de teléfonos que formatea números telefónicos a formato estándar, maneja varios formatos de entrada." },
+            { id: "mdsssnconverter", name: "MDS SSN\nConverter", type: "conversion", size: 25,
+              description: "Convertidor de números de seguro social que valida y formatea SSNs, rechaza patrones inválidos." },
+            { id: "mdsdecimals", name: "MDS Decimal\nConverter", type: "conversion", size: 25,
+              description: "Convertidor de decimales que parsea valores decimales/moneda con precisión especificada." },
+            
+            // Data Schema (Green)
+            { id: "coreuploadds", name: "CoreUploadDS", type: "schema", size: 35,
+              description: "DataSet fuertemente tipado que representa el esquema de base de datos intermedio (uplmaster, uplinsurance, upltrans, uplnotes, uplinvent, uplnextkin)." },
+            { id: "uplmaster", name: "uplmaster\nTable", type: "schema", size: 30,
+              description: "Tabla principal de demografía de cuentas: accountnumber, debtorname, address1, city, state, zip, homephone, socialsecurity, birthdate, balance, etc." },
+            { id: "upltrans", name: "upltrans\nTable", type: "schema", size: 25,
+              description: "Tabla de transacciones financieras: accountnumber, trandate, trancode, amount, description, etc." },
+            { id: "uplinsurance", name: "uplinsurance\nTable", type: "schema", size: 25,
+              description: "Tabla de información de seguros: accountnumber, insseq, insname, insaddress, policyno, groupno, insuredname, relationship, etc." },
+            { id: "uplnotes", name: "uplnotes\nTable", type: "schema", size: 20,
+              description: "Tabla de notas de cuentas: accountnumber, notedate, notetype, notetext, etc." },
+            { id: "uplinvent", name: "uplinvent\nTable", type: "schema", size: 20,
+              description: "Tabla de inventario/estado: accountnumber, inventdate, statuscode, balance. CRÍTICO: Solo almacenar datos mínimos." },
+            
+            // GUI Management (Orange)
+            { id: "cuploads", name: "Cuploads\nGUI System", type: "gui", size: 35,
+              description: "Sistema GUI de gestión de convertidores que carga y ejecuta convertidores como DLLs. Proporciona programación, UI de configuración, monitoreo y logging centralizado." },
+            { id: "iconvertersettings", name: "IConverter\nSettings", type: "gui", size: 25,
+              description: "Interfaz que habilita integración con Cuploads proporcionando gestión de configuración y soporte GUI." },
+            { id: "convertersettings", name: "Converter\nSettings", type: "gui", size: 25,
+              description: "Clase de configuración que maneja parámetros del convertidor, incluyendo protección de recall y configuraciones específicas del cliente." },
+            
+            // Healthcare Systems (Purple)
+            { id: "meditech", name: "Meditech\nSystem", type: "healthcare", size: 30,
+              description: "Sistema hospitalario Meditech. Directorio ./Meditech contiene implementaciones de referencia para patrones de convertidores de calidad de producción." },
+            { id: "epic", name: "Epic\nSystem", type: "healthcare", size: 25,
+              description: "Sistema Epic de registros médicos electrónicos, uno de los sistemas hospitalarios soportados." },
+            { id: "cerner", name: "Cerner\nSystem", type: "healthcare", size: 25,
+              description: "Sistema Cerner de información hospitalaria, requiere patrones de conversión específicos." },
+            { id: "soarian", name: "Soarian\nSystem", type: "healthcare", size: 25,
+              description: "Sistema Soarian de gestión hospitalaria, parte de los sistemas de facturación soportados." },
+            
+            // Security & Compliance (Teal)
+            { id: "recallprotection", name: "Recall\nProtection", type: "security", size: 30,
+              description: "CRÍTICO: Protección obligatoria contra duplicados para cumplimiento FDCPA § 806 y § 807. Previene carga duplicada de cuentas cuando hospitales retiran y reenvían cuentas." },
+            { id: "fdcpa", name: "FDCPA\nCompliance", type: "security", size: 25,
+              description: "Cumplimiento de Fair Debt Collection Practices Act - prevención de acoso (§ 806) y representaciones falsas (§ 807)." },
+            { id: "regulationf", name: "Regulation F\nCompliance", type: "security", size: 25,
+              description: "Cumplimiento de Regulation F - información precisa de validación de deuda y protección del consumidor." },
+            { id: "hipaa", name: "HIPAA\nCompliance", type: "security", size: 25,
+              description: "Protección de información de salud protegida (PHI) y información de identificación personal (PII) en datos de deuda médica." },
+            
+            // Business Logic (Dark Gray)
+            { id: "transactioncodes", name: "Transaction\nCode Mapping", type: "business", size: 30,
+              description: "Sistema empresarial de mapeo de códigos de transacción. Proporciona configuración GUI, almacenamiento persistente, creación dinámica de códigos y soporte para códigos ilimitados específicos del cliente." },
+            { id: "membercode", name: "Member Code\nMapping", type: "business", size: 25,
+              description: "Sistema de mapeo de códigos de miembro para segregación de datos a nivel de instalación/ubicación. Habilita reportes específicos por instalación y cálculos de comisión separados." },
+            { id: "businessrules", name: "Business Rules\nValidation", type: "business", size: 25,
+              description: "Validación de reglas de negocio: validación de balance, demografía requerida, secuenciación de fechas, detección de duplicados, validación de montos de transacción." },
+            
+            // Data Processing (Orange-Red)
+            { id: "clariondate", name: "Clarion Date\nConversion", type: "processing", size: 25,
+              description: "Librería de conversión de fechas personalizada para formato de fecha Clarion (días desde 12/28/1800). Crítico para almacenamiento en base de datos." },
+            { id: "dataformatting", name: "Data Formatting\nHelpers", type: "processing", size: 25,
+              description: "Métodos helper obligatorios: FormatPhoneNumber, FormatSSN, FormatName, FormatAddress, FormatCurrency, ParseDecimal, etc. DEBEN estar completamente implementados." },
+            { id: "fieldmapping", name: "Field Mapping\nAttributes", type: "processing", size: 25,
+              description: "Atributos de mapeo automático de campos a columnas de dataset sin código manual TakeRecord. Reduce cantidad de código necesario." }
+        ];
+
+        // Enlaces basados en relaciones reales del sistema
+        const links = [
+            // Core Framework relationships
+            { source: "coreupload", target: "baseconverter", type: "contains", strength: 1 },
+            { source: "coreupload", target: "baseconversionclass", type: "contains", strength: 1 },
+            { source: "coreupload", target: "coreuploadds", type: "uses", strength: 0.8 },
+            { source: "baseconverter", target: "baseconversionclass", type: "orchestrates", strength: 0.9 },
+            
+            // Conversion Engine relationships
+            { source: "baseconversionclass", target: "filehelpers", type: "uses", strength: 0.8 },
+            { source: "filehelpers", target: "mdsdateconverter", type: "integrates", strength: 0.7 },
+            { source: "filehelpers", target: "mdstelephoneconverter", type: "integrates", strength: 0.7 },
+            { source: "filehelpers", target: "mdsssnconverter", type: "integrates", strength: 0.7 },
+            { source: "filehelpers", target: "mdsdecimals", type: "integrates", strength: 0.7 },
+            
+            // Data Schema relationships
+            { source: "coreuploadds", target: "uplmaster", type: "contains", strength: 1 },
+            { source: "coreuploadds", target: "upltrans", type: "contains", strength: 0.9 },
+            { source: "coreuploadds", target: "uplinsurance", type: "contains", strength: 0.8 },
+            { source: "coreuploadds", target: "uplnotes", type: "contains", strength: 0.7 },
+            { source: "coreuploadds", target: "uplinvent", type: "contains", strength: 0.7 },
+            
+            // GUI Management relationships
+            { source: "cuploads", target: "baseconverter", type: "manages", strength: 0.9 },
+            { source: "cuploads", target: "iconvertersettings", type: "requires", strength: 0.8 },
+            { source: "iconvertersettings", target: "convertersettings", type: "implements", strength: 0.8 },
+            { source: "convertersettings", target: "recallprotection", type: "configures", strength: 0.7 },
+            
+            // Healthcare Systems relationships
+            { source: "meditech", target: "baseconverter", type: "extends", strength: 0.8 },
+            { source: "epic", target: "baseconverter", type: "extends", strength: 0.7 },
+            { source: "cerner", target: "baseconverter", type: "extends", strength: 0.7 },
+            { source: "soarian", target: "baseconverter", type: "extends", strength: 0.7 },
+            
+            // Security & Compliance relationships
+            { source: "recallprotection", target: "fdcpa", type: "ensures", strength: 0.9 },
+            { source: "recallprotection", target: "regulationf", type: "ensures", strength: 0.9 },
+            { source: "coreupload", target: "hipaa", type: "complies", strength: 0.8 },
+            
+            // Business Logic relationships
+            { source: "transactioncodes", target: "upltrans", type: "populates", strength: 0.8 },
+            { source: "membercode", target: "uplmaster", type: "populates", strength: 0.7 },
+            { source: "businessrules", target: "baseconversionclass", type: "validates", strength: 0.8 },
+            
+            // Data Processing relationships
+            { source: "clariondate", target: "mdsdateconverter", type: "powers", strength: 0.8 },
+            { source: "dataformatting", target: "baseconversionclass", type: "supports", strength: 0.8 },
+            { source: "fieldmapping", target: "filehelpers", type: "enhances", strength: 0.7 },
+            { source: "fieldmapping", target: "coreuploadds", type: "maps_to", strength: 0.8 },
+            
+            // Cross-category relationships
+            { source: "cuploads", target: "transactioncodes", type: "configures", strength: 0.6 },
+            { source: "meditech", target: "transactioncodes", type: "defines", strength: 0.6 },
+            { source: "dataformatting", target: "hipaa", type: "protects", strength: 0.5 },
+            { source: "businessrules", target: "fdcpa", type: "enforces", strength: 0.6 }
+        ];
+
+        // Configuración del gráfico
+        const width = 1340;
+        const height = 900;
+
+        const svg = d3.select("#graph")
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+        const tooltip = d3.select(".tooltip");
+
+        // Colores por tipo con gradientes
+        const colorScale = {
+            "core": "url(#coreGradient)",
+            "conversion": "url(#conversionGradient)",
+            "schema": "url(#schemaGradient)",
+            "gui": "url(#guiGradient)",
+            "healthcare": "url(#healthcareGradient)",
+            "security": "url(#securityGradient)",
+            "business": "url(#businessGradient)",
+            "processing": "url(#processingGradient)"
+        };
+
+        // Definir gradientes
+        const defs = svg.append("defs");
+        
+        const gradients = [
+            { id: "coreGradient", colors: ["#e74c3c", "#c0392b"] },
+            { id: "conversionGradient", colors: ["#3498db", "#2980b9"] },
+            { id: "schemaGradient", colors: ["#2ecc71", "#27ae60"] },
+            { id: "guiGradient", colors: ["#f39c12", "#e67e22"] },
+            { id: "healthcareGradient", colors: ["#9b59b6", "#8e44ad"] },
+            { id: "securityGradient", colors: ["#1abc9c", "#16a085"] },
+            { id: "businessGradient", colors: ["#34495e", "#2c3e50"] },
+            { id: "processingGradient", colors: ["#e67e22", "#d35400"] }
+        ];
+
+        gradients.forEach(grad => {
+            const gradient = defs.append("linearGradient")
+                .attr("id", grad.id)
+                .attr("x1", "0%").attr("y1", "0%")
+                .attr("x2", "100%").attr("y2", "100%");
+            
+            gradient.append("stop")
+                .attr("offset", "0%")
+                .attr("stop-color", grad.colors[0]);
+            
+            gradient.append("stop")
+                .attr("offset", "100%")
+                .attr("stop-color", grad.colors[1]);
+        });
+
+        // Colores de enlaces por tipo
+        const linkColorScale = {
+            "contains": "#e74c3c",
+            "uses": "#3498db",
+            "manages": "#f39c12",
+            "extends": "#9b59b6",
+            "ensures": "#1abc9c",
+            "validates": "#34495e",
+            "supports": "#e67e22",
+            "configures": "#95a5a6",
+            "integrates": "#2ecc71",
+            "orchestrates": "#e74c3c",
+            "requires": "#f39c12",
+            "implements": "#3498db",
+            "populates": "#2ecc71",
+            "powers": "#e67e22",
+            "enhances": "#9b59b6",
+            "maps_to": "#1abc9c",
+            "complies": "#34495e",
+            "protects": "#95a5a6",
+            "defines": "#f1c40f",
+            "enforces": "#e74c3c"
+        };
+
+        // Simulación de fuerzas
+        let simulation = d3.forceSimulation(nodes)
+            .force("link", d3.forceLink(links).id(d => d.id).distance(d => 120 + d.strength * 50).strength(d => d.strength * 0.5))
+            .force("charge", d3.forceManyBody().strength(d => -300 - d.size * 5))
+            .force("center", d3.forceCenter(width / 2, height / 2))
+            .force("collision", d3.forceCollide().radius(d => d.size + 10))
+            .force("x", d3.forceX(width / 2).strength(0.1))
+            .force("y", d3.forceY(height / 2).strength(0.1));
+
+        // Enlaces
+        const link = svg.append("g")
+            .selectAll("line")
+            .data(links)
+            .enter().append("line")
+            .attr("class", "link")
+            .attr("stroke", d => linkColorScale[d.type] || "#95a5a6")
+            .attr("stroke-width", d => 1 + d.strength * 2)
+            .attr("marker-end", "url(#arrowhead)");
+
+        // Marcador de flecha
+        defs.append("marker")
+            .attr("id", "arrowhead")
+            .attr("viewBox", "0 -5 10 10")
+            .attr("refX", 15)
+            .attr("refY", 0)
+            .attr("markerWidth", 6)
+            .attr("markerHeight", 6)
+            .attr("orient", "auto")
+            .append("path")
+            .attr("d", "M0,-5L10,0L0,5")
+            .attr("fill", "#95a5a6");
+
+        // Nodos
+        const node = svg.append("g")
+            .selectAll("g")
+            .data(nodes)
+            .enter().append("g")
+            .attr("class", "node")
+            .call(d3.drag()
+                .on("start", dragstarted)
+                .on("drag", dragged)
+                .on("end", dragended));
+
+        node.append("circle")
+            .attr("r", d => d.size)
+            .attr("fill", d => colorScale[d.type]);
+
+        node.append("text")
+            .text(d => d.name)
+            .attr("dy", "0.35em")
+            .style("font-size", d => Math.max(10, d.size / 3) + "px");
+
+        // Eventos de mouse
+        node.on("mouseover", function(event, d) {
+            // Resaltar conexiones
+            link.style("opacity", l => 
+                l.source.id === d.id || l.target.id === d.id ? 1 : 0.1
+            );
+            
+            node.style("opacity", n => {
+                const connected = links.some(l => 
+                    (l.source.id === d.id && l.target.id === n.id) ||
+                    (l.target.id === d.id && l.source.id === n.id)
+                );
+                return n.id === d.id || connected ? 1 : 0.3;
+            });
+
+            tooltip.style("opacity", 1)
+                .html(`<h4>${d.name}</h4><p>${d.description}</p>`)
+                .style("left", (event.pageX + 15) + "px")
+                .style("top", (event.pageY - 15) + "px");
+        })
+        .on("mouseout", function() {
+            link.style("opacity", 0.7);
+            node.style("opacity", 1);
+            tooltip.style("opacity", 0);
+        });
+
+        // Actualización de posiciones
+        simulation.on("tick", () => {
+            link
+                .attr("x1", d => d.source.x)
+                .attr("y1", d => d.source.y)
+                .attr("x2", d => d.target.x)
+                .attr("y2", d => d.target.y);
+
+            node
+                .attr("transform", d => `translate(${d.x},${d.y})`);
+        });
+
+        // Variables de control
+        let physicsEnabled = true;
+
+        // Funciones de control
+        function resetSimulation() {
+            simulation.alpha(1).restart();
+        }
+
+        function togglePhysics() {
+            if (physicsEnabled) {
+                simulation.stop();
+                physicsEnabled = false;
+            } else {
+                simulation.restart();
+                physicsEnabled = true;
+            }
+        }
+
+        function centerGraph() {
+            simulation.force("center", d3.forceCenter(width / 2, height / 2));
+            simulation.alpha(0.3).restart();
+        }
+
+        // Funciones de arrastre
+        function dragstarted(event, d) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+        }
+
+        function dragged(event, d) {
+            d.fx = event.x;
+            d.fy = event.y;
+        }
+
+        function dragended(event, d) {
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+        }
+
+        // Hacer funciones globales
+        window.resetSimulation = resetSimulation;
+        window.togglePhysics = togglePhysics;
+        window.centerGraph = centerGraph;
+    </script>
+</body>
+</html>
