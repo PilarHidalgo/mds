@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ciclo de Vida del Formatter MDS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .timeline {
+            position: relative;
+            padding: 40px 20px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: linear-gradient(to bottom, #3498db, #e74c3c);
+            transform: translateX(-50%);
+        }
+
+        .step {
+            position: relative;
+            margin: 40px 0;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.6s ease;
+        }
+
+        .step.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .step-content {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            position: relative;
+            width: 45%;
+            border: 2px solid #ecf0f1;
+            transition: all 0.3s ease;
+        }
+
+        .step-content:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+            border-color: #3498db;
+        }
+
+        .step:nth-child(odd) .step-content {
+            margin-left: 55%;
+        }
+
+        .step:nth-child(even) .step-content {
+            margin-right: 55%;
+        }
+
+        .step-number {
+            position: absolute;
+            left: 50%;
+            top: 30px;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2em;
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+            z-index: 10;
+        }
+
+        .step-title {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .step-icon {
+            font-size: 1.5em;
+        }
+
+        .step-description {
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .agents-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 15px;
+            border-left: 4px solid #e74c3c;
+        }
+
+        .agents-title {
+            font-weight: bold;
+            color: #e74c3c;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .agent {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            border: 1px solid #dee2e6;
+            transition: all 0.3s ease;
+        }
+
+        .agent:hover {
+            border-color: #e74c3c;
+            transform: translateX(5px);
+        }
+
+        .agent-name {
+            font-weight: bold;
+            color: #e74c3c;
+            margin-bottom: 5px;
+        }
+
+        .agent-description {
+            font-size: 0.9em;
+            color: #666;
+            line-height: 1.4;
+        }
+
+        .technical-details {
+            background: #e8f4fd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            border-left: 4px solid #3498db;
+        }
+
+        .technical-title {
+            font-weight: bold;
+            color: #3498db;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .code-block {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 4px;
+            background: linear-gradient(to right, #3498db, #e74c3c);
+            transition: width 0.3s ease;
+            z-index: 1000;
+        }
+
+        .navigation {
+            position: fixed;
+            right: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: white;
+            border-radius: 25px;
+            padding: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            z-index: 100;
+        }
+
+        .nav-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #bdc3c7;
+            margin: 8px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .nav-dot.active {
+            background: #3498db;
+            transform: scale(1.3);
+        }
+
+        @media (max-width: 768px) {
+            .timeline::before {
+                left: 30px;
+            }
+
+            .step-content {
+                width: calc(100% - 80px);
+                margin-left: 80px !important;
+                margin-right: 0 !important;
+            }
+
+            .step-number {
+                left: 30px;
+            }
+
+            .navigation {
+                display: none;
+            }
+        }
+
+        .highlight {
+            background: linear-gradient(120deg, #a8edea 0%, #fed6e3 100%);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .database-flow {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .db-box {
+            background: #f39c12;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            flex: 1;
+            min-width: 150px;
+            font-weight: bold;
+        }
+
+        .arrow {
+            font-size: 2em;
+            color: #3498db;
+        }
+    </style>
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    
+    <div class="navigation" id="navigation">
+        <!-- Los puntos de navegación se generarán dinámicamente -->
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>🔄 Ciclo de Vida del Formatter MDS</h1>
+            <p>Proceso completo de conversión de datos de clientes a formato MDS</p>
+        </div>
+
+        <div class="timeline">
+            <!-- Paso 1: Análisis de Archivos -->
+            <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <div class="step-title">
+                        <span class="step-icon">🔍</span>
+                        Análisis de Archivos de Entrada
+                    </div>
+                    <div class="step-description">
+                        El primer paso es analizar los archivos de datos del cliente para entender su estructura, formato y contenido. Este análisis determina cómo se debe configurar el formatter.
+                    </div>
+
+                    <div class="agents-section">
+                        <div class="agents-title">
+                            <span>🤖</span> Agente Participante
+                        </div>
+                        <div class="agent">
+                            <div class="agent-name">file-analyzer</div>
+                            <div class="agent-description">
+                                Analiza archivos de datos médicos y genera especificaciones JSON estructuradas. Detecta formatos (delimitado, ancho fijo, Excel), identifica campos, tipos de datos y mapeos a tablas MDS.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="technical-details">
+                        <div class="technical-title">
+                            <span>⚙️</span> Detalles Técnicos
+                        </div>
+                        <p>El agente examina:</p>
+                        <ul style="margin-left: 20px; margin-top: 10px;">
+                            <li>Estructura del archivo (CSV, fixed-width, Excel)</li>
+                            <li>Tipos de datos y formatos de fecha</li>
+                            <li>Mapeo a tablas MDS (uplmaster, upltrans, etc.)</li>
+                            <li>Cross-walks necesarios</li>
+                        </ul>
+                        <div class="code-block">
+// Salida del análisis
+{
+  "fileInfo": {
+    "format": "delimited",
+    "delimiter": ",",
+    "inputType": "Collections"
+  },
+  "recordTypes": [{
+    "name": "DemographicRecord",
+    "targetTable": "uplmaster"
+  }]
+}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Paso 2: Generación de Código -->
+            <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <div class="step-title">
+                        <span class="step-icon">⚡</span>
+                        Generación de Código C#
+                    </div>
+                    <div class="step-description">
+                        Basándose en las especificaciones del análisis, se genera automáticamente el código C# del formatter usando FileHelpers y el framework CoreUpload.
+                    </div>
+
+                    <div class="agents-section">
+                        <div class="agents-title">
+                            <span>🤖</span> Agente Participante
+                        </div>
+                        <div class="agent">
+                            <div class="agent-name">csharp-generator</div>
+                            <div class="agent-description">
+                                Genera código C# completo del formatter MDS usando FileHelpers. Crea clases principales, handlers, tipos de registro y cross-walks basándose en especificaciones JSON.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="technical-details">
+                        <div class="technical-title">
+                            <span>🏗️</span> Componentes Generados
+                        </div>
+                        <ul style="margin-left: 20px;">
+                            <li><strong>Clase Principal:</strong> PriXXXX.cs (hereda de BaseConverter)</li>
+                            <li><strong>Handlers:</strong> DemographicsHandler, TransactionHandler</li>
+                            <li><strong>Record Types:</strong> Con atributos FileHelpers</li>
+                            <li><strong>Cross-walks:</strong> Mapeo de códigos del cliente</li>
+                        </ul>
+                        <div class="code-block">
+[DelimitedRecord(",")]
+public sealed class DemographicRecordType {
+    [FieldMapping(TableDestination.Master, "accountnumber")]
+    public string AccountNumber;
+    
+    [FieldConverter(typeof(MDSDateConverter))]
+    [FieldMapping(TableDestination.Master, "birthdate")]
+    public int BirthDate;
+}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Paso 3: Validación de Código -->
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <div class="step-title">
+                        <span class="step-icon">✅</span>
+                        Validación y Testing
+                    </div>
+                    <div class="step-description">
+                        El código generado se valida contra el framework CoreUpload, esquema de base de datos y se generan casos de prueba automatizados para asegurar la calidad.
+                    </div>
+
+                    <div class="agents-section">
+                        <div class="agents-title">
+                            <span>🤖</span> Agente Participante
+                        </div>
+                        <div class="agent">
+                            <div class="agent-name">code-validator</div>
+                            <div class="agent-description">
+                                Valida código C# del formatter MDS contra el framework CoreUpload y esquema de base de datos. Genera casos de prueba automatizados y reportes de validación.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="technical-details">
+                        <div class="technical-title">
+                            <span>🔬</span> Validaciones Realizadas
+                        </div>
+                        <ul style="margin-left: 20px;">
+                            <li><strong>Compilación:</strong> Verifica que el código compile sin errores</li>
+                            <li><strong>Estructura:</strong> Valida herencia y métodos requeridos</li>
+                            <li><strong>Mapeos:</strong> Confirma mapeos a esquema de BD</li>
+                            <li><strong>Cross-walks:</strong> Verifica cobertura completa</li>
+                        </ul>
+                        <div class="code-block">
+// Prueba generada automáticamente
+[Test]
+public void Should_Parse_ValidRecord() {
+    var line = "\"A123456789\",\"DOE, JOHN\",\"01151990\"";
+    var records = _engine.ReadString(line);
+    
+    Assert.That(records[0].AccountNumber, Is.EqualTo("A123456789"));
+    Assert.That(records[0].BirthDate, Is.EqualTo(80720));
+}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Paso 4: Configuración del Sistema -->
+            <div class="step">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                    <div class="step-title">
+                        <span class="step-icon">⚙️</span>
+                        Configuración del Sistema
+                    </div>
+                    <div class="step-description">
+                        Se configura el perfil del cliente en la base de datos, incluyendo rutas de archivos, máscaras de archivos y configuración del scheduler para procesamiento automático.
+                    </div>
+
+                    <div class="technical-details">
+                        <div class="technical-title">
+                            <span>🗄️</span> Configuración de Perfil
+                        </div>
+                        <div class="database-flow">
+                            <div class="db-box">profiles</div>
+                            <div class="arrow">→</div>
+                            <div class="db-box">protasks</div>
+                            <div class="arrow">→</div>
+                            <div class="db-box">TaskLauncher</div>
+                        </div>
+                        <div class="code-block">
+-- Configuración en tabla profiles
+INSERT INTO profiles (
+    profilename, convapp, datafolder, 
+    inputfilemask, backupfolder, dbservername
+) VALUES (
+    'Cliente ABC Daily', 'pri5230.exe', 
+    '\\server\incoming\clientABC', '*.txt',
+    '\\server\archive\clientABC', 'PROD'
+)
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Paso 5: Ejecución del Pipeline -->
+            <div class="step">
+                <div class="step-number">5</div>
+                <div class="step-content">
+                    <div class="step-title">
+                        <span class="step-icon">🚀</span>
+                        Ejecución del Pipeline de Procesamiento
+                    </div>
+                    <div class="step-description">
+                        El sistema de scheduling ejecuta el pipeline completo: encuentra archivos, los copia al área de trabajo, ejecuta el formatter y procesa los datos.
+                    </div>
+
+                    <div class="technical-details">
+                        <div class="technical-title">
+                            <span>🔄</span> Pipeline de 12 Pasos
+                        </div>
+                        <ol style="margin-left: 20px;">
+                            <li>Update Apps & Remove Old Files</li>
+                            <li>Unarchive Client Files</li>
+                            <li>Run Pre-Operations</li>
+                            <li><span class="highlight">Build Process Files List</span></li>
+                            <li><span class="highlight">Launch Conversion Formatter</span></li>
+                            <li>Bypass Unknown Members</li>
+                            <li>Review and Upload</li>
+                            <li>Run Post Operations</li>
+                            <li>Archive Input Files</li>
+                            <li>Delete Temp Files</li>
+                            <li>Run Acknowledgement Reports</li>
+                            <li>Close Process</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Paso 6: Procesamiento de Archivos -->
+            <div class="step">
+                <div class="step-number">6</div>
+                <div class="step-content">
+                    <div class="step-title">
+                        <span class="step-icon">📁</span>
+                        Procesamiento de Archivos
+                    </div>
+                    <div class="step-description">
+                        El formatter escanea archivos, los clasifica por tipo (Demographics, Transactions, etc.) y selecciona el handler apropiado para cada uno.
+                    </div>
+
+                    <div class="technical-details">
+                        <div class="technical-title">
+                            <span>🔍</span> Clasificación de Archivos
+                        </div>
+                        <div class="code-block">
+protected override InputType QualifyFile(ProcessFile pFile) {
+    string fileName = pFile.ShortName.ToUpper();
+    
+    if (fileName.Contains("AGCY-MDS"))
+        return InputType.Collections;
+    else if (fileName.Contains("AMDS"))
+        return InputType.Transactions;
+    else if (fileName.Contains("RECON"))
+        return InputType.Inventory;
+    
+    return InputType.Unknown;
+}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Paso 7: Parsing con FileHelpers -->
+            <div class="step">
+                <div class="step-number">7</div>
+                <div class="step-content">
+                    <div class="step-title">
+                        <span class="step-icon">🔧</span>
+                        Parsing con FileHelpers
+                    </div>
+                    <div class="step-description">
+                        FileHelpers lee y parsea los archivos línea por línea, convirtiendo cada línea en objetos tipados usando los atributos definidos en los record types.
+                    </div>
+
+                    <div class="technical-details">
+                        <div class="technical-title">
+                            <span>⚡</span> Proceso de Parsing
+                        </div>
+                        <div class="code-block">
+// FileHelpers lee el archivo completo
+object[] records = EngineSingle.ReadFile(InputFile.FileName);
+
+// Cada record es un objeto tipado
+foreach (DemographicRecordType record in records) {
+    // Campos ya convertidos por atributos
+    string acctNo = record.AccountNumber;
+    int birthDate = record.BirthDate; // Ya en formato Clarion
+    decimal balance = record.Balance;
+}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Paso 8: Mapeo Automático -->
+            <div class="step">
+                <div class="step-number">8</div>
+                <div class="step-content">
+                    <div class="step-title">
+                        <span class="step-icon">🗺️</span>
+                        Mapeo Automático de Campos
+                    </div>
+                    <div class="step-description">
+                        El sistema usa los atributos [FieldMapping] para mapear automáticamente campos de los records a columnas en las tablas del DataSet intermedio.
+                    </div>
+
+                    <div class="technical-details">
+                        <div class="technical-title">
+                            <span>🎯</span> Mapeo Automático
+                        </div>
+                        <div class="database-flow">
+                            <div class="db-box">Record Fields</div>
+                            <div class="arrow">→</div>
+                            <div class="db-box">FieldMapping</div>
+                            <div class="arrow">→</div>
+                            <div class="db-box">DataSet Columns</div>
+                        </div>
+                        <div class="code-block">
+// Atributo en record type
+[FieldMapping(TableDestination.Master, "accountnumber")]
+public string AccountNumber;
+
+// Se mapea automáticamente a:
+row["accountnumber"] = record.AccountNumber;
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Paso 9: Procesamiento Personalizado -->
+            <div class="step">
+                <div class="step-number">9</div>
+                <div class="step-content">
+                    <div class="step-title">
+                        <span class="step-icon">🎨</span>
+                        Procesamiento Personalizado
+                    </div>
+                    <div class="step-description">
+                        El método TakeRecord() permite lógica personalizada para cada cliente: formateo de nombres, procesamiento de seguros, aplicación de cross-walks y validaciones específicas.
+                    </div>
+
+                    <div class="technical-details">
+                        <div class="technical-title">
+                            <span>🔧</span> Lógica Personalizada
+                        </div>
+                        <div class="code-block">
+public override void TakeRecord(object pRecord, SortedList pFilledDataSetRows) {
+    var rec = pRecord as DemographicRecordType;
+    var row = pFilledDataSetRows[TableDestination.Master] as uplmasterRow;
+    
+    // Lógica específica del cliente
+    row.membercode = GetMemberCode(rec.FacilityCode);
+    row.debtorname = FormatName(rec.PatientName);
+    
+    // Procesar seguros
+    ProcessInsurance(rec);
+    
+    // Aplicar cross-walks
+    row.financialclass = FinancialClassCrossWalk.Get(rec.FinClass);
+}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Paso 10: Actualización de Base de Datos -->
+            <div class="step">
+                <div class="step-number">10</div>
+                <div class="step-content">
+                    <div class="step-title">
+                        <span class="step-icon">💾</span>
+                        Actualización de Base de Datos
+                    </div>
+                    <div class="step-description">
+                        Los datos procesados en el DataSet se escriben a las tablas intermedias de Sybase (uplmaster, upltrans, uplinsurance, etc.) usando TableAdapters.
+                    </div>
+
+                    <div class="technical-details">
+                        <div class="technical-title">
+                            <span>🗄️</span> Flujo de Datos
+                        </div>
+                        <div class="database-flow">
+                            <div class="db-box">CoreUploadDS</div>
+                            <div class="arrow">→</div>
+                            <div class="db-box">TableAdapters</div>
+                            <div class="arrow">→</div>
+                            <div class="db-box">Cupload DB</div>
+                        </div>
+                        <div class="code-block">
+// Actualización por lotes
+foreach (DataRow row in DataSet.uplmaster.Rows) {
+    TableManager.uplmasterTableAdapter.Insert(
+        row.membercode,
+        row.accountnumber,
+        row.debtorname,
+        row.birthdate,
+        // ... todos los campos
+    );
+}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Paso 11: Merge a Producción -->
+            <div class="step">
+                <div class="step-number">11</div>
+                <div class="step-content">
+                    <div class="step-title">
+                        <span class="step-icon">🔄</span>
+                        Merge a Base de Datos de Producción
+                    </div>
+                    <div class="step-description">
+                        Los datos validados en las tablas intermedias se transfieren a la base de datos de colecciones de producción donde son utilizados por el personal de MDS.
+                    </div>
+
+                    <div class="technical-details">
+                        <div class="technical-title">
+                            <span>🏭</span> Arquitectura de 3 Bases de Datos
+                        </div>
+                        <div class="database-flow">
+                            <div class="db-box">Cupload<br/>(Intermedia)</div>
+                            <div class="arrow">→</div>
+                            <div class="db-box">Collect<br/>(Producción)</div>
+                            <div class="arrow">→</div>
+                            <div class="db-box">ControlDB<br/>(Referencia)</div>
+                        </div>
+                        <p style="margin-top: 15px;">
+                            <strong>Cupload:</strong> Área de staging para validación<br/>
+                            <strong>Collect:</strong> Base de datos principal de colecciones<br/>
+                            <strong>ControlDB:</strong> Tablas de referencia y validación
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Paso 12: Reportes y Archivado -->
+            <div class="step">
+                <div class="step-number">12</div>
+                <div class="step-content">
+                    <div class="step-title">
+                        <span class="step-icon">📊</span>
+                        Reportes y Archivado
+                    </div>
+                    <div class="step-description">
+                        Se generan reportes de confirmación para el cliente, se archivan los archivos procesados y se actualiza el estado del proceso a "Completado".
+                    </div>
+
+                    <div class="technical-details">
+                        <div class="technical-title">
+                            <span>📋</span> Finalización del Proceso
+                        </div>
+                        <ul style="margin-left: 20px;">
+                            <li><strong>Reportes:</strong> Resumen de cuentas procesadas</li>
+                            <li><strong>Archivado:</strong> Archivos movidos a carpeta de respaldo</li>
+                            <li><strong>Limpieza:</strong> Archivos temporales eliminados</li>
+                            <li><strong>Estado:</strong> Proceso marcado como "Completed"</li>
+                        </ul>
+                        <div class="code-block">
+// Estado final en uplstatus
+UPDATE uplstatus 
+SET status = 'Completed',
+    importenddate = GETDATE(),
+    masterrecords = 1500,
+    transrecords = 3200,
+    insrecords = 800
+WHERE recordid = @StatusID
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Animación de aparición de pasos
+        const steps = document.querySelectorAll('.step');
+        const progressBar = document.getElementById('progressBar');
+        const navigation = document.getElementById('navigation');
+
+        // Crear puntos de navegación
+        steps.forEach((step, index) => {
+            const dot = document.createElement('div');
+            dot.className = 'nav-dot';
+            dot.addEventListener('click', () => {
+                step.scrollIntoView({ behavior: 'smooth' });
+            });
+            navigation.appendChild(dot);
+        });
+
+        const navDots = document.querySelectorAll('.nav-dot');
+
+        // Observer para animaciones
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    
+                    // Actualizar navegación
+                    const index = Array.from(steps).indexOf(entry.target);
+                    navDots.forEach((dot, i) => {
+                        dot.classList.toggle('active', i <= index);
+                    });
+                    
+                    // Actualizar barra de progreso
+                    const progress = ((index + 1) / steps.length) * 100;
+                    progressBar.style.width = progress + '%';
+                }
+            });
+        }, {
+            threshold: 0.3
+        });
+
+        steps.forEach(step => {
+            observer.observe(step);
+        });
+
+        // Scroll suave para navegación
+        document.addEventListener('DOMContentLoaded', () =>`javascript`)
+        // Scroll suave para navegación
+        document.addEventListener('DOMContentLoaded', () => {
+        // Inicializar primera animación
+        setTimeout(() => {
+            if (steps.length > 0) {
+                steps[0].classList.add('visible');
+                navDots[0].classList.add('active');
+                }
+                }, 500);
+        });
+
+        // Actualizar barra de progreso en scroll
+        window.addEventListener('scroll', () => {
+            const scrollTop = window.pageYOffset;
+            const docHeight = document.body.offsetHeight - window.innerHeight;
+            const scrollPercent = (scrollTop / docHeight) * 100;
+            progressBar.style.width = Math.min(scrollPercent, 100) + '%';
+        });
+
+        // Efectos hover para elementos interactivos
+        document.querySelectorAll('.step-content').forEach(content => {
+            content.addEventListener('mouseenter', () => {
+                content.style.transform = 'translateY(-5px) scale(1.02)';
+            });
+            
+            content.addEventListener('mouseleave', () => {
+                content.style.transform = 'translateY(0) scale(1)';
+            });
+        });
+
+        // Animación de typing para código
+        function typeWriter(element, text, speed = 50) {
+            let i = 0;
+            element.innerHTML = '';
+            
+            function type() {
+                if (i < text.length) {
+                    element.innerHTML += text.charAt(i);
+                    i++;
+                    setTimeout(type, speed);
+                }
+            }
+            type();
+        }
+
+        // Aplicar animación de typing a bloques de código cuando sean visibles
+        const codeBlocks = document.querySelectorAll('.code-block');
+        const codeObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting && !entry.target.dataset.animated) {
+                    const originalText = entry.target.textContent;
+                    typeWriter(entry.target, originalText, 30);
+                    entry.target.dataset.animated = 'true';
+                }
+            });
+        }, { threshold: 0.5 });
+
+        codeBlocks.forEach(block => {
+            codeObserver.observe(block);
+        });
+
+        // Tooltip para agentes
+        document.querySelectorAll('.agent').forEach(agent => {
+            agent.addEventListener('mouseenter', (e) => {
+                const tooltip = document.createElement('div');
+                tooltip.className = 'tooltip';
+                tooltip.innerHTML = `
+                    <strong>Herramientas:</strong> Read, Write, Edit, Bash, Glob, Grep<br/>
+                    <strong>Modelo:</strong> Claude Sonnet<br/>
+                    <strong>Especialización:</strong> Procesamiento de datos médicos MDS
+                `;
+                tooltip.style.cssText = `
+                    position: absolute;
+                    background: #2c3e50;
+                    color: white;
+                    padding: 10px;
+                    border-radius: 5px;
+                    font-size: 0.8em;
+                    z-index: 1000;
+                    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+                    max-width: 250px;
+                    line-height: 1.4;
+                `;
+                
+                document.body.appendChild(tooltip);
+                
+                const rect = e.target.getBoundingClientRect();
+                tooltip.style.left = (rect.right + 10) + 'px';
+                tooltip.style.top = rect.top + 'px';
+                
+                agent.addEventListener('mouseleave', () => {
+                    if (tooltip.parentNode) {
+                        tooltip.parentNode.removeChild(tooltip);
+                    }
+                }, { once: true });
+            });
+        });
+
+        // Animación de pulso para elementos importantes
+        function pulseElement(element) {
+            element.style.animation = 'pulse 2s infinite';
+        }
+
+        // CSS para animación de pulso
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes pulse {
+                0% { transform: scale(1); }
+                50% { transform: scale(1.05); }
+                100% { transform: scale(1); }
+            }
+            
+            @keyframes fadeInUp {
+                from {
+                    opacity: 0;
+                    transform: translateY(30px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+            
+            .tooltip {
+                animation: fadeInUp 0.3s ease;
+            }
+            
+            .step-content:hover .step-title {
+                color: #3498db;
+                transition: color 0.3s ease;
+            }
+            
+            .agent:hover .agent-name {
+                color: #e74c3c;
+                transform: translateX(5px);
+                transition: all 0.3s ease;
+            }
+            
+            .db-box:hover {
+                transform: scale(1.1);
+                transition: transform 0.3s ease;
+            }
+            
+            .nav-dot:hover {
+                transform: scale(1.5);
+                background: #e74c3c !important;
+            }
+            
+            /* Responsive improvements */
+            @media (max-width: 1024px) {
+                .database-flow {
+                    flex-direction: column;
+                    align-items: center;
+                }
+                
+                .arrow {
+                    transform: rotate(90deg);
+                    margin: 10px 0;
+                }
+            }
+            
+            @media (max-width: 768px) {
+                .step-title {
+                    font-size: 1.2em;
+                }
+                
+                .step-description {
+                    font-size: 0.9em;
+                }
+                
+                .code-block {
+                    font-size: 0.8em;
+                    padding: 10px;
+                }
+                
+                .header h1 {
+                    font-size: 2em;
+                }
+                
+                .header p {
+                    font-size: 1em;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Función para resaltar elementos relacionados
+        function highlightRelated(stepNumber) {
+            // Remover highlights previos
+            document.querySelectorAll('.highlight-related').forEach(el => {
+                el.classList.remove('highlight-related');
+            });
+
+            // Agregar highlights basados en el paso
+            switch(stepNumber) {
+                case 1:
+                    // Resaltar elementos relacionados con análisis
+                    document.querySelectorAll('.agent-name').forEach(el => {
+                        if (el.textContent.includes('file-analyzer')) {
+                            el.classList.add('highlight-related');
+                        }
+                    });
+                    break;
+                case 2:
+                    // Resaltar elementos relacionados con generación
+                    document.querySelectorAll('.agent-name').forEach(el => {
+                        if (el.textContent.includes('csharp-generator')) {
+                            el.classList.add('highlight-related');
+                        }
+                    });
+                    break;
+                case 3:
+                    // Resaltar elementos relacionados con validación
+                    document.querySelectorAll('.agent-name').forEach(el => {
+                        if (el.textContent.includes('code-validator')) {
+                            el.classList.add('highlight-related');
+                        }
+                    });
+                    break;
+            }
+        }
+
+        // Agregar CSS para highlight relacionado
+        const highlightStyle = document.createElement('style');
+        highlightStyle.textContent = `
+            .highlight-related {
+                background: linear-gradient(45deg, #f39c12, #e67e22) !important;
+                color: white !important;
+                padding: 5px 10px !important;
+                border-radius: 15px !important;
+                animation: glow 2s infinite alternate;
+            }
+            
+            @keyframes glow {
+                from { box-shadow: 0 0 5px #f39c12; }
+                to { box-shadow: 0 0 20px #f39c12, 0 0 30px #f39c12; }
+            }
+        `;
+        document.head.appendChild(highlightStyle);
+
+        // Actualizar observer para incluir highlights
+        const enhancedObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    
+                    const index = Array.from(steps).indexOf(entry.target);
+                    navDots.forEach((dot, i) => {
+                        dot.classList.toggle('active', i <= index);
+                    });
+                    
+                    // Resaltar elementos relacionados
+                    highlightRelated(index + 1);
+                    
+                    const progress = ((index + 1) / steps.length) * 100;
+                    progressBar.style.width = progress + '%';
+                }
+            });
+        }, { threshold: 0.3 });
+
+        // Re-observar con el observer mejorado
+        steps.forEach(step => {
+            enhancedObserver.observe(step);
+        });
+
+        // Agregar funcionalidad de búsqueda
+        const searchContainer = document.createElement('div');
+        searchContainer.innerHTML = `
+            <div style="position: fixed; top: 20px; left: 20px; z-index: 1000;">
+                <input type="text" id="searchInput" placeholder="Buscar en el flujo..." 
+                       style="padding: 10px; border: 2px solid #3498db; border-radius: 25px; 
+                              outline: none; width: 250px; font-size: 14px;">
+                <div id="searchResults" style="background: white; border-radius: 10px; 
+                     box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-top: 5px; 
+                     max-height: 200px; overflow-y: auto; display: none;"></div>
+            </div>
+        `;
+        document.body.appendChild(searchContainer);
+
+        const searchInput = document.getElementById('searchInput');
+        const searchResults = document.getElementById('searchResults');
+
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            if (query.length < 2) {
+                searchResults.style.display = 'none';
+                return;
+            }
+
+            const results = [];
+            steps.forEach((step, index) => {
+                const content = step.textContent.toLowerCase();
+                if (content.includes(query)) {
+                    const title = step.querySelector('.step-title').textContent;
+                    results.push({ index, title, step });
+                }
+            });
+
+            if (results.length > 0) {
+                searchResults.innerHTML = results.map(result => 
+                    `<div style="padding: 10px; cursor: pointer; border-bottom: 1px solid #eee;" 
+                          onclick="document.querySelectorAll('.step')[${result.index}].scrollIntoView({behavior: 'smooth'})">
+                        <strong>Paso ${result.index + 1}:</strong> ${result.title}
+                     </div>`
+                ).join('');
+                searchResults.style.display = 'block';
+            } else {
+                searchResults.innerHTML = '<div style="padding: 10px; color: #666;">No se encontraron resultados</div>';
+                searchResults.style.display = 'block';
+            }
+        });
+
+        // Ocultar resultados al hacer clic fuera
+        document.addEventListener('click', (e) => {
+            if (!searchContainer.contains(e.target)) {
+                searchResults.style.display = 'none';
+            }
+        });
+
+        console.log('🚀 Flujo del Formatter MDS cargado exitosamente');
+        console.log('📊 Total de pasos:', steps.length);
+        console.log('🤖 Agentes integrados: file-analyzer, csharp-generator, code-validator');
+    </script>
+</body>
+</html>
