@@ -1,0 +1,1876 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagrama UML - Formatter MDS con Spec Match Agent Completo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .uml-container {
+            padding: 40px;
+            background: #f8f9fa;
+            overflow-x: auto;
+        }
+
+        .uml-diagram {
+            min-width: 1800px;
+            height: 1400px;
+            position: relative;
+            background: white;
+            border: 2px solid #34495e;
+            border-radius: 10px;
+            margin: 0 auto;
+        }
+
+        /* Actores */
+        .actor {
+            position: absolute;
+            text-align: center;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .actor-icon {
+            width: 70px;
+            height: 90px;
+            background: #3498db;
+            border-radius: 35px 35px 0 0;
+            margin: 0 auto 10px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.8em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .actor-icon:hover {
+            transform: scale(1.1);
+            background: #e74c3c;
+        }
+
+        .actor-icon.spec-match {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+            font-size: 2em;
+        }
+
+        .actor-icon.spec-match:hover {
+            background: linear-gradient(135deg, #8e44ad, #732d91);
+        }
+
+        .actor-name {
+            font-size: 0.9em;
+            max-width: 120px;
+            word-wrap: break-word;
+            line-height: 1.2;
+        }
+
+        /* Líneas de vida */
+        .lifeline {
+            position: absolute;
+            width: 3px;
+            background: linear-gradient(to bottom, #bdc3c7, #95a5a6);
+            top: 130px;
+            bottom: 50px;
+        }
+
+        /* Activaciones */
+        .activation {
+            position: absolute;
+            width: 15px;
+            background: #3498db;
+            border: 2px solid #2980b9;
+            left: -6px;
+            border-radius: 3px;
+        }
+
+        .activation.spec-match {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+            border-color: #732d91;
+            width: 18px;
+            left: -7px;
+        }
+
+        /* Mensajes */
+        .message {
+            position: absolute;
+            height: 3px;
+            background: #e74c3c;
+            display: flex;
+            align-items: center;
+            border-radius: 2px;
+        }
+
+        .message.spec-match {
+            background: linear-gradient(to right, #9b59b6, #8e44ad);
+            height: 4px;
+        }
+
+        .message::after {
+            content: '';
+            position: absolute;
+            right: -10px;
+            top: -5px;
+            width: 0;
+            height: 0;
+            border-left: 10px solid #e74c3c;
+            border-top: 5px solid transparent;
+            border-bottom: 5px solid transparent;
+        }
+
+        .message.spec-match::after {
+            border-left-color: #8e44ad;
+            right: -12px;
+            top: -6px;
+            border-left-width: 12px;
+            border-top-width: 6px;
+            border-bottom-width: 6px;
+        }
+
+        .message-label {
+            position: absolute;
+            top: -30px;
+            background: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+            color: #2c3e50;
+            white-space: nowrap;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid #ecf0f1;
+        }
+
+        .message-label:hover {
+            background: #3498db;
+            color: white;
+            transform: scale(1.05);
+            border-color: #3498db;
+        }
+
+        .message-label.spec-match {
+            border: 2px solid #9b59b6;
+            background: linear-gradient(135deg, #f8f4fd, #e8d5f2);
+            color: #6c3483;
+        }
+
+        .message-label.spec-match:hover {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+            color: white;
+            border-color: #732d91;
+        }
+
+        /* Notas */
+        .note {
+            position: absolute;
+            background: #f1c40f;
+            border: 2px solid #f39c12;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 0.8em;
+            max-width: 220px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .note:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+        }
+
+        .note.spec-match {
+            background: linear-gradient(135deg, #e8d5f2, #d5b7e8);
+            border-color: #9b59b6;
+            color: #6c3483;
+        }
+
+        .note.spec-match:hover {
+            background: linear-gradient(135deg, #d5b7e8, #c39bd3);
+        }
+
+        .note::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            width: 0;
+            height: 0;
+            border-left: 18px solid #f39c12;
+            border-bottom: 18px solid transparent;
+        }
+
+        .note.spec-match::before {
+            border-left-color: #9b59b6;
+        }
+
+        /* Fragmentos */
+        .fragment {
+            position: absolute;
+            border: 3px solid #9b59b6;
+            border-radius: 8px;
+            background: rgba(155, 89, 182, 0.08);
+        }
+
+        .fragment-label {
+            position: absolute;
+            top: -18px;
+            left: 15px;
+            background: #9b59b6;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            font-weight: bold;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+        }
+
+        .fragment.validation {
+            border-color: #e67e22;
+            background: rgba(230, 126, 34, 0.08);
+        }
+
+        .fragment.validation .fragment-label {
+            background: #e67e22;
+        }
+
+        .fragment.analysis {
+            border-color: #27ae60;
+            background: rgba(39, 174, 96, 0.08);
+        }
+
+        .fragment.analysis .fragment-label {
+            background: #27ae60;
+        }
+
+        /* Controles */
+        .controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            z-index: 1000;
+            min-width: 200px;
+        }
+
+        .control-btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+        }
+
+        .control-btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .control-btn.active {
+            background: #e74c3c;
+        }
+
+        .control-btn.spec-match {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+        }
+
+        .control-btn.spec-match:hover {
+            background: linear-gradient(135deg, #8e44ad, #732d91);
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: absolute;
+            background: #2c3e50;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 0.85em;
+            z-index: 1000;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            max-width: 350px;
+            line-height: 1.5;
+            display: none;
+        }
+
+        .tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 25px;
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 8px solid #2c3e50;
+        }
+
+        /* Animaciones */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes messageFlow {
+            0% { width: 0; opacity: 0; }
+            100% { width: 100%; opacity: 1; }
+        }
+
+        @keyframes specMatchGlow {
+            0% { box-shadow: 0 0 5px #9b59b6; }
+            50% { box-shadow: 0 0 25px #9b59b6, 0 0 35px #8e44ad; }
+            100% { box-shadow: 0 0 5px #9b59b6; }
+        }
+
+        .animate-message {
+            animation: messageFlow 1.2s ease-in-out;
+        }
+
+        .animate-pulse {
+            animation: pulse 2s infinite;
+        }
+
+        .animate-spec-match {
+            animation: specMatchGlow 3s infinite;
+        }
+
+        /* Estados de proceso */
+        .process-state {
+            position: absolute;
+            background: #27ae60;
+            color: white;
+            padding: 10px 18px;
+            border-radius: 25px;
+            font-size: 0.85em;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+
+        .process-state:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.3);
+        }
+
+        .state-pending { background: linear-gradient(135deg, #f39c12, #e67e22); }
+        .state-processing { background: linear-gradient(135deg, #3498db, #2980b9); }
+        .state-completed { background: linear-gradient(135deg, #27ae60, #229954); }
+        .state-validation { background: linear-gradient(135deg, #9b59b6, #8e44ad); }
+        .state-analysis { background: linear-gradient(135deg, #e67e22, #d35400); }
+        .state-error { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+
+        /* Checklist visual mejorado */
+        .checklist {
+            position: absolute;
+            background: white;
+            border: 3px solid #9b59b6;
+            border-radius: 12px;
+            padding: 18px;
+            font-size: 0.85em;
+            max-width: 280px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .checklist-header {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin: -18px -18px 15px -18px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            padding: 6px 0;
+            transition: all 0.3s ease;
+            border-radius: 5px;
+            padding-left: 5px;
+        }
+
+        .checklist-item:hover {
+            background: #f8f9fa;
+            transform: translateX(3px);
+        }
+
+        .checklist-item.checked {
+            color: #27ae60;
+            background: rgba(39, 174, 96, 0.1);
+        }
+
+        .checklist-item.missing {
+            color: #e74c3c;
+            background: rgba(231, 76, 60, 0.1);
+        }
+
+        .checklist-item.partial {
+            color: #f39c12;
+            background: rgba(243, 156, 18, 0.1);
+        }
+
+        .checklist-icon {
+            margin-right: 10px;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        /* Análisis técnico panel */
+        .analysis-panel {
+            position: absolute;
+            background: white;
+            border: 3px solid #27ae60;
+            border-radius: 12px;
+            padding: 18px;
+            font-size: 0.8em;
+            max-width: 300px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .analysis-header {
+            background: linear-gradient(135deg, #27ae60, #229954);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin: -18px -18px 15px -18px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .analysis-item {
+            margin: 8px 0;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border-left: 4px solid #27ae60;
+        }
+
+        .analysis-item strong {
+            color: #27ae60;
+        }
+
+        /* Responsive */
+        @media (max-width: 1600px) {
+            .uml-diagram {
+                min-width: 1400px;
+                transform: scale(0.85);
+                transform-origin: top left;
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .uml-diagram {
+                min-width: 1200px;
+                transform: scale(0.7);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .uml-diagram {
+                min-width: 1000px;
+                transform: scale(0.6);
+            }
+            
+            .controls {
+                position: relative;
+                margin: 20px auto;
+                width: fit-content;
+            }
+        }
+
+        /* Leyenda mejorada */
+        .legend {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: white;
+            border: 3px solid #34495e;
+            border-radius: 12px;
+            padding: 18px;
+            font-size: 0.85em;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .legend h4 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+            text-align: center;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            padding: 5px;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .legend-item:hover {
+            background: #f8f9fa;
+            transform: translateX(3px);
+        }
+
+        .legend-color {
+            width: 24px;
+            height: 24px;
+            margin-right: 12px;
+            border-radius: 4px;
+            border: 2px solid #ecf0f1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Diagrama UML - Formatter MDS con Spec Match Agent Completo</h1>
+            <p>Auditor técnico especializado en formatos de facturación médica con análisis completo</p>
+        </div>
+
+        <div class="controls">
+            <button class="control-btn" onclick="playAnimation()">▶️ Reproducir</button>
+            <button class="control-btn" onclick="pauseAnimation()">⏸️ Pausar</button>
+            <button class="control-btn" onclick="resetAnimation()">🔄 Reiniciar</button>
+            <button class="control-btn" onclick="toggleDetails()">📋 Detalles</button>
+            <button class="control-btn spec-match" onclick="highlightSpecMatch()">🎯 Spec Match</button>
+            <button class="control-btn spec-match" onclick="showSpecMatchPrompt()">📝 Prompt</button>
+            <button class="control-btn" onclick="showAnalysisFlow()">🔍 Análisis</button>
+        </div>
+
+        <div class="uml-container">
+            <div class="uml-diagram" id="umlDiagram">
+                <!-- Actores -->
+                <div class="actor" style="left: 50px; top: 20px;">
+                    <div class="actor-icon" data-tooltip="Agente especializado en análisis de archivos médicos">🔍</div>
+                    <div class="actor-name">file-analyzer</div>
+                </div>
+
+                <div class="actor" style="left: 220px; top: 20px;">
+                    <div class="actor-icon spec-match" data-tooltip="Auditor técnico especializado en formatos de facturación médica (Meditech, Epic, Cerner)">🎯</div>
+                    <div class="actor-name">spec-match<br/><small>(Technical Auditor)</small></div>
+                </div>
+
+                <div class="actor" style="left: 390px; top: 20px;">
+                    <div class="actor-icon" data-tooltip="Agente generador de código C# con FileHelpers">⚡</div>
+                    <div class="actor-name">csharp-generator</div>
+                </div>
+
+                <div class="actor" style="left: 560px; top: 20px;">
+                    <div class="actor-icon" data-tooltip="Agente validador de código y generador de tests">✅</div>
+                    <div class="actor-name">code-validator</div>
+                </div>
+
+                <div class="actor" style="left: 830px; top: 20px;">
+                    <div class="actor-icon" data-tooltip="Sistema de scheduling y orquestación">🎯</div>
+                    <div class="actor-name">TaskLauncher</div>
+                </div>
+
+                <div class="actor" style="left: 1050px; top: 20px;">
+                    <div class="actor-icon" data-tooltip="Aplicación Console que ejecuta el pipeline">🖥️</div>
+                    <div class="actor-name">Console</div>
+                </div>
+
+                <div class="actor" style="left: 1270px; top: 20px;">
+                    <div class="actor-icon" data-tooltip="Formatter generado (ej: Pri5230)">🔧</div>
+                    <div class="actor-name">Formatter</div>
+                </div>
+
+                <div class="actor" style="left: 1490px; top: 20px;">
+                    <div class="actor-icon" data-tooltip="Base de datos intermedia Cupload">💾</div>
+                    <div class="actor-name">Database</div>
+                </div>
+
+                <!-- Líneas de vida -->
+                <div class="lifeline" style="left: 84px;"></div>
+                <div class="lifeline" style="left: 254px;"></div>
+                <div class="lifeline" style="left: 424px;"></div>
+                <div class="lifeline" style="left: 594px;"></div>
+                <div class="lifeline" style="left: 864px;"></div>
+                <div class="lifeline" style="left: 1084px;"></div>
+                <div class="lifeline" style="left: 1304px;"></div>
+                <div class="lifeline" style="left: 1524px;"></div>
+
+                <!-- Fragmento: Fase de Desarrollo -->
+                <div class="fragment" style="left: 30px; top: 150px; width: 600px; height: 320px;">
+                    <div class="fragment-label">Fase de Desarrollo</div>
+                </div>
+
+                <!-- Fragmento: Análisis Técnico -->
+                <div class="fragment analysis" style="left: 170px; top: 190px; width: 320px; height: 240px;">
+                    <div class="fragment-label">Análisis Técnico Especializado</div>
+                </div>
+
+                <!-- Mensajes Fase 1: Análisis -->
+                <div class="message" id="msg1" style="left: 84px; top: 170px; width: 170px;">
+                    <div class="message-label">1. Analizar estructura archivos</div>
+                </div>
+
+                <div class="activation" style="left: 249px; top: 160px; height: 50px;"></div>
+
+                <!-- Mensajes Spec Match Agent - Análisis PDF -->
+                <div class="message spec-match" id="msg2" style="left: 84px; top: 220px; width: 170px;">
+                    <div class="message-label spec-match">2. Enviar PDF + checklist</div>
+                </div>
+
+                <div class="activation spec-match" style="left: 249px; top: 210px; height: 180px;"></div>
+
+                <div class="message spec-match" id="msg3" style="left: 254px; top: 260px; width: 170px;">
+                    <div class="message-label spec-match">3. Auditar PDF vs checklist</div>
+                </div>
+
+                <div class="message spec-match" id="msg4" style="left: 84px; top: 300px; width: 170px;">
+                    <div class="message-label spec-match">4. Enviar archivos de datos</div>
+                </div>
+
+                <div class="message spec-match" id="msg5" style="left: 254px; top: 340px; width: 170px;">
+                    <div class="message-label spec-match">5. Analizar datos reales</div>
+                </div>
+
+                <div class="message spec-match" id="msg6" style="left: 254px; top: 380px; width: 170px;">
+                    <div class="message-label spec-match">6. Generar reporte JSON</div>
+                </div>
+
+                <div class="note spec-match" style="left: 280px; top: 420px;">
+                    <strong>Spec Match Output:</strong><br/>
+                    • Tipo de archivo identificado<br/>
+                    • Dirección (Incoming/Outgoing)<br/>
+                    • Status por campo (complete/partial/missing)<br/>
+                    • Evidencia específica del PDF/datos<br/>
+                    • Recomendaciones técnicas
+                </div>
+
+                <!-- Mensajes Fase 2: Generación -->
+                <div class="message" id="msg7" style="left: 254px; top: 500px; width: 170px;">
+                    <div class="message-label">7. Generar código C# validado</div>
+                </div>
+
+                <div class="activation" style="left: 419px; top: 490px; height: 70px;"></div>
+
+                <div class="note" style="left: 450px; top: 520px;">
+                    <strong>Genera con auditoría:</strong><br/>
+                    • Clase principal (PriXXXX)<br/>
+                    • Handlers especializados<br/>
+                    • Record Types auditados<br/>
+                    • Cross-walks completos<br/>
+                    • Mapeo basado en evidencia
+                </div>
+
+                <!-- Mensajes Fase 3: Validación de Código -->
+                <div class="message" id="msg8" style="left: 424px; top: 580px; width: 170px;">
+                    <div class="message-label">8. Validar código generado</div>
+                </div>
+
+                <div class="activation" style="left: 589px; top: 570px; height: 80px;"></div>
+
+                <!-- Fragmento: Fase de Producción -->
+                <div class="fragment" style="left: 810px; top: 680px; width: 750px; height: 520px;">
+                    <div class="fragment-label">Fase de Producción</div>
+                </div>
+
+                <!-- Mensajes Fase 4: Scheduling -->
+                <div class="message" id="msg9" style="left: 864px; top: 710px; width: 220px;">
+                    <div class="message-label">9. Ejecutar tarea programada</div>
+                </div>
+
+                <div class="activation" style="left: 1079px; top: 700px; height: 450px;"></div>
+
+                <!-- Pipeline Console -->
+                <div class="message" id="msg10" style="left: 1084px; top: 750px; width: 220px;">
+                    <div class="message-label">10. Escanear archivos</div>
+                </div>
+
+                <div class="message" id="msg11" style="left: 1084px; top: 800px; width: 220px;">
+                    <div class="message-label">11. Copiar a área trabajo</div>
+                </div>
+
+                <div class="message" id="msg12" style="left: 1084px; top: 850px; width: 220px;">
+                    <div class="message-label">12. Poblar uplprocess</div>
+                </div>
+
+                <div class="message" id="msg13" style="left: 1084px; top: 900px; width: 220px;">
+                    <div class="message-label">13. Lanzar formatter</div>
+                </div>
+
+                <div class="activation" style="left: 1299px; top: 890px; height: 220px;"></div>
+
+                <!-- Procesamiento Formatter -->
+                <div class="message" id="msg14" style="left: 1304px; top: 940px; width: 220px;">
+                    <div class="message-label">14. ScanIncomingFiles()</div>
+                </div>
+
+                <div class="message" id="msg15" style="left: 1304px; top: 990px; width: 220px;">
+                    <div class="message-label">15. QualifyFiles()</div>
+                </div>
+
+                <div class="message" id="msg16" style="left: 1304px; top: 1040px; width: 220px;">
+                    <div class="message-label">16. LoadFiles() + FileHelpers</div>
+                </div>
+
+                <div class="message" id="msg17" style="left: 1304px; top: 1090px; width: 220px;">
+                    <div class="message-label">17. UpdateDatabase()</div>
+                </div>
+
+                <div class="activation" style="left: 1519px; top: 1080px; height: 70px;"></div>
+
+                <!-- Checklist Visual Mejorado -->
+                <div class="checklist" style="left: 50px; top: 520px;">
+                    <div class="checklist-header">📋 Checklist Técnico MDS</div>
+                    <div class="checklist-item checked">
+                        <span class="checklist-icon">✅</span>
+                        <span>Account Number</span>
+                    </div>
+                    <div class="checklist-item checked">
+                        <span class="checklist-icon">✅</span>
+                        <span>Patient Name</span>
+                    </div>
+                    <div class="checklist-item partial">
+                        <span class="checklist-icon">⚠️</span>
+                        <span>Balance Amount</span>
+                    </div>
+                    <div class="checklist-item missing">
+                        <span class="checklist-icon">❌</span>
+                        <span>Insurance Info</span>
+                    </div>
+                    <div class="checklist-item checked">
+                        <span class```html
+                        <span class="checklist-icon">✅</span>
+                        <span>Service Date</span>
+                    </div>
+                    <div class="checklist-item missing">
+                        <span class="checklist-icon">❌</span>
+                        <span>SSN</span>
+                    </div>
+                    <div class="checklist-item partial">
+                        <span class="checklist-icon">⚠️</span>
+                        <span>Guarantor Info</span>
+                    </div>
+                    <div class="checklist-item checked">
+                        <span class="checklist-icon">✅</span>
+                        <span>Transaction Data</span>
+                    </div>
+                </div>
+
+                <!-- Panel de Análisis Técnico -->
+                <div class="analysis-panel" style="left: 650px; top: 520px;">
+                    <div class="analysis-header">🔍 Análisis Técnico</div>
+                    <div class="analysis-item">
+                        <strong>Tipo:</strong> Placements (Demographics)
+                    </div>
+                    <div class="analysis-item">
+                        <strong>Dirección:</strong> Incoming
+                    </div>
+                    <div class="analysis-item">
+                        <strong>Confianza:</strong> 95%
+                    </div>
+                    <div class="analysis-item">
+                        <strong>Sistema:</strong> Meditech V12
+                    </div>
+                    <div class="analysis-item">
+                        <strong>Records:</strong> 10, 20A, 30, 55, 60A
+                    </div>
+                    <div class="analysis-item">
+                        <strong>Cobertura:</strong> 78% completa
+                    </div>
+                </div>
+
+                <!-- Estados de proceso expandidos -->
+                <div class="process-state state-pending" style="left: 100px; top: 1280px;">Análisis</div>
+                <div class="process-state state-validation" style="left: 280px; top: 1280px;">Auditoría</div>
+                <div class="process-state state-analysis" style="left: 460px; top: 1280px;">Validación</div>
+                <div class="process-state state-processing" style="left: 640px; top: 1280px;">Generación</div>
+                <div class="process-state state-processing" style="left: 820px; top: 1280px;">Testing</div>
+                <div class="process-state state-completed" style="left: 1000px; top: 1280px;">Producción</div>
+                <div class="process-state state-completed" style="left: 1180px; top: 1280px;">Procesamiento</div>
+                <div class="process-state state-completed" style="left: 1360px; top: 1280px;">Base de Datos</div>
+
+                <!-- Leyenda actualizada -->
+                <div class="legend">
+                    <h4>🎯 Leyenda del Sistema</h4>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: linear-gradient(135deg, #3498db, #2980b9);"></div>
+                        <span>Agentes MDS Estándar</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: linear-gradient(135deg, #9b59b6, #8e44ad);"></div>
+                        <span>Spec Match Agent (Auditor Técnico)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #e74c3c;"></div>
+                        <span>Mensajes/Llamadas Estándar</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: linear-gradient(to right, #9b59b6, #8e44ad);"></div>
+                        <span>Mensajes Spec Match</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #f1c40f;"></div>
+                        <span>Notas Explicativas</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: rgba(155, 89, 182, 0.3);"></div>
+                        <span>Fragmentos de Desarrollo</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: rgba(39, 174, 96, 0.3);"></div>
+                        <span>Análisis Técnico Especializado</span>
+                    </div>
+                </div>
+
+                <!-- Tooltip -->
+                <div class="tooltip" id="tooltip"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let animationStep = 0;
+        let animationInterval;
+        let isPlaying = false;
+        let showDetails = false;
+
+        const messages = [
+            'msg1', 'msg2', 'msg3', 'msg4', 'msg5', 'msg6', 'msg7', 
+            'msg8', 'msg9', 'msg10', 'msg11', 'msg12', 'msg13', 
+            'msg14', 'msg15', 'msg16', 'msg17'
+        ];
+
+        const messageDetails = {
+            'msg1': {
+                title: 'Análisis de Estructura de Archivos',
+                description: 'El agente file-analyzer examina los archivos del cliente para detectar formato básico y estructura.',
+                technical: 'Detecta: CSV/Fixed-width/Excel, estructura general, prepara para auditoría técnica'
+            },
+            'msg2': {
+                title: 'Envío de PDF + Checklist',
+                description: 'Se envía la especificación PDF del cliente junto con el checklist de requisitos MDS al auditor técnico.',
+                technical: 'Input: PDF specification + checklist requirements para análisis especializado'
+            },
+            'msg3': {
+                title: 'Auditoría PDF vs Checklist',
+                description: 'Spec Match Agent audita el PDF contra checklist usando expertise en sistemas médicos (Meditech, Epic, Cerner).',
+                technical: 'Análisis: estructura documento, tipos de record, campos por record type, evidencia específica'
+            },
+            'msg4': {
+                title: 'Envío de Archivos de Datos Reales',
+                description: 'Los archivos de datos reales se envían para validación contra la especificación PDF.',
+                technical: 'Input: archivos crudos (placements/trans/inv/notes) para análisis de contenido real'
+            },
+            'msg5': {
+                title: 'Análisis de Datos Reales',
+                description: 'Análisis de multi-record formats identificando tipos de record (01, 10, 20A, 30, 55, 60A, 70, 99).',
+                technical: 'Detecta: record types, field positions, data formats, mapeo exacto a especificación'
+            },
+            'msg6': {
+                title: 'Generación de Reporte JSON',
+                description: 'Genera reporte JSON completo con fileType, direction, confidence, results detallados y recomendaciones.',
+                technical: 'Output: JSON con status complete/partial/missing, evidencia específica, recommendations'
+            },
+            'msg7': {
+                title: 'Generación de Código C# Auditado',
+                description: 'El csharp-generator usa el reporte de auditoría para crear código más preciso y completo.',
+                technical: 'Genera: BaseConverter, Handlers, RecordTypes basados en evidencia auditada'
+            },
+            'msg8': {
+                title: 'Validación de Código Generado',
+                description: 'code-validator verifica el código generado contra los hallazgos de la auditoría técnica.',
+                technical: 'Valida: compilación, mapeos auditados, cobertura según reporte JSON'
+            },
+            'msg9': {
+                title: 'Ejecución Programada',
+                description: 'TaskLauncher ejecuta tareas según schedule configurado.',
+                technical: 'Inserta READY en protasksstatus, TaskWorker ejecuta Console'
+            },
+            'msg10': {
+                title: 'Escaneo de Archivos',
+                description: 'Console busca archivos según configuración del perfil.',
+                technical: 'Usa DirectoryInfo.GetFiles() con máscara configurada'
+            },
+            'msg11': {
+                title: 'Copia a Área de Trabajo',
+                description: 'Archivos se copian desde red a carpeta local.',
+                technical: 'De \\\\server\\incoming a C:\\Cuploads\\NET\\Data'
+            },
+            'msg12': {
+                title: 'Población de uplprocess',
+                description: 'Se insertan registros en tabla uplprocess.',
+                technical: 'Campos: sourcefile, processfile, loadexe, profileid, dbservername'
+            },
+            'msg13': {
+                title: 'Lanzamiento del Formatter',
+                description: 'Console ejecuta el formatter auditado.',
+                technical: 'Comando: pri5230.exe /format=pri5230 /pfid=1234 /statid=5678'
+            },
+            'msg14': {
+                title: 'Escaneo de Archivos Entrantes',
+                description: 'Formatter consulta uplprocess para archivos a procesar.',
+                technical: 'SELECT de uplprocess WHERE loadexe y profileid coinciden'
+            },
+            'msg15': {
+                title: 'Clasificación de Archivos',
+                description: 'QualifyFile() usa conocimiento auditado para clasificar.',
+                technical: 'Retorna: Collections, Transactions, Inventory, Notes basado en auditoría'
+            },
+            'msg16': {
+                title: 'Carga y Procesamiento Auditado',
+                description: 'FileHelpers parsea usando mapeos validados por auditoría.',
+                technical: 'FileHelperEngine → ProcessDestinations() → TakeRecord() con mapeos auditados'
+            },
+            'msg17': {
+                title: 'Actualización de Base de Datos',
+                description: 'TableAdapters escriben datos validados por auditoría.',
+                technical: 'Actualiza: uplmaster, upltrans, uplinsurance con mayor precisión'
+            }
+        };
+
+        const specMatchPrompts = {
+            pdfAnalysis: `You are a technical auditor specializing in medical billing data formats (Meditech, Epic, Cerner, etc.).
+
+Analyze the attached PDF specification document and validate it against the checklist requirements.
+
+**Filename:** \${filename}
+**Checklist Requirements:** \${checklistDescription}
+
+**Your Task:**
+1. Read and understand the PDF document structure
+2. Determine the file type based on the content:
+   - Placements (patient/account placement data with demographics)
+   - Transactions (payment/financial transactions)
+   - Recalls (recall/follow-up data)
+   - Notes (notes or comments)
+   - Inventory (balance updates)
+
+3. Determine direction: Incoming or Outgoing
+
+4. For each checklist item, evaluate:
+   - "complete" if there is an explicit, unequivocal field
+   - "partial" if it is approximate or unclear
+   - "missing" if not found
+
+5. Cite evidence from the document (e.g., "Record 30 - Adm/Svc Date")
+
+Respond with ONLY a JSON object (no markdown, no explanation):
+{
+  "fileType": "Placements|Transactions|Recalls|Notes|Inventory|Unknown",
+  "direction": "Incoming|Outgoing|Unknown",
+  "confidence": 0-100,
+  "summary": {
+    "overall": "complete|partial|missing",
+    "comments": "Brief summary of findings"
+  },
+  "results": [
+    {
+      "id": "item-id",
+      "detected": true,
+      "status": "complete|partial|missing",
+      "recordLocation": "Record 20A - GuarName",
+      "fieldName": "GuarName",
+      "evidence": "Found in Record Type 20A, field position 5"
+    }
+  ],
+  "missingFields": ["field1", "field2"],
+  "presentFields": ["field1", "field2"],
+  "recommendations": ["Add missing field X", "Clarify field Y"]
+}
+
+IMPORTANT:
+- Return ONLY valid JSON
+- Use the exact "id" values from the checklist
+- Provide specific evidence from the PDF for each finding
+- Be thorough in analyzing all record types and fields`,
+
+            dataAnalysis: `You are a data file analyst specializing in medical billing data formats (Meditech, Epic, Cerner, etc.).
+
+Analyze the provided data file(s) and validate against the checklist requirements.
+
+The data files may have multi-record formats where different record types are identified by indicators (like "01", "10", "20A", "30", etc.) at the beginning of each line.
+
+Common record types:
+- Record Type 01 = File Header
+- Record Type 10 = Patient Demographics  
+- Record Type 20A = Guarantor Demographics
+- Record Type 30 = Visit/Account Info
+- Record Type 55 = Billing Information
+- Record Type 60A = Insurance
+- Record Type 70 = Transactions
+- Record Type 99 = File Trailer
+
+**Checklist Requirements:** \${checklistDescription}
+**Data File Content:** \${combinedContent.substring(0, 30000)}
+
+**Your Task:**
+1. Determine the file type: Placements, Transactions, Recalls, Notes, or Inventory
+2. For each checklist item, find if it exists in the data
+3. Specify the EXACT record type and field where each item was found
+4. Evaluate status: complete (found), partial (approximate), missing (not found)
+
+Respond with ONLY a JSON object (no markdown):
+{
+  "fileType": "Placements|Transactions|Recalls|Notes|Inventory|Unknown",
+  "direction": "Incoming|Outgoing|Unknown", 
+  "confidence": 0-100,
+  "summary": {
+    "overall": "complete|partial|missing",
+    "comments": "Brief summary"
+  },
+  "results": [
+    {
+      "id": "item-id",
+      "detected": true,
+      "status": "complete|partial|missing",
+      "recordLocation": "Record 20A - GuarName",
+      "fieldName": "GuarName", 
+      "evidence": "Found in record type 20A at position 5"
+    }
+  ],
+  "missingFields": ["field1"],
+  "presentFields": ["field1", "field2"],
+  "recommendations": ["suggestion1"]
+}
+
+Use the exact "id" values from the checklist above.`
+        };
+
+        function playAnimation() {
+            if (isPlaying) return;
+            isPlaying = true;
+            
+            animationInterval = setInterval(() => {
+                if (animationStep < messages.length) {
+                    animateMessage(messages[animationStep]);
+                    animationStep++;
+                } else {
+                    pauseAnimation();
+                    animationStep = 0;
+                }
+            }, 2000);
+
+            document.querySelector('.control-btn').classList.add('active');
+        }
+
+        function pauseAnimation() {
+            isPlaying = false;
+            clearInterval(animationInterval);
+            document.querySelector('.control-btn').classList.remove('active');
+        }
+
+        function resetAnimation() {
+            pauseAnimation();
+            animationStep = 0;
+            
+            // Resetear todas las animaciones
+            messages.forEach(msgId => {
+                const msg = document.getElementById(msgId);
+                if (msg) {
+                    msg.classList.remove('animate-message');
+                    msg.style.opacity = '0.3';
+                }
+            });
+
+            // Resetear estados
+            document.querySelectorAll('.process-state').forEach(state => {
+                state.className = 'process-state state-pending';
+            });
+
+            // Resetear checklist y análisis
+            updateChecklistAnimation(0);
+            updateAnalysisPanel(0);
+        }
+
+        function animateMessage(messageId) {
+            const message = document.getElementById(messageId);
+            if (message) {
+                message.classList.add('animate-message');
+                message.style.opacity = '1';
+                
+                // Animar actor relacionado
+                const actorIndex = getActorIndexForMessage(messageId);
+                const actors = document.querySelectorAll('.actor-icon');
+                if (actors[actorIndex]) {
+                    actors[actorIndex].classList.add('animate-pulse');
+                    if (actorIndex === 1) { // Spec Match Agent
+                        actors[actorIndex].classList.add('animate-spec-match');
+                    }
+                    setTimeout(() => {
+                        actors[actorIndex].classList.remove('animate-pulse', 'animate-spec-match');
+                    }, 2000);
+                }
+
+                // Actualizar estado del proceso
+                updateProcessState(animationStep);
+                
+                // Actualizar checklist y análisis si es mensaje de spec-match
+                if (['msg2', 'msg3', 'msg4', 'msg5', 'msg6'].includes(messageId)) {
+                    updateChecklistAnimation(animationStep);
+                    updateAnalysisPanel(animationStep);
+                }
+            }
+        }
+
+        function getActorIndexForMessage(messageId) {
+            const messageToActor = {
+                'msg1': 0,  // file-analyzer
+                'msg2': 1,  // spec-match
+                'msg3': 1,  // spec-match
+                'msg4': 1,  // spec-match
+                'msg5': 1,  // spec-match
+                'msg6': 1,  // spec-match
+                'msg7': 2,  // csharp-generator
+                'msg8': 3,  // code-validator
+                'msg9': 4,  // TaskLauncher
+                'msg10': 5, // Console
+                'msg11': 5, // Console
+                'msg12': 5, // Console
+                'msg13': 5, // Console
+                'msg14': 6, // Formatter
+                'msg15': 6, // Formatter
+                'msg16': 6, // Formatter
+                'msg17': 7  // Database
+            };
+            return messageToActor[messageId] || 0;
+        }
+
+        function updateProcessState(step) {
+            const states = document.querySelectorAll('.process-state');
+            states.forEach((state, index) => {
+                if (step >= 1 && step <= 6) {
+                    // Durante análisis técnico
+                    if (index === 0) state.className = 'process-state state-completed';
+                    else if (index === 1) state.className = 'process-state state-validation';
+                    else if (index === 2) state.className = 'process-state state-analysis';
+                    else state.className = 'process-state state-pending';
+                } else if (step > 6) {
+                    // Después del análisis
+                    if (index <= Math.floor((step - 6) / 2) + 2) {
+                        state.className = 'process-state state-completed';
+                    } else if (index === Math.floor((step - 6) / 2) + 3) {
+                        state.className = 'process-state state-processing';
+                    } else {
+                        state.className = 'process-state state-pending';
+                    }
+                } else {
+                    state.className = 'process-state state-pending';
+                }
+            });
+        }
+
+        function updateChecklistAnimation(step) {
+            const items = document.querySelectorAll('.checklist-item');
+            items.forEach((item, index) => {
+                if (step >= 2 && step <= 6) {
+                    // Durante la auditoría técnica
+                    const progress = (step - 2) / 4; // 0 a 1
+                    const itemProgress = Math.min(1, Math.max(0, (progress * items.length) - index));
+                    
+                    item.style.opacity = 0.3 + (itemProgress * 0.7);
+                    item.style.transform = `translateX(${-20 + (itemProgress * 20)}px)`;
+                    
+                    if (itemProgress >= 1) {
+                        item.style.opacity = '1';
+                        item.style.transform = 'translateX(0)';
+                    }
+                } else if (step > 6) {
+                    // Después de la auditoría
+                    item.style.opacity = '1';
+                    item.style.transform = 'translateX(0)';
+                } else {
+                    // Antes de la auditoría
+                    item.style.opacity = '0.3';
+                    item.style.transform = 'translateX(-20px)';
+                }
+            });
+        }
+
+        function updateAnalysisPanel(step) {
+            const panel = document.querySelector('.analysis-panel');
+            const items = panel.querySelectorAll('.analysis-item');
+            
+            items.forEach((item, index) => {
+                if (step >= 3 && step <= 6) {
+                    const progress = (step - 3) / 3;
+                    const itemProgress = Math.min(1, Math.max(0, (progress * items.length) - index));
+                    
+                    item.style.opacity = 0.2 + (itemProgress * 0.8);
+                    item.style.transform = `scale(${0.9 + (itemProgress * 0.1)})`;
+                } else if (step > 6) {
+                    item.style.opacity = '1';
+                    item.style.transform = 'scale(1)';
+                } else {
+                    item.style.opacity = '0.2';
+                    item.style.transform = 'scale(0.9)';
+                }
+            });
+        }
+
+        function toggleDetails() {
+            showDetails = !showDetails;
+            const btn = document.querySelectorAll('.control-btn')[3];
+            btn.textContent = showDetails ? '📋 Ocultar' : '📋 Detalles';
+            btn.classList.toggle('active', showDetails);
+        }
+
+        function highlightSpecMatch() {
+            // Resetear highlights previos
+            document.querySelectorAll('.message, .actor-icon, .activation, .note, .checklist, .analysis-panel').forEach(el => {
+                el.style.filter = 'none';
+                el.style.transform = el.style.transform.replace(/scale\([^)]*\)/g, '');
+            });
+
+            // Resaltar elementos del Spec Match Agent
+            const specMatchElements = [
+                document.querySelector('.actor-icon.spec-match'),
+                document.getElementById('msg2'),
+                document.getElementById('msg3'),
+                document.getElementById('msg4'),
+                document.getElementById('msg5'),
+                document.getElementById('msg6'),
+                document.querySelector('.activation.spec-match'),
+                document.querySelector('.note.spec-match'),
+                document.querySelector('.checklist'),
+                document.querySelector('.analysis-panel'),
+                document.querySelector('.fragment.analysis')
+            ];
+
+            specMatchElements.forEach(el => {
+                if (el) {
+                    el.style.filter = 'drop-shadow(0 0 20px #9b59b6)';
+                    const currentTransform = el.style.transform || '';
+                    el.style.transform = currentTransform + ' scale(1.05)';
+                }
+            });
+
+            // Mostrar detalles del Spec Match Agent
+            showSpecMatchDetails();
+
+            setTimeout(() => {
+                specMatchElements.forEach(el => {
+                    if (el) {
+                        el.style.filter = 'none';
+                        el.style.transform = el.style.transform.replace(/scale\([^)]*\)/g, '');
+                    }
+                });
+            }, 8000);
+        }
+
+        function showSpecMatchPrompt() {
+            const promptHtml = `
+                <div style="background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); max-width: 900px; max-height: 80vh; overflow-y: auto;">
+                    <h2 style="color: #9b59b6; margin-bottom: 20px;">📝 Prompts del Spec Match Agent</h2>
+                    
+                    <div style="margin-bottom: 30px;">
+                        <h3 style="color: #2c3e50; margin-bottom: 15px;">🔍 1. Análisis de PDF Specification</h3>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #9b59b6;">
+                            <strong>Propósito:</strong> Auditar documentos PDF de especificación contra checklist MDS
+                        </div>
+                        <pre style="background: #2c3e50; color: #ecf0f1; padding: 15px; border-radius: 8px; font-size: 0.8em; overflow-x: auto; margin-top: 10px; white-space: pre-wrap;">${specMatchPrompts.pdfAnalysis}</pre>
+                    </div>
+
+                    <div style="margin-bottom: 30px;">
+                        <h3 style="color: #2c3e50; margin-bottom: 15px;">📊 2. Análisis de Archivos de Datos</h3>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #27ae60;">
+                            <strong>Propósito:</strong> Analizar archivos de datos reales contra especificación
+                        </div>
+                        <pre style="background: #2c3e50; color: #ecf0f1; padding: 15px; border-radius: 8px; font-size: 0.8em; overflow-x: auto; margin-top: 10px; white-space: pre-wrap;">${specMatchPrompts.dataAnalysis}</pre>
+                    </div>
+
+                    <div style="background: #e8d5f2; padding: 20px; border-radius: 10px; margin-top: 25px;">
+                        <h3 style="color: #9b59b6; margin-bottom: 15px;">🎯 Características Clave</h3>
+                        <ul style="margin: 0; padding-left: 20px;">
+                            <li><strong>Especialización:</strong> Sistemas médicos (Meditech, Epic, Cerner)</li>
+                            <li><strong>Multi-record Support:</strong> Identifica tipos 01, 10, 20A, 30, 55, 60A, 70, 99</li>
+                            <li><strong>Evidencia Específica:</strong> Cita ubicaciones exactas en documentos</li>
+                            <li><strong>Status Granular:</strong> complete/partial/missing con justificación</li>
+                            <li><strong>JSON Estructurado:</strong> Output consistente para procesamiento automático</li>
+                            <li><strong>Recomendaciones:</strong> Sugerencias técnicas específicas</li>
+                        </ul>
+                    </div>
+
+                    <button onclick="this.parentElement.parentElement.remove()" 
+                            style="background: #9b59b6; color: white; border: none; padding: 12px 24px; 
+                                   border-radius: 8px; cursor: pointer; margin-top: 20px; float: right; font-weight: bold;">
+                        Cerrar
+                    </button>
+                </div>
+            `;
+
+            const overlay = document.createElement('div');
+            overlay.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                background: rgba(0,0,0,0.8); z-index: 2000; display: flex;
+                align-items: center; justify-content: center; padding: 20px;
+                box-sizing: border-box;
+            `;
+            overlay.innerHTML = promptHtml;
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) document.body.removeChild(overlay);
+            });
+            document.body.appendChild(overlay);
+        }
+
+        function showSpecMatchDetails() {
+            const detailsHtml = `
+                <div style="background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); max-width: 800px;">
+                    <h2 style="color: #9b59b6; margin-bottom: 20px;">🎯 Spec Match Agent - Auditor Técnico Completo</h2>
+                    
+                    <div style="margin-bottom: 25px;">
+                        <h3 style="color: #2c3e50;">🔍 Especialización Técnica</h3>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #9b59b6;">
+                            <p><strong>Expertise:</strong> Formatos de facturación médica (Meditech, Epic, Cerner, CPSI, etc.)</p>
+                            <p><strong>Capacidades:</strong> Análisis de PDF + validación de datos reales</p>
+                            <p><strong>Output:</strong> JSON estructurado con evidencia específica</p>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 25px;">
+                        <h3 style="color: #2c3e50;">📋 Proceso de Auditoría Dual</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <div style="background: #e8f4fd; padding: 15px; border-radius: 8px; border-left: 4px solid #3498db;">
+                                <h4 style="color: #3498db; margin-bottom: 10px;">📄 Análisis PDF</h4>
+                                <ul style="margin: 0; padding-left: 15px; font-size: 0.9em;">
+                                    <li>Lee especificación técnica</li>
+                                    <li>Identifica record types</li>
+                                    <li>Mapea campos por record</li>
+                                    <li>Evalúa vs checklist MDS</li>
+                                </ul>
+                            </div>
+                            <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; border-left: 4px solid #27ae60;">
+                                <h4 style="color: #27ae60; margin-bottom: 10px;">📊 Análisis Datos</h4>
+                                <ul style="margin: 0; padding-left: 15px; font-size: 0.9em;">
+                                    <li>Procesa archivos reales</li>
+                                    <li>Identifica multi-records</li>
+                                    <li>Valida contenido vs spec</li>
+                                    <li>Genera mapeo exacto</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 25px;">
+                        <h3 style="color: #2c3e50;">🎯 Record Types Soportados</h3>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
+                            <div style="display: grid; grid-html </div>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; font-size: 0.85em;">
+                                <div><strong>01:</strong> File Header</div>
+                                <div><strong>10:</strong> Patient Demographics</div>
+                                <div><strong>20A:</strong> Guarantor Demographics</div>
+                                <div><strong>30:</strong> Visit/Account Info</div>
+                                <div><strong>55:</strong> Billing Information</div>
+                                <div><strong>60A:</strong> Insurance</div>
+                                <div><strong>70:</strong> Transactions</div>
+                                <div><strong>99:</strong> File Trailer</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 25px;">
+                        <h3 style="color: #2c3e50;">📊 Ejemplo de Output JSON</h3>
+                        <pre style="background: #2c3e50; color: #ecf0f1; padding: 15px; border-radius: 8px; font-size: 0.8em; overflow-x: auto;">
+{
+  "fileType": "Placements",
+  "direction": "Incoming",
+  "confidence": 95,
+  "summary": {
+    "overall": "partial",
+    "comments": "Meditech V12 format with 78% field coverage"
+  },
+  "results": [
+    {
+      "id": "account-number",
+      "detected": true,
+      "status": "complete",
+      "recordLocation": "Record 10 - PatAcctNum",
+      "fieldName": "PatAcctNum",
+      "evidence": "Found in Record Type 10, positions 1-15"
+    },
+    {
+      "id": "patient-ssn",
+      "detected": false,
+      "status": "missing",
+      "recordLocation": null,
+      "fieldName": null,
+      "evidence": "SSN field not found in any record type"
+    }
+  ],
+  "missingFields": ["patient-ssn", "insurance-policy"],
+  "presentFields": ["account-number", "patient-name", "balance"],
+  "recommendations": [
+    "Request SSN field in Record 10",
+    "Add insurance policy number to Record 60A"
+  ]
+}
+                        </pre>
+                    </div>
+
+                    <div style="background: #e8d5f2; padding: 20px; border-radius: 10px;">
+                        <h4 style="color: #9b59b6; margin-bottom: 15px;">💡 Valor Agregado Técnico</h4>
+                        <ul style="margin: 0; padding-left: 20px;">
+                            <li><strong>Precisión:</strong> 95%+ accuracy en identificación de campos</li>
+                            <li><strong>Evidencia:</strong> Citas específicas de ubicación en documentos</li>
+                            <li><strong>Expertise:</strong> Conocimiento profundo de sistemas médicos</li>
+                            <li><strong>Automatización:</strong> Reduce tiempo de análisis de días a minutos</li>
+                            <li><strong>Consistencia:</strong> Evaluación estandarizada y repetible</li>
+                        </ul>
+                    </div>
+
+                    <button onclick="this.parentElement.parentElement.remove()" 
+                            style="background: #9b59b6; color: white; border: none; padding: 12px 24px; 
+                                   border-radius: 8px; cursor: pointer; margin-top: 20px; float: right; font-weight: bold;">
+                        Cerrar
+                    </button>
+                </div>
+            `;
+
+            const overlay = document.createElement('div');
+            overlay.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                background: rgba(0,0,0,0.8); z-index: 2000; display: flex;
+                align-items: center; justify-content: center; padding: 20px;
+                box-sizing: border-box;
+            `;
+            overlay.innerHTML = detailsHtml;
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) document.body.removeChild(overlay);
+            });
+            document.body.appendChild(overlay);
+        }
+
+        function showAnalysisFlow() {
+            const flowHtml = `
+                <div style="background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); max-width: 900px; max-height: 80vh; overflow-y: auto;">
+                    <h2 style="color: #27ae60; margin-bottom: 20px;">🔍 Flujo de Análisis Técnico Completo</h2>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 20px;">
+                        <div style="display: flex; align-items: center; padding: 20px; background: #f8f9fa; border-radius: 12px; border-left: 6px solid #3498db;">
+                            <div style="background: #3498db; color: white; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; margin-right: 20px; font-weight: bold; font-size: 1.2em;">1</div>
+                            <div>
+                                <h4 style="color: #3498db; margin-bottom: 8px;">📄 Recepción de Documentación</h4>
+                                <p style="margin: 0; color: #555;">Recibe PDF de especificación técnica + checklist de requisitos MDS</p>
+                                <small style="color: #777;">Input: Specification PDF, MDS Requirements Checklist</small>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; align-items: center; padding: 20px; background: #f8f9fa; border-radius: 12px; border-left: 6px solid #9b59b6;">
+                            <div style="background: #9b59b6; color: white; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; margin-right: 20px; font-weight: bold; font-size: 1.2em;">2</div>
+                            <div>
+                                <h4 style="color: #9b59b6; margin-bottom: 8px;">🔍 Auditoría de Especificación PDF</h4>
+                                <p style="margin: 0; color: #555;">Análisis técnico especializado usando expertise en sistemas médicos</p>
+                                <small style="color: #777;">Sistemas: Meditech, Epic, Cerner, CPSI, Paragon, MedHost</small>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; align-items: center; padding: 20px; background: #f8f9fa; border-radius: 12px; border-left: 6px solid #e67e22;">
+                            <div style="background: #e67e22; color: white; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; margin-right: 20px; font-weight: bold; font-size: 1.2em;">3</div>
+                            <div>
+                                <h4 style="color: #e67e22; margin-bottom: 8px;">📊 Análisis de Datos Reales</h4>
+                                <p style="margin: 0; color: #555;">Procesamiento de archivos de datos reales para validación contra especificación</p>
+                                <small style="color: #777;">Files: Placements, Transactions, Inventory, Notes</small>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; align-items: center; padding: 20px; background: #f8f9fa; border-radius: 12px; border-left: 6px solid #27ae60;">
+                            <div style="background: #27ae60; color: white; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; margin-right: 20px; font-weight: bold; font-size: 1.2em;">4</div>
+                            <div>
+                                <h4 style="color: #27ae60; margin-bottom: 8px;">📋 Evaluación vs Checklist</h4>
+                                <p style="margin: 0; color: #555;">Comparación detallada campo por campo con evidencia específica</p>
+                                <small style="color: #777;">Status: complete/partial/missing con justificación</small>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; align-items: center; padding: 20px; background: #f8f9fa; border-radius: 12px; border-left: 6px solid #8e44ad;">
+                            <div style="background: #8e44ad; color: white; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; margin-right: 20px; font-weight: bold; font-size: 1.2em;">5</div>
+                            <div>
+                                <h4 style="color: #8e44ad; margin-bottom: 8px;">📤 Generación de Reporte JSON</h4>
+                                <p style="margin: 0; color: #555;">Output estructurado con mapeo completo y recomendaciones técnicas</p>
+                                <small style="color: #777;">Output: Structured JSON with evidence and recommendations</small>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; align-items: center; padding: 20px; background: #f8f9fa; border-radius: 12px; border-left: 6px solid #e74c3c;">
+                            <div style="background: #e74c3c; color: white; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; margin-right: 20px; font-weight: bold; font-size: 1.2em;">6</div>
+                            <div>
+                                <h4 style="color: #e74c3c; margin-bottom: 8px;">🔄 Retroalimentación al Pipeline</h4>
+                                <p style="margin: 0; color: #555;">El reporte alimenta al csharp-generator para código más preciso</p>
+                                <small style="color: #777;">Integration: Enhanced code generation based on audit findings</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="background: #e8f5e8; padding: 25px; border-radius: 12px; margin-top: 30px;">
+                        <h3 style="color: #27ae60; margin-bottom: 20px;">📊 Métricas de Rendimiento</h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                            <div style="text-align: center; padding: 15px; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                <div style="font-size: 2em; color: #27ae60; font-weight: bold;">95%</div>
+                                <div style="color: #555; font-size: 0.9em;">Precisión de Identificación</div>
+                            </div>
+                            <div style="text-align: center; padding: 15px; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                <div style="font-size: 2em; color: #3498db; font-weight: bold;">15min</div>
+                                <div style="color: #555; font-size: 0.9em;">Tiempo de Análisis</div>
+                            </div>
+                            <div style="text-align: center; padding: 15px; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                <div style="font-size: 2em; color: #9b59b6; font-weight: bold;">8+</div>
+                                <div style="color: #555; font-size: 0.9em;">Sistemas Soportados</div>
+                            </div>
+                            <div style="text-align: center; padding: 15px; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                <div style="font-size: 2em; color: #e67e22; font-weight: bold;">40%</div>
+                                <div style="color: #555; font-size: 0.9em;">Reducción de Errores</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="this.parentElement.parentElement.remove()" 
+                            style="background: #27ae60; color: white; border: none; padding: 12px 24px; 
+                                   border-radius: 8px; cursor: pointer; margin-top: 20px; float: right; font-weight: bold;">
+                        Cerrar
+                    </button>
+                </div>
+            `;
+
+            const overlay = document.createElement('div');
+            overlay.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                background: rgba(0,0,0,0.8); z-index: 2000; display: flex;
+                align-items: center; justify-content: center; padding: 20px;
+                box-sizing: border-box;
+            `;
+            overlay.innerHTML = flowHtml;
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) document.body.removeChild(overlay);
+            });
+            document.body.appendChild(overlay);
+        }
+
+        // Tooltips
+        function showTooltip(element, content) {
+            const tooltip = document.getElementById('tooltip');
+            const rect = element.getBoundingClientRect();
+            const container = document.querySelector('.uml-container');
+            const containerRect = container.getBoundingClientRect();
+            
+            tooltip.innerHTML = content;
+            tooltip.style.display = 'block';
+            tooltip.style.left = (rect.left - containerRect.left + rect.width / 2 - 175) + 'px';
+            tooltip.style.top = (rect.bottom - containerRect.top + 15) + 'px';
+        }
+
+        function hideTooltip() {
+            document.getElementById('tooltip').style.display = 'none';
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            // Inicializar estado
+            resetAnimation();
+
+            // Tooltips para actores
+            document.querySelectorAll('.actor-icon').forEach(actor => {
+                actor.addEventListener('mouseenter', (e) => {
+                    const tooltip = e.target.getAttribute('data-tooltip');
+                    if (tooltip) {
+                        showTooltip(e.target, tooltip);
+                    }
+                });
+                actor.addEventListener('mouseleave', hideTooltip);
+            });
+
+            // Tooltips para mensajes
+            document.querySelectorAll('.message-label').forEach(label => {
+                label.addEventListener('mouseenter', (e) => {
+                    if (showDetails) {
+                        const messageId = e.target.closest('.message').id;
+                        const detail = messageDetails[messageId];
+                        if (detail) {
+                            const content = `
+                                <strong>${detail.title}</strong><br/>
+                                ${detail.description}<br/><br/>
+                                <em>Técnico:</em> ${detail.technical}
+                            `;
+                            showTooltip(e.target, content);
+                        }
+                    }
+                });
+                label.addEventListener('mouseleave', hideTooltip);
+            });
+
+            // Click en mensajes para mostrar detalles
+            document.querySelectorAll('.message-label').forEach(label => {
+                label.addEventListener('click', (e) => {
+                    const messageId = e.target.closest('.message').id;
+                    const detail = messageDetails[messageId];
+                    if (detail) {
+                        alert(`${detail.title}\n\n${detail.description}\n\nDetalles técnicos:\n${detail.technical}`);
+                    }
+                });
+            });
+
+            // Click especial para Spec Match Agent
+            document.querySelector('.actor-icon.spec-match').addEventListener('click', showSpecMatchDetails);
+
+            // Auto-play inicial después de 3 segundos
+            setTimeout(() => {
+                playAnimation();
+            }, 3000);
+        });
+
+        // Responsive handling
+        window.addEventListener('resize', () => {
+            hideTooltip();
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            switch(e.key) {
+                case ' ':
+                    e.preventDefault();
+                    if (isPlaying) pauseAnimation();
+                    else playAnimation();
+                    break;
+                case 'r':
+                    resetAnimation();
+                    break;
+                case 'd':
+                    toggleDetails();
+                    break;
+                case 's':
+                    highlightSpecMatch();
+                    break;
+                case 'p':
+                    showSpecMatchPrompt();
+                    break;
+                case 'a':
+                    showAnalysisFlow();
+                    break;
+            }
+        });
+
+        // Funciones adicionales
+        function showStats() {
+            const stats = {
+                totalSteps: messages.length,
+                agents: 4,
+                phases: 4,
+                databases: 3,
+                avgProcessingTime: '15-30 minutos',
+                supportedFormats: ['CSV', 'Fixed-width', 'Excel', 'Multi-record'],
+                specMatchAccuracy: '95%+',
+                dataValidationAccuracy: '98%',
+                errorReduction: '40%',
+                analysisTime: '15 minutos',
+                supportedSystems: ['Meditech', 'Epic', 'Cerner', 'CPSI', 'Paragon', 'MedHost', 'Soarian', 'NextGen']
+            };
+
+            const statsHtml = `
+                <div style="background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); max-width: 600px;">
+                    <h3 style="color: #2c3e50; margin-bottom: 20px;">📊 Estadísticas del Sistema Completo</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div style="padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #3498db;">
+                            <strong style="color: #3498db;">Proceso General</strong>
+                            <ul style="list-style: none; padding: 10px 0 0 0; margin: 0;">
+                                <li><strong>Pasos totales:</strong> ${stats.totalSteps}</li>
+                                <li><strong>Agentes:</strong> ${stats.agents}</li>
+                                <li><strong>Fases:</strong> ${stats.phases}</li>
+                                <li><strong>Tiempo promedio:</strong> ${stats.avgProcessingTime}</li>
+                            </ul>
+                        </div>
+                        <div style="padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #9b59b6;">
+                            <strong style="color: #9b59b6;">Spec Match Agent</strong>
+                            <ul style="list-style: none; padding: 10px 0 0 0; margin: 0;">
+                                <li><strong>Precisión:</strong> ${stats.specMatchAccuracy}</li>
+                                <li><strong>Tiempo análisis:</strong> ${stats.analysisTime}</li>
+                                <li><strong>Reducción errores:</strong> ${stats.errorReduction}</li>
+                                <li><strong>Sistemas:</strong> ${stats.supportedSystems.length}+</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div style="margin-top: 20px; padding: 15px; background: #e8f5e8; border-radius: 8px;">
+                        <strong style="color: #27ae60;">Sistemas Médicos Soportados:</strong>
+                        <div style="margin-top: 10px; font-size: 0.9em;">
+                            ${stats.supportedSystems.join(', ')}
+                        </div>
+                    </div>
+                    <div style="margin-top: 20px; padding: 15px; background: #fff3cd; border-radius: 8px;">
+                        <strong style="color: #856404;">Formatos de Archivo:</strong>
+                        <div style="margin-top: 10px; font-size: 0.9em;">
+                            ${stats.supportedFormats.join(', ')}
+                        </div>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" 
+                            style="background: #3498db; color: white; border: none; padding: 10px 20px; 
+                                   border-radius: 5px; cursor: pointer; margin-top: 20px; float: right;">
+                        Cerrar
+                    </button>
+                </div>
+            `;
+
+            const overlay = document.createElement('div');
+            overlay.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                background: rgba(0,0,0,0.7); z-index: 2000; display: flex;
+                align-items: center; justify-content: center;
+            `;
+            overlay.innerHTML = statsHtml;
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) document.body.removeChild(overlay);
+            });
+            document.body.appendChild(overlay);
+        }
+
+        function showHelp() {
+            const helpContent = `
+                <div style="background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); max-width: 700px;">
+                    <h2>🎯 Guía del Diagrama UML con Spec Match Agent</h2>
+                    
+                    <h3>🎮 Controles Principales</h3>
+                    <ul>
+                        <li><strong>▶️ Reproducir:</strong> Inicia la animación secuencial completa</li>
+                        <li><strong>⏸️ Pausar:</strong> Detiene la animación en curso</li>
+                        <li><strong>🔄 Reiniciar:</strong> Vuelve al estado inicial</li>
+                        <li><strong>📋 Detalles:</strong> Activa tooltips técnicos detallados</li>
+                        <li><strong>🎯 Spec Match:</strong> Resalta el Spec Match Agent y sus elementos</li>
+                        <li><strong>📝 Prompt:</strong> Muestra los prompts completos del agente</li>
+                        <li><strong>🔍 Análisis:</strong> Muestra el flujo de análisis técnico</li>
+                    </ul>
+
+                    <h3>⌨️ Atajos de Teclado</h3>
+                    <ul>
+                        <li><strong>Espacio:</strong> Play/Pause animación</li>
+                        <li><strong>R:</strong> Reset completo</li>
+                        <li><strong>D:</strong> Toggle detalles</li>
+                        <li><strong>S:</strong> Resaltar Spec Match Agent</li>
+                        <li><strong>P:</strong> Mostrar prompts del agente</li>
+                        <li><strong>A:</strong> Mostrar flujo de análisis</li>
+                    </ul>
+
+                    <h3>🤖 Agentes del Sistema</h3>
+                    <ul>
+                        <li><strong>file-analyzer:</strong> Análisis básico de estructura de archivos</li>
+                        <li style="color: #9b59b6;"><strong>spec-match (Auditor Técnico):</strong> Especialista en sistemas médicos</li>
+                        <li><strong>csharp-generator:</strong> Generación automática de código C#</li>
+                        <li><strong>code-validator:</strong> Validación y testing automatizado</li>
+                    </ul>
+
+                    <h3>🎯 Nuevo: Spec Match Agent - Auditor Técnico</h3>
+                    <div style="background: #e8d5f2; padding: 20px; border-radius: 10px; margin: 15px 0;">
+                        <h4 style="color: #9b59b6; margin-bottom: 10px;">Capacidades Especializadas:</h4>
+                        <ul>
+                            <li><strong>Sistemas Médicos:</strong> Meditech, Epic, Cerner, CPSI, etc.</li>
+                            <li><strong>Análisis Dual:</strong> PDF specifications + archivos de datos reales</li>
+                            <li><strong>Multi-record Support:</strong> Identifica tipos 01, 10, 20A, 30, 55, 60A, 70, 99</li>
+                            <li><strong>Evidencia Específica:</strong> Cita ubicaciones exactas en documentos</li>
+                            <li><strong>JSON Estructurado:</strong> Output consistente para automatización</li>
+                            <li><strong>Recomendaciones:</strong> Sugerencias técnicas específicas</li>
+                        </ul>
+                    </div>
+
+                    <h3>📊 Fases del Proceso Actualizado</h3>
+                    <ol>
+                        <li><strong>Análisis:</strong> file-analyzer examina estructura básica</li>
+                        <li><strong>Auditoría:</strong> spec-match realiza análisis técnico especializado</li>
+                        <li><strong>Validación:</strong> Verificación de datos reales vs especificación</li>
+                        <li><strong>Generación:</strong> csharp-generator crea código basado en auditoría</li>
+                        <li><strong>Testing:</strong> code-validator verifica calidad</li>
+                        <li><strong>Producción:</strong> Ejecución automática del pipeline</li>
+                        <li><strong>Procesamiento:</strong> Conversión de datos con mayor precisión</li>
+                    </ol>
+
+                    <div style="background: #e8f4fd; padding: 15px; border-radius: 8px; margin-top: 20px;">
+                        <strong>💡 Tip:</strong> El Spec Match Agent mejora significativamente la precisión del proceso 
+                        al proporcionar análisis técnico especializado que reduce errores en un 40% y acelera 
+                        el desarrollo de formatters.
+                    </div>
+
+                    <button onclick="this.parentElement.parentElement.remove()" 
+                            style="background: #3498db; color: white; border: none; padding: 12px 24px; 
+                                   border-radius: 8px; cursor: pointer; margin-top: 20px; float: right; font-weight: bold;">
+                        Cerrar
+                    </button>
+                </div>
+            `;
+
+            const overlay = document.createElement('div');
+            overlay.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                background: rgba(0,0,0,0.8); z-index: 2000; display: flex;
+                align-items: center; justify-content: center; padding: 20px;
+                box-sizing: border-box;
+            `;
+            overlay.innerHTML = helpContent;
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) document.body.removeChild(overlay);
+            });
+            document.body.appendChild(overlay);
+        }
+
+        // Agregar controles adicionales
+        const additionalControls = `
+            <button class="control-btn" onclick="showStats()">📊 Stats</button>
+            <button class="control-btn" onclick="showHelp()">❓ Ayuda</button>
+        `;
+
+        document.querySelector('.controls').insertAdjacentHTML('beforeend', additionalControls);
+
+        console.log('🎯 Diagrama UML Completo del Formatter MDS con Spec Match Agent cargado');
+        console.log('⌨️ Atajos: Espacio=Play/Pause, R=Reset, D=Detalles, S=Spec Match, P=Prompts, A=Análisis');
+        console.log('🤖 Agentes: file-analyzer, spec-match (Auditor Técnico), csharp-generator, code-validator');
+        console.log('📊 Fases: Análisis → Auditoría → Validación → Generación → Testing → Producción → Procesamiento');
+        console.log('🔍 Spec Match Agent: Auditor técnico especializado en sistemas médicos con análisis dual PDF+datos');
+    </script>
+</body>
+</html>
