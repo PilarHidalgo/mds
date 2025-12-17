@@ -1,0 +1,1544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UML Diagram - MDS Formatter Lifecycle with Specialized Agents</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .uml-container {
+            padding: 40px;
+            background: #f8f9fa;
+            overflow-x: auto;
+        }
+
+        .uml-diagram {
+            min-width: 1800px;
+            height: 1500px;
+            position: relative;
+            background: white;
+            border: 2px solid #34495e;
+            border-radius: 10px;
+            margin: 0 auto;
+        }
+
+        /* Actors */
+        .actor {
+            position: absolute;
+            text-align: center;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .actor-icon {
+            width: 70px;
+            height: 90px;
+            background: #3498db;
+            border-radius: 35px 35px 0 0;
+            margin: 0 auto 10px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.8em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .actor-icon:hover {
+            transform: scale(1.1);
+            background: #e74c3c;
+        }
+
+        .actor-icon.match-specs {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+            font-size: 2em;
+        }
+
+        .actor-icon.match-specs:hover {
+            background: linear-gradient(135deg, #8e44ad, #732d91);
+        }
+
+        .actor-icon.code-generator {
+            background: linear-gradient(135deg, #e67e22, #d35400);
+        }
+
+        .actor-icon.code-generator:hover {
+            background: linear-gradient(135deg, #d35400, #ba4a00);
+        }
+
+        .actor-icon.code-validator {
+            background: linear-gradient(135deg, #27ae60, #229954);
+        }
+
+        .actor-icon.code-validator:hover {
+            background: linear-gradient(135deg, #229954, #1e8449);
+        }
+
+        .actor-icon.issue-resolver {
+            background: linear-gradient(135deg, #e67e22, #f39c12);
+        }
+
+        .actor-icon.issue-resolver:hover {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+        }
+
+        .actor-name {
+            font-size: 0.9em;
+            max-width: 120px;
+            word-wrap: break-word;
+            line-height: 1.2;
+        }
+
+        /* Lifelines */
+        .lifeline {
+            position: absolute;
+            width: 3px;
+            background: linear-gradient(to bottom, #bdc3c7, #95a5a6);
+            top: 130px;
+            bottom: 50px;
+        }
+
+        /* Activations */
+        .activation {
+            position: absolute;
+            width: 15px;
+            background: #3498db;
+            border: 2px solid #2980b9;
+            left: -6px;
+            border-radius: 3px;
+        }
+
+        .activation.match-specs {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+            border-color: #732d91;
+            width: 18px;
+            left: -7px;
+        }
+
+        .activation.code-generator {
+            background: linear-gradient(135deg, #e67e22, #d35400);
+            border-color: #ba4a00;
+            width: 18px;
+            left: -7px;
+        }
+
+        .activation.code-validator {
+            background: linear-gradient(135deg, #27ae60, #229954);
+            border-color: #1e8449;
+            width: 18px;
+            left: -7px;
+        }
+
+        .activation.issue-resolver {
+            background: linear-gradient(135deg, #e67e22, #f39c12);
+            border-color: #d68910;
+            width: 18px;
+            left: -7px;
+        }
+
+        /* Messages */
+        .message {
+            position: absolute;
+            height: 3px;
+            background: #e74c3c;
+            display: flex;
+            align-items: center;
+            border-radius: 2px;
+        }
+
+        .message.match-specs {
+            background: linear-gradient(to right, #9b59b6, #8e44ad);
+            height: 4px;
+        }
+
+        .message.code-generator {
+            background: linear-gradient(to right, #e67e22, #d35400);
+            height: 4px;
+        }
+
+        .message.code-validator {
+            background: linear-gradient(to right, #27ae60, #229954);
+            height: 4px;
+        }
+
+        .message.issue-resolver {
+            background: linear-gradient(to right, #e67e22, #f39c12);
+            height: 4px;
+        }
+
+        .message::after {
+            content: '';
+            position: absolute;
+            right: -10px;
+            top: -5px;
+            width: 0;
+            height: 0;
+            border-left: 10px solid #e74c3c;
+            border-top: 5px solid transparent;
+            border-bottom: 5px solid transparent;
+        }
+
+        .message.match-specs::after {
+            border-left-color: #8e44ad;
+            right: -12px;
+            top: -6px;
+            border-left-width: 12px;
+            border-top-width: 6px;
+            border-bottom-width: 6px;
+        }
+
+        .message.code-generator::after {
+            border-left-color: #d35400;
+            right: -12px;
+            top: -6px;
+            border-left-width: 12px;
+            border-top-width: 6px;
+            border-bottom-width: 6px;
+        }
+
+        .message.code-validator::after {
+            border-left-color: #229954;
+            right: -12px;
+            top: -6px;
+            border-left-width: 12px;
+            border-top-width: 6px;
+            border-bottom-width: 6px;
+        }
+
+        .message.issue-resolver::after {
+            border-left-color: #f39c12;
+            right: -12px;
+            top: -6px;
+            border-left-width: 12px;
+            border-top-width: 6px;
+            border-bottom-width: 6px;
+        }
+
+        .message-label {
+            position: absolute;
+            top: -30px;
+            background: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+            color: #2c3e50;
+            white-space: nowrap;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid #ecf0f1;
+        }
+
+        .message-label:hover {
+            background: #3498db;
+            color: white;
+            transform: scale(1.05);
+            border-color: #3498db;
+        }
+
+        .message-label.match-specs {
+            border: 2px solid #9b59b6;
+            background: linear-gradient(135deg, #f8f4fd, #e8d5f2);
+            color: #6c3483;
+        }
+
+        .message-label.match-specs:hover {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+            color: white;
+            border-color: #732d91;
+        }
+
+        .message-label.code-generator {
+            border: 2px solid #e67e22;
+            background: linear-gradient(135deg, #fef5e7, #fdeaa7);
+            color: #b7950b;
+        }
+
+        .message-label.code-generator:hover {
+            background: linear-gradient(135deg, #e67e22, #d35400);
+            color: white;
+            border-color: #ba4a00;
+        }
+
+        .message-label.code-validator {
+            border: 2px solid #27ae60;
+            background: linear-gradient(135deg, #e8f8f5, #d5f4e6);
+            color: #196f3d;
+        }
+
+        .message-label.code-validator:hover {
+            background: linear-gradient(135deg, #27ae60, #229954);
+            color: white;
+            border-color: #1e8449;
+        }
+
+        .message-label.issue-resolver {
+            border: 2px solid #e67e22;
+            background: linear-gradient(135deg, #fef5e7, #f8c471);
+            color: #d68910;
+        }
+
+        .message-label.issue-resolver:hover {
+            background: linear-gradient(135deg, #e67e22, #f39c12);
+            color: white;
+            border-color: #d68910;
+        }
+
+        /* Notes */
+        .note {
+            position: absolute;
+            background: #f1c40f;
+            border: 2px solid #f39c12;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 0.8em;
+            max-width: 220px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .note:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+        }
+
+        .note.match-specs {
+            background: linear-gradient(135deg, #e8d5f2, #d5b7e8);
+            border-color: #9b59b6;
+            color: #6c3483;
+        }
+
+        .note.match-specs:hover {
+            background: linear-gradient(135deg, #d5b7e8, #c39bd3);
+        }
+
+        .note.code-generator {
+            background: linear-gradient(135deg, #fdeaa7, #f7dc6f);
+            border-color: #e67e22;
+            color: #b7950b;
+        }
+
+        .note.code-generator:hover {
+            background: linear-gradient(135deg, #f7dc6f, #f4d03f);
+        }
+
+        .note.code-validator {
+            background: linear-gradient(135deg, #d5f4e6, #a9dfbf);
+            border-color: #27ae60;
+            color: #196f3d;
+        }
+
+        .note.code-validator:hover {
+            background: linear-gradient(135deg, #a9dfbf, #7dcea0);
+        }
+
+        .note.issue-resolver {
+            background: linear-gradient(135deg, #fef5e7, #f8c471);
+            border-color: #e67e22;
+            color: #d68910;
+        }
+
+        .note.issue-resolver:hover {
+            background: linear-gradient(135deg, #f8c471, #f4d03f);
+        }
+
+        .note::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            width: 0;
+            height: 0;
+            border-left: 18px solid #f39c12;
+            border-bottom: 18px solid transparent;
+        }
+
+        .note.match-specs::before {
+            border-left-color: #9b59b6;
+        }
+
+        .note.code-generator::before {
+            border-left-color: #e67e22;
+        }
+
+        .note.code-validator::before {
+            border-left-color: #27ae60;
+        }
+
+        .note.issue-resolver::before {
+            border-left-color: #e67e22;
+        }
+
+        /* Fragments */
+        .fragment {
+            position: absolute;
+            border: 3px solid #9b59b6;
+            border-radius: 8px;
+            background: rgba(155, 89, 182, 0.08);
+            z-index: 1;
+        }
+
+        .fragment-label {
+            position: absolute;
+            top: -18px;
+            left: 15px;
+            background: #9b59b6;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            font-weight: bold;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+            z-index: 2;
+        }
+
+        .fragment.generation {
+            border-color: #e67e22;
+            background: rgba(230, 126, 34, 0.08);
+        }
+
+        .fragment.generation .fragment-label {
+            background: #e67e22;
+        }
+
+        .fragment.validation {
+            border-color: #27ae60;
+            background: rgba(39, 174, 96, 0.08);
+        }
+
+        .fragment.validation .fragment-label {
+            background: #27ae60;
+        }
+
+        .fragment.interactive {
+            border-color: #e67e22;
+            background: rgba(230, 126, 34, 0.12);
+            border-style: dashed;
+        }
+
+        .fragment.interactive .fragment-label {
+            background: #e67e22;
+        }
+
+        .fragment.production {
+            border-color: #3498db;
+            background: rgba(52, 152, 219, 0.08);
+        }
+
+        .fragment.production .fragment-label {
+            background: #3498db;
+        }
+
+        /* Controls */
+        .controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            z-index: 1000;
+            min-width: 200px;
+        }
+
+        .control-btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+        }
+
+        .control-btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .control-btn.active {
+            background: #e74c3c;
+        }
+
+        .control-btn.match-specs {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+        }
+
+        .control-btn.match-specs:hover {
+            background: linear-gradient(135deg, #8e44ad, #732d91);
+        }
+
+        .control-btn.code-generator {
+            background: linear-gradient(135deg, #e67e22, #d35400);
+        }
+
+        .control-btn.code-generator:hover {
+            background: linear-gradient(135deg, #d35400, #ba4a00);
+        }
+
+        .control-btn.code-validator {
+            background: linear-gradient(135deg, #27ae60, #229954);
+        }
+
+        .control-btn.code-validator:hover {
+            background: linear-gradient(135deg, #229954, #1e8449);
+        }
+
+        .control-btn.issue-resolver {
+            background: linear-gradient(135deg, #e67e22, #f39c12);
+        }
+
+        .control-btn.issue-resolver:hover {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: absolute;
+            background: #2c3e50;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 0.85em;
+            z-index: 1000;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            max-width: 350px;
+            line-height: 1.5;
+            display: none;
+        }
+
+        .tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 25px;
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 8px solid #2c3e50;
+        }
+
+        /* Animations */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes messageFlow {
+            0% { width: 0; opacity: 0; }
+            100% { width: 100%; opacity: 1; }
+        }
+
+        @keyframes agentGlow {
+            0% { box-shadow: 0 0 5px currentColor; }
+            50% { box-shadow: 0 0 25px currentColor, 0 0 35px currentColor; }
+            100% { box-shadow: 0 0 5px currentColor; }
+        }
+
+        .animate-message {
+            animation: messageFlow 1.2s ease-in-out;
+        }
+
+        .animate-pulse {
+            animation: pulse 2s infinite;
+        }
+
+        .animate-glow {
+            animation: agentGlow 3s infinite;
+        }
+
+        /* Process states */
+        .process-state {
+            position: absolute;
+            background: #27ae60;
+            color: white;
+            padding: 10px 18px;
+            border-radius: 25px;
+            font-size: 0.85em;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+
+        .process-state:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.3);
+        }
+
+        .state-pending { background: linear-gradient(135deg, #95a5a6, #7f8c8d); }
+        .state-analysis { background: linear-gradient(135deg, #9b59b6, #8e44ad); }
+        .state-generation { background: linear-gradient(135deg, #e67e22, #d35400); }
+        .state-validation { background: linear-gradient(135deg, #27ae60, #229954); }
+        .state-interactive { background: linear-gradient(135deg, #e67e22, #f39c12); }
+        .state-production { background: linear-gradient(135deg, #3498db, #2980b9); }
+        .state-completed { background: linear-gradient(135deg, #2ecc71, #27ae60); }
+
+        /* Enhanced legend */
+        .legend {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: white;
+            border: 3px solid #34495e;
+            border-radius: 12px;
+            padding: 18px;
+            font-size: 0.85em;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            z-index: 10;
+        }
+
+        .legend h4 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+            text-align: center;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            padding: 5px;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .legend-item:hover {
+            background: #f8f9fa;
+            transform: translateX(3px);
+        }
+
+        .legend-color {
+            width: 24px;
+            height: 24px;
+            margin-right: 12px;
+            border-radius: 4px;
+            border: 2px solid #ecf0f1;
+        }
+
+        /* Responsive */
+        @media (max-width: 1600px) {
+            .uml-diagram {
+                min-width: 1400px;
+                transform: scale(0.85);
+                transform-origin: top left;
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .uml-diagram {
+                min-width: 1200px;
+                transform: scale(0.7);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .uml-diagram {
+                min-width: 1000px;
+                transform: scale(0.6);
+            }
+            
+            .controls {
+                position: relative;
+                margin: 20px auto;
+                width: fit-content;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔄 UML Diagram - MDS Formatter Lifecycle</h1>
+            <p>Complete system with specialized agents: Match Specs, Code Generator, Code Validator, and Issue Resolver</p>
+        </div>
+
+        <div class="controls">
+            <button class="control-btn" onclick="playAnimation()">▶️ Play</button>
+            <button class="control-btn" onclick="pauseAnimation()">⏸️ Pause</button>
+            <button class="control-btn" onclick="resetAnimation()">🔄 Reset</button>
+            <button class="control-btn" onclick="toggleDetails()">📋 Details</button>
+            <button class="control-btn match-specs" onclick="highlightMatchSpecs()">🔍 Match Specs</button>
+            <button class="control-btn code-generator" onclick="highlightCodeGenerator()">⚙️ Code Generator</button>
+            <button class="control-btn code-validator" onclick="highlightCodeValidator()">✅ Code Validator</button>
+            <button class="control-btn issue-resolver" onclick="highlightIssueResolver()">🔄 Issue Resolver</button>
+            <button class="control-btn" onclick="showAgentPrompts()">📝 Prompts</button>
+        </div>
+
+        <div class="uml-container">
+            <div class="uml-diagram" id="umlDiagram">
+                <!-- Actors -->
+                <div class="actor" style="left: 50px; top: 20px;">
+                    <div class="actor-icon match-specs" data-tooltip="Technical auditor specialized in medical billing formats">🔍</div>
+                    <div class="actor-name">MATCH SPECS<br/><small>(Technical Auditor)</small></div>
+                </div>
+
+                <div class="actor" style="left: 300px; top: 20px;">
+                    <div class="actor-icon code-generator" data-tooltip="C# code generator with host system specific templates">⚙️</div>
+                    <div class="actor-name">CODE GENERATOR<br/><small>(C# Generator)</small></div>
+                </div>
+
+                <div class="actor" style="left: 550px; top: 20px;">
+                    <div class="actor-icon code-validator" data-tooltip="Code validator and automated test generator">✅</div>
+                    <div class="actor-name">CODE VALIDATOR<br/><small>(Validator & Tester)</small></div>
+                </div>
+
+                <div class="actor" style="left: 800px; top: 20px;">
+                    <div class="actor-icon issue-resolver" data-tooltip="Interactive issue resolution and code regeneration agent">🔄</div>
+                    <div class="actor-name">ISSUE RESOLVER<br/><small>(Interactive Agent)</small></div>
+                </div>
+
+                <div class="actor" style="left: 1050px; top: 20px;">
+                    <div class="actor-icon" data-tooltip="Task scheduling and orchestration system">🎯</div>
+                    <div class="actor-name">TaskLauncher</div>
+                </div>
+
+                <div class="actor" style="left: 1300px; top: 20px;">
+                    <div class="actor-icon" data-tooltip="Console application that executes the complete pipeline">🖥️</div>
+                    <div class="actor-name">Console</div>
+                </div>
+
+                <div class="actor" style="left: 1550px; top: 20px;">
+                    <div class="actor-icon" data-tooltip="Generated and validated formatter (e.g., Pri5230)">🔧</div>
+                    <div class="actor-name">Formatter</div>
+                </div>
+
+                <!-- Lifelines -->
+                <div class="lifeline" style="left: 84px;"></div>
+                <div class="lifeline" style="left: 334px;"></div>
+                <div class="lifeline" style="left: 584px;"></div>
+                <div class="lifeline" style="left: 834px;"></div>
+                <div class="lifeline" style="left: 1084px;"></div>
+                <div class="lifeline" style="left: 1334px;"></div>
+                <div class="lifeline" style="left: 1584px;"></div>
+
+                <!-- PHASE 1: ANALYSIS AND SPECIFICATION -->
+                <div class="fragment" style="left: 30px; top: 150px; width: 570px; height: 350px;">
+                    <div class="fragment-label">PHASE 1: Analysis and Specification</div>
+                </div>
+
+                <!-- Match Specs Messages - PDF Analysis -->
+                <div class="message match-specs" id="msg1" style="left: 84px; top: 180px; width: 250px;">
+                    <div class="message-label match-specs">1. Analyze PDF + checklist</div>
+                </div>
+                <div class="activation match-specs" style="left: 79px; top: 170px; height: 80px;"></div>
+
+                <!-- Match Specs Messages - Data analysis -->
+                <div class="message match-specs" id="msg2" style="left: 84px; top: 230px; width: 250px;">
+                    <div class="message-label match-specs">2. Analyze data files</div>
+                </div>
+
+                <!-- Match Specs Messages - Cross validation -->
+                <div class="message match-specs" id="msg3" style="left: 84px; top: 280px; width: 250px;">
+                    <div class="message-label match-specs">3. Cross-validate PDF vs data</div>
+                </div>
+
+                <!-- Match Specs Messages - Specification generation -->
+                <div class="message match-specs" id="msg4" style="left: 84px; top: 330px; width: 250px;">
+                    <div class="message-label match-specs">4. Generate JSON specification</div>
+                </div>
+
+                <!-- Match Specs Note -->
+                <div class="note match-specs" style="left: 350px; top: 200px;">
+                    <strong>Match Specs Output:</strong><br/>
+                    • Identified file type<br/>
+                    • Field status (complete/partial/missing)<br/>
+                    • Specific PDF/data evidence<br/>
+                    • Record types mapping<br/>
+                    • Technical recommendations
+                </div>
+
+                <!-- PHASE 2: CODE GENERATION -->
+                <div class="fragment generation" style="left: 280px; top: 520px; width: 320px; height: 280px;">
+                    <div class="fragment-label">PHASE 2: Code Generation</div>
+                </div>
+
+                <!-- Code Generator Messages -->
+                <div class="message code-generator" id="msg5" style="left: 334px; top: 550px; width: 250px;">
+                    <div class="message-label code-generator">5. Select knowledge base</div>
+                </div>
+                <div class="activation code-generator" style="left: 329px; top: 540px; height: 220px;"></div>
+
+                <div class="message code-generator" id="msg6" style="left: 334px; top: 600px; width: 250px;">
+                    <div class="message-label code-generator">6. Generate main classes</div>
+                </div>
+
+                <div class="message code-generator" id="msg7" style="left: 334px; top: 650px; width: 250px;">
+                    <div class="message-label code-generator">7. Generate record types</div>
+                </div>
+
+                <div class="message code-generator" id="msg8" style="left: 334px; top: 700px; width: 250px;">
+                    <div class="message-label code-generator">8. Generate complete project</div>
+                </div>
+
+                <!-- Code Generator Note -->
+                <div class="note code-generator" style="left: 620px; top: 580px;">
+                    <strong>Code Generator Output:</strong><br/>
+                    • PriXXXX.cs (main converter)<br/>
+                    • Specialized handlers<br/>
+                    • Record Types with FileHelpers<br/>
+                    • Complete .csproj project<br/>
+                    • Configured cross-walks
+                </div>
+
+                <!-- PHASE 3: VALIDATION AND TESTING -->
+                <div class="fragment validation" style="left: 530px; top: 820">
+                <!-- PHASE 3: VALIDATION AND TESTING -->
+                <div class="fragment validation" style="left: 530px; top: 820px; width: 320px; height: 280px;">
+                    <div class="fragment-label">PHASE 3: Validation and Testing</div>
+                </div>
+
+                <!-- Code Validator Messages -->
+                <div class="message code-validator" id="msg9" style="left: 584px; top: 850px; width: 250px;">
+                    <div class="message-label code-validator">9. Validate compilation</div>
+                </div>
+                <div class="activation code-validator" style="left: 579px; top: 840px; height: 80px;"></div>
+
+                <div class="message code-validator" id="msg10" style="left: 584px; top: 900px; width: 250px;">
+                    <div class="message-label code-validator">10. Validate structure</div>
+                </div>
+
+                <div class="message code-validator" id="msg11" style="left: 584px; top: 950px; width: 250px;">
+                    <div class="message-label code-validator">11. Generate and execute tests</div>
+                </div>
+
+                <!-- Code Validator Note -->
+                <div class="note code-validator" style="left: 870px; top: 880px;">
+                    <strong>Code Validator Output:</strong><br/>
+                    • Compilation validation<br/>
+                    • Structure verification<br/>
+                    • Complete test suite<br/>
+                    • Test execution results<br/>
+                    • Issue analysis report
+                </div>
+
+                <!-- PHASE 3.6: INTERACTIVE ISSUE RESOLUTION -->
+                <div class="fragment interactive" style="left: 780px; top: 1020px; width: 320px; height: 180px;">
+                    <div class="fragment-label">PHASE 3.6: Interactive Issue Resolution</div>
+                </div>
+
+                <!-- Issue Resolver Messages -->
+                <div class="message issue-resolver" id="msg12" style="left: 834px; top: 1050px; width: 250px;">
+                    <div class="message-label issue-resolver">12. Present test results to user</div>
+                </div>
+                <div class="activation issue-resolver" style="left: 829px; top: 1040px; height: 140px;"></div>
+
+                <div class="message issue-resolver" id="msg13" style="left: 834px; top: 1100px; width: 250px;">
+                    <div class="message-label issue-resolver">13. Allow custom prompt input</div>
+                </div>
+
+                <div class="message issue-resolver" id="msg14" style="left: 834px; top: 1150px; width: 250px;">
+                    <div class="message-label issue-resolver">14. Trigger regeneration if confirmed</div>
+                </div>
+
+                <!-- Issue Resolver Note -->
+                <div class="note issue-resolver" style="left: 1120px; top: 1080px;">
+                    <strong>Issue Resolver Features:</strong><br/>
+                    • Interactive user interface<br/>
+                    • Custom prompt capability<br/>
+                    • Fix confirmation dialog<br/>
+                    • Iterative improvement cycle<br/>
+                    • Feedback loop to Phase 2
+                </div>
+
+                <!-- PHASE 4: PRODUCTION -->
+                <div class="fragment production" style="left: 1030px; top: 1220px; width: 570px; height: 220px;">
+                    <div class="fragment-label">PHASE 4: Production and Execution</div>
+                </div>
+
+                <!-- Production Messages -->
+                <div class="message" id="msg15" style="left: 1084px; top: 1250px; width: 250px;">
+                    <div class="message-label">15. Execute scheduled task</div>
+                </div>
+                <div class="activation" style="left: 1079px; top: 1240px; height: 180px;"></div>
+
+                <div class="message" id="msg16" style="left: 1334px; top: 1280px; width: 250px;">
+                    <div class="message-label">16. Process files</div>
+                </div>
+
+                <div class="message" id="msg17" style="left: 1334px; top: 1330px; width: 250px;">
+                    <div class="message-label">17. Execute validated formatter</div>
+                </div>
+                <div class="activation" style="left: 1329px; top: 1320px; height: 100px;"></div>
+
+                <!-- Process states -->
+                <div class="process-state state-analysis" style="left: 100px; top: 1450px;">Analysis</div>
+                <div class="process-state state-generation" style="left: 280px; top: 1450px;">Generation</div>
+                <div class="process-state state-validation" style="left: 460px; top: 1450px;">Validation</div>
+                <div class="process-state state-interactive" style="left: 640px; top: 1450px;">Interactive</div>
+                <div class="process-state state-production" style="left: 820px; top: 1450px;">Production</div>
+                <div class="process-state state-completed" style="left: 1000px; top: 1450px;">Completed</div>
+
+                <!-- Enhanced legend -->
+                <div class="legend">
+                    <h4>🎯 System Legend</h4>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: linear-gradient(135deg, #9b59b6, #8e44ad);"></div>
+                        <span>Match Specs Agent</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: linear-gradient(135deg, #e67e22, #d35400);"></div>
+                        <span>Code Generator Agent</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: linear-gradient(135deg, #27ae60, #229954);"></div>
+                        <span>Code Validator Agent</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: linear-gradient(135deg, #e67e22, #f39c12);"></div>
+                        <span>Issue Resolver Agent</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: linear-gradient(135deg, #3498db, #2980b9);"></div>
+                        <span>Standard MDS System</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #f1c40f;"></div>
+                        <span>Notes and Documentation</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: rgba(155, 89, 182, 0.3);"></div>
+                        <span>Process Phases</span>
+                    </div>
+                </div>
+
+                <!-- Tooltip -->
+                <div class="tooltip" id="tooltip"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let animationStep = 0;
+        let animationInterval;
+        let isPlaying = false;
+        let showDetails = false;
+
+        const messages = [
+            'msg1', 'msg2', 'msg3', 'msg4', 'msg5', 'msg6', 'msg7', 'msg8',
+            'msg9', 'msg10', 'msg11', 'msg12', 'msg13', 'msg14', 'msg15', 'msg16', 'msg17'
+        ];
+
+        const messageDetails = {
+            'msg1': {
+                title: 'PDF Analysis + Checklist',
+                description: 'Match Specs analyzes PDF specification documents against MDS requirements checklist.',
+                technical: 'Input: PDF specification + checklist requirements. Identifies record types, fields, specific evidence.'
+            },
+            'msg2': {
+                title: 'Data File Analysis',
+                description: 'Processing real data files for validation against specification.',
+                technical: 'Analyzes multi-record formats (01, 10, 20A, 30, 55, 60A, 70, 99), identifies exact fields.'
+            },
+            'msg3': {
+                title: 'Cross-validation PDF vs Data',
+                description: 'Comparison between PDF specification and actual data file content.',
+                technical: 'Verifies consistency, identifies discrepancies, evaluates mapping completeness.'
+            },
+            'msg4': {
+                title: 'JSON Specification Generation',
+                description: 'Creation of structured specification with evidence and recommendations.',
+                technical: 'Output: JSON with fileType, direction, confidence, results[], specific evidence.'
+            },
+            'msg5': {
+                title: 'Knowledge Base Selection',
+                description: 'Code Generator selects templates according to detected host system.',
+                technical: 'Meditech → MeditechExtractV12, Epic → EpicConverter, Cerner → CernerDelimited'
+            },
+            'msg6': {
+                title: 'Main Classes Generation',
+                description: 'Creation of main converter and specialized handlers.',
+                technical: 'Generates PriXXXX.cs, DemographicsHandler, TransactionHandler, InventoryHandler'
+            },
+            'msg7': {
+                title: 'Record Types Generation',
+                description: 'Creation of FileHelpers classes with appropriate attributes.',
+                technical: 'Applies [DelimitedRecord], [FixedLengthRecord], [FieldMapping], MDS converters'
+            },
+            'msg8': {
+                title: 'Complete Project Generation',
+                description: 'Creation of project files and configuration.',
+                technical: 'Generates .csproj, AssemblyInfo.cs, packages.config, host-specific references'
+            },
+            'msg9': {
+                title: 'Compilation Validation',
+                description: 'Code Validator verifies that code compiles correctly.',
+                technical: 'Executes dotnet build, identifies compilation errors, verifies using statements'
+            },
+            'msg10': {
+                title: 'Structure Validation',
+                description: 'Verification of required CoreUpload framework patterns.',
+                technical: 'Validates BaseConverter inheritance, abstract methods, correct base handlers'
+            },
+            'msg11': {
+                title: 'Test Generation and Execution',
+                description: 'Creation and execution of complete test suite with unit and integration cases.',
+                technical: 'Generates NUnit tests, parsing tests, cross-walks, complete integration, executes and analyzes results'
+            },
+            'msg12': {
+                title: 'Present Test Results to User',
+                description: 'Issue Resolver presents test execution results and identified issues to user.',
+                technical: 'Interactive interface showing test failures, compilation errors, validation issues with detailed analysis'
+            },
+            'msg13': {
+                title: 'Allow Custom Prompt Input',
+                description: 'User can provide custom prompts for specific issue resolution.',
+                technical: 'Text input interface for user feedback, custom requirements, specific fix instructions'
+            },
+            'msg14': {
+                title: 'Trigger Regeneration if Confirmed',
+                description: 'If user confirms, triggers code regeneration with issue-specific corrections.',
+                technical: 'Returns to Phase 2 with user feedback, applies fixes, creates iterative improvement cycle'
+            },
+            'msg15': {
+                title: 'Scheduled Execution',
+                description: 'TaskLauncher executes tasks according to configured schedule.',
+                technical: 'Inserts READY in protasksstatus, TaskWorker executes Console automatically'
+            },
+            'msg16': {
+                title: 'File Processing',
+                description: 'Console executes complete processing pipeline.',
+                technical: 'ScanIncomingFiles → BuildProcessFiles → PopulateUplprocess'
+            },
+            'msg17': {
+                title: 'Validated Formatter Execution',
+                description: 'Generated and validated formatter processes files with higher precision.',
+                technical: 'QualifyFiles → LoadFiles → ProcessRecords with audited mappings'
+            }
+        };
+
+        const agentPrompts = {
+            matchSpecs: {
+                title: "MATCH SPECS - Technical Auditor",
+                pdfPrompt: `You are a technical auditor specializing in medical billing data formats (Meditech, Epic, Cerner, etc.).
+
+Analyze the attached PDF specification document and validate it against the checklist requirements.
+
+**Filename:** \${filename}
+**Checklist Requirements:** \${checklistDescription}
+
+**Your Task:**
+1. Read and understand the PDF document structure
+2. Determine the file type based on the content:
+   - Placements (patient/account placement data with demographics)
+   - Transactions (payment/financial transactions)
+   - Recalls (recall/follow-up data)
+   - Notes (notes or comments)
+   - Inventory (balance updates)
+
+3. Determine direction: Incoming or Outgoing
+
+4. For each checklist item, evaluate:
+   - "complete" if there is an explicit, unequivocal field
+   - "partial" if it is approximate or unclear
+   - "missing" if not found
+
+5. Cite evidence from the document (e.g., "Record 30 - Adm/Svc Date")
+
+Respond with ONLY a JSON object (no markdown, no explanation)`,
+
+                dataPrompt: `You are a data file analyst specializing in medical billing data formats (Meditech, Epic, Cerner, etc.).
+
+Analyze the provided data file(s) and validate against the checklist requirements.
+
+The data files may have multi-record formats where different record types are identified by indicators (like "01", "10", "20A", "30", etc.) at the beginning of each line.
+
+Common record types:
+- Record Type 01 = File Header
+- Record Type 10 = Patient Demographics
+- Record Type 20A = Guarantor Demographics
+- Record Type 30 = Visit/Account Info
+- Record Type 55 = Billing Information
+- Record Type 60A = Insurance
+- Record Type 70 = Transactions
+- Record Type 99 = File Trailer
+
+**Your Task:**
+1. Determine the file type: Placements, Transactions, Recalls, Notes, or Inventory
+2. For each checklist item, find if it exists in the data
+3. Specify the EXACT record type and field where each item was found
+4. Evaluate status: complete (found), partial (approximate), missing (not found)`
+            },
+
+            codeGenerator: {
+                title: "CODE GENERATOR - C# Generator",
+                prompt: `You are a specialized agent for generating MDS collection upload formatter code. You generate production-ready C# code by leveraging existing templates and knowledge bases for the detected host system.
+
+## Input Requirements
+You receive a JSON specification from the file-analyzer agent containing:
+- sourceSystem.detected: The host system (Meditech, Epic, Cerner, or Unknown)
+- sourceSystem.version: Version if applicable (V11, V12, etc.)
+- fileInfo: Format details (delimiter, encoding, headers)
+- recordTypes: Field definitions with mappings
+- crossWalks: Transaction codes and financial classes
+
+## Knowledge Base Selection
+Based on sourceSystem.detected, read the corresponding knowledge base:
+
+| Host System | Knowledge Base Directory | Template Directory |
+|-------------|-------------------------|-------------------|
+| **Meditech** | ./context/Meditech/ | ./context/Templates/Meditech/MeditechExtractV12/ |
+| **Epic** | ./context/Epic/ | ./context/Templates/Epic/EpicConverter/ |
+| **Cerner** | ./context/Cerner/ | ./context/Templates/Cerner/CernerDelimited/ |
+| **Unknown** | ./context/CoreUpload/ | ./context/Templates/SimpleConverter/ |
+
+## Generate Artifacts
+1. **PriXXXX.cs** - Main converter class
+2. **InventoryRecordType.cs** - FileHelpers record class
+3. **PriXXXX.csproj** - Project file
+4. **Properties/AssemblyInfo.cs** - Assembly metadata
+5. **packages.config** - NuGet packages`
+            },
+
+            codeValidator: {
+                title: "CODE VALIDATOR - Validator & Tester",
+                prompt: `You are a specialized agent for validating MDS collection upload formatter code and creating automated tests.
+
+## Validation Process
+
+### 1. Syntax and Compilation Validation
+Check that generated code compiles:
+\`\`\`bash
+dotnet build src/PriXXXX/PriXXXX.csproj --no-restore
+\`\`\`
+
+### 2. Structure Validation
+Verify formatter implements required patterns:
+- Main converter inherits from BaseConverter
+- All handlers inherit from BaseConversionClass or DelimitedHandler
+- QualifyFile() handles all expected InputTypes
+- GetConverter() returns handler for each InputType
+
+### 3. Database Schema Validation
+Verify field mappings against MDS Cupload schema:
+- uplmaster (60 fields) - Required fields validation
+- upltrans (18 fields) - Transaction mappings
+- uplinsurance (42 fields) - Insurance mappings
+
+### 4. Test Generation and Execution
+Generate and execute NUnit test cases:
+- Unit tests for record parsing
+- Integration tests for file processing
+- Cross-walk validation tests
+- Error handling tests
+
+### 5. Validation Report
+Generate detailed report with:
+- Compilation status
+- Structure validation results
+- Database mapping verification
+- Test execution results
+- Issue analysis and recommendations`
+            },
+
+            issueResolver: {
+                title: "ISSUE RESOLVER - Interactive Agent",
+                prompt: `You are an interactive agent specialized in issue resolution and iterative code improvement for MDS formatter development.
+
+## Your Role
+You serve as the bridge between automated validation results and user-driven improvements, creating a feedback loop for continuous enhancement.
+
+## Process Flow
+
+### 1. Present Test Results
+- Display comprehensive test execution results
+- Highlight failing tests with detailed error analysis
+- Show compilation errors and warnings
+- Present validation issues in user-friendly format
+
+### 2. Interactive User Interface
+- Provide text input for custom prompts and requirements
+- Allow users to specify particular areas of concern
+- Enable detailed feedback on specific issues
+- Support technical discussions about implementation approaches
+
+### 3. Issue Resolution Confirmation
+Ask user: "Would you like to fix the identified issues and regenerate the code?"
+- Present clear options: Yes/No/Customize
+- If "Customize": Allow detailed prompt input
+- If "Yes": Use standard issue resolution approach
+- If "No": End process with current state
+
+### 4. Feedback Integration and Regeneration
+When user confirms fixes:
+- Incorporate user feedback into regeneration process
+- Apply issue-specific corrections and improvements
+- Trigger Phase 2 (Code Generation) with enhanced requirements
+- Include user custom prompts in generation context
+- Apply fixes for compilation errors, test failures, validation issues
+
+### 5. Iterative Improvement Cycle
+- Return to Phase 3 (Validation and Testing) for re-validation
+- Continue cycle until all tests pass or user is satisfied
+- Maintain history of improvements and user feedback
+- Track resolution effectiveness for future improvements
+
+## Output Artifacts
+- User interaction logs
+- Issue resolution history
+- Feedback integration reports
+- Iterative improvement tracking
+- Final resolution summary`
+            }
+        };
+
+        function playAnimation() {
+            if (isPlaying) return;
+            isPlaying = true;
+            
+            animationInterval = setInterval(() => {
+                if (animationStep < messages.length) {
+                    animateMessage(messages[animationStep]);
+                    animationStep++;
+                } else {
+                    pauseAnimation();
+                    animationStep = 0;
+                }
+            }, 2000);
+
+            document.querySelector('.control-btn').classList.add('active');
+        }
+
+        function pauseAnimation() {
+            isPlaying = false;
+            clearInterval(animationInterval);
+            document.querySelector('.control-btn').classList.remove('active');
+        }
+
+        function resetAnimation() {
+            pauseAnimation();
+            animationStep = 0;
+            
+            // Reset all animations
+            messages.forEach(msgId => {
+                const msg = document.getElementById(msgId);
+                if (msg) {
+                    msg.classList.remove('animate-message');
+                    msg.style.opacity = '0.3';
+                }
+            });
+
+            // Reset states
+            document.querySelectorAll('.process-state').forEach(state => {
+                state.className = 'process-state state-pending';
+            });
+        }
+
+        function animateMessage(messageId) {
+            const message = document.getElementById(messageId);
+            if (message) {
+                message.classList.add('animate-message');
+                message.style.opacity = '1';
+                
+                // Animate related actor
+                const actorIndex = getActorIndexForMessage(messageId);
+                const actors = document.querySelectorAll('.actor-icon');
+                if (actors[actorIndex]) {
+                    actors[actorIndex].classList.add('animate-pulse', 'animate-glow');
+                    setTimeout(() => {
+                        actors[actorIndex].classList.remove('animate-pulse', 'animate-glow');
+                    }, 2000);
+                }
+                
+                // Update process state
+                updateProcessState(animationStep);
+            }
+        }
+
+        function getActorIndexForMessage(messageId) {
+            const messageToActor = {
+                'msg1': 0, 'msg2': 0, 'msg3': 0, 'msg4': 0,  // Match Specs
+                'msg5': 1, 'msg6': 1, 'msg7': 1, 'msg8': 1,  // Code Generator
+                'msg9': 2, 'msg10': 2, 'msg11': 2,           // Code Validator
+                'msg12': 3, 'msg13': 3, 'msg14': 3,          // Issue Resolver
+                'msg15': 4, 'msg16': 5, 'msg17': 6           // Production
+            };
+            return messageToActor[messageId] || 0;
+        }
+
+        function updateProcessState(step) {
+            const states = document.querySelectorAll('.process-state');
+            states.forEach((state, index) => {
+                if (step >= 1 && step <= 4) {
+                    if (index === 0) state.className = 'process-state state-analysis';
+                    else state.className = 'process-state state-pending';
+                } else if (step >= 5 && step <= 8) {
+                    if (index === 0) state.className = 'process-state state-completed';
+                    else if (index === 1) state.className = 'process-state state-generation';
+                    else state.className = 'process-state state-pending';
+                } else if (step >= 9 && step <= 11) {
+                    if (index <= 1) state.className = 'process-state state-completed';
+                    else if (index === 2) state.className = 'process-state state-validation';
+                    else state.className = 'process-state state-pending';
+                } else if (step >= 12 && step <= 14) {
+                    if (index <= 2) state.className = 'process-state state-completed';
+                    else if (index === 3) state.className = 'process-state state-interactive';
+                    else state.className = 'process-state state-pending';
+                } else if (step > 14) {
+                    if (index <= 3) state.className = 'process-state state-completed';
+                    else if (index === 4) state.className = 'process-state state-production';
+                    else if (index === 5) state.className = 'process-state state-completed';
+                    else state.className = 'process-state state-pending';
+                }
+            });
+        }
+
+        function toggleDetails() {
+            showDetails = !showDetails;
+            const btn = document.querySelectorAll('.control-btn')[3];
+            btn.textContent = showDetails ? '📋 Hide' : '📋 Details';
+            btn.classList.toggle('active', showDetails);
+        }
+
+        function highlightMatchSpecs() {
+            highlightAgent(0, 'match-specs');
+        }
+
+        function highlightCodeGenerator() {
+            highlightAgent(1, 'code-generator');
+        }
+
+        function highlightCodeValidator() {
+            highlightAgent(2, 'code-validator');
+        }
+
+        function highlightIssueResolver() {
+            highlightAgent(3, 'issue-resolver');
+        }
+
+        function highlightAgent(agentIndex, className) {
+            // Reset previous highlights
+            document.querySelectorAll('.message, .actor-icon, .activation, .note, .fragment').forEach(el => {
+                el.style.filter = 'none';
+                el.style.transform = el.style.transform.replace(/scale\([^)]*\)/g, '');
+            });
+
+            // Highlight specific agent elements
+            const elements = document.querySelectorAll(`.${className}, .actor-icon:nth-child(${agentIndex + 1})`);
+            elements.forEach(el => {
+                if (el) {
+                    el.style.filter = 'drop-shadow(0 0 20px currentColor)';
+                    const currentTransform = el.style.transform || '';
+                    el.style.transform = currentTransform + ' scale(1.05)';
+                }
+            });
+
+            setTimeout(() => {
+                elements.forEach(el => {
+                    if (el) {
+                        el.style.filter = 'none';
+                        el.style.transform = el.style.transform.replace(/scale\([^)]*\)/g, '');
+                    }
+                });
+            }, 5000);
+        }
+
+        function showAgentPrompts() {
+            const promptsHtml = `
+                <div style="background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); max-width: 1000px; max-height: 80vh; overflow-y: auto;">
+                    <h2 style="color: #2c3e50; margin-bottom: 20px;">📝 MDS Agent Prompts</h2>
+                    
+                    <div style="margin-bottom: 30px;">
+                        <h3 style="color: #9b59b6; margin-bottom: 15px;">🔍 ${agentPrompts.matchSpecs.title}</h3>
+                        <div style="background: #f8f4fd; padding: 15px; border-radius: 8px; border-left: 4px solid #9b59b6; margin-bottom: 15px;">
+                            <strong>PDF Analysis:</strong>
+                        </div>
+                        <pre style="background: #2c3e50; color: #ecf0f1; padding: 15px; border-radius: 8px; font-size: 0.75em; overflow-x: auto; white-space: pre-wrap;">${agentPrompts.matchSpecs.pdfPrompt}</pre>
+                        
+                        <div style="background: #f8f4fd; padding: 15px; border-radius: 8px; border-left: 4px solid #9b59b6; margin: 15px 0;">
+                            <strong>Data Analysis:</strong>
+                        </div>
+                        <pre style="background: #2c3e50; color: #ecf0f1; padding: 15px; border-radius: 8px; font-size: 0.75em; overflow-x: auto; white-space: pre-wrap;">${agentPrompts.matchSpecs.dataPrompt}</pre>
+                    </div>
+
+                    <div style="margin-bottom: 30px;">
+                        <h3 style="color: #e67e22; margin-bottom: 15px;">⚙️ ${agentPrompts.codeGenerator.title}</h3>
+                        <pre style="background: #2c3e50; color: #ecf0f1; padding: 15px; border-radius: 8px; font-size: 0.75em; overflow-x: auto; white-space: pre-wrap;">${agentPrompts.codeGenerator.prompt}</pre>
+                    </div>
+
+                    <div style="margin-bottom: 30px;">
+                        <h3 style="color: #27ae60; margin-bottom: 15px;">✅ ${agentPrompts.codeValidator.title}</h3>
+                        <pre style="background: #2c3e50; color: #ecf0f1; padding: 15px; border-radius: 8px; font-size: 0.75em; overflow-x: auto; white-space: pre-wrap;">${agentPrompts.codeValidator.prompt}</pre>
+                    </div>
+
+                    <div style="margin-bottom: 30px;">
+                        <h3 style="color: #e67e22; margin-bottom: 15px;">🔄 ${agentPrompts.issueResolver.title}</h3>
+                        <pre style="background: #2c3e50; color: #ecf0f1; padding: 15px; border-radius: 8px; font-size: 0.75em; overflow-x: auto; white-space: pre-wrap;">${agentPrompts.issueResolver.prompt}</pre>
+                    </div>
+
+                    <button onclick="this.parentElement.parentElement.remove()"
+                            style="background: #3498db; color: white; border: none; padding: 12px 24px;
+                                   border-radius: 8px; cursor: pointer; margin-top: 20px; float: right; font-weight: bold;">
+                        Close
+                    </button>
+                </div>
+            `;
+
+            const overlay = document.createElement('div');
+            overlay.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                background: rgba(0,0,0,0.8); z-index: 2000; display: flex;
+                align-items: center; justify-content: center; padding: 20px;
+                box-sizing: border-box;
+            `;
+            overlay.innerHTML = promptsHtml;
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) document.body.removeChild(overlay);
+            });
+            document.body.appendChild(overlay);
+        }
+
+        // Tooltips
+        function showTooltip(element, content) {
+            const tooltip = document.getElementById('tooltip');
+            const rect = element.getBoundingClientRect();
+            const container = document.querySelector('.uml-container');
+            const containerRect = container.getBoundingClientRect();
+            
+            tooltip.innerHTML = content;
+            tooltip.style.display = 'block';
+            tooltip.style.left = (rect.left - containerRect.left + rect.width / 2 - 175) + 'px';
+            tooltip.style.top = (rect.bottom - containerRect.top + 15) + 'px';
+        }
+
+        function hideTooltip() {
+            document.getElementById('tooltip').style.display = 'none';
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize state
+            resetAnimation();
+
+            // Tooltips for actors
+            document.querySelectorAll('.actor-icon').forEach(actor => {
+                actor.addEventListener('mouseenter', (e) => {
+                    const tooltip = e.target.getAttribute('data-tooltip');
+                    if (tooltip) {
+                        showTooltip(e.target, tooltip);
+                    }
+                });
+                actor.addEventListener('mouseleave', hideTooltip);
+            });
+
+            // Tooltips for messages
+            document.querySelectorAll('.message-label').forEach(label => {
+                label.addEventListener('mouseenter', (e) => {
+                    if (showDetails) {
+                        const messageId = e.target.closest('.message').id;
+                        const detail = messageDetails[messageId];
+                        if (detail) {
+                            const content = `
+                                <strong>${detail.title}</strong><br/>
+                                ${detail.description}<br/><br/>
+                                <em>Technical:</em> ${detail.technical}
+                            `;
+                            showTooltip(e.target, content);
+                        }
+                    }
+                });
+                label.addEventListener('mouseleave', hideTooltip);
+            });
+
+            // Auto-play initial after 3 seconds
+            setTimeout(() => {
+                playAnimation();
+            }, 
+            // Auto-play initial after 3 seconds
+            setTimeout(() => {
+                playAnimation();
+            }, 3000));
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            switch(e.key) {
+                case ' ':
+                    e.preventDefault();
+                    if (isPlaying) pauseAnimation();
+                    else playAnimation();
+                    break;
+                case 'r':
+                    resetAnimation();
+                    break;
+                case 'd':
+                    toggleDetails();
+                    break;
+                case '1':
+                    highlightMatchSpecs();
+                    break;
+                case '2':
+                    highlightCodeGenerator();
+                    break;
+                case '3':
+                    highlightCodeValidator();
+                    break;
+                case '4':
+                    highlightIssueResolver();
+                    break;
+                case 'p':
+                    showAgentPrompts();
+                    break;
+            }
+        });
+
+        console.log('🔄 Complete UML Diagram of MDS Formatter Lifecycle loaded');
+        console.log('⌨️ Shortcuts: Space=Play/Pause, R=Reset, D=Details, 1-4=Highlight Agents, P=Prompts');
+        console.log('🤖 Agents: Match Specs, Code Generator, Code Validator, Issue Resolver');
+        console.log('📊 Phases: Analysis → Generation → Validation → Interactive → Production');
+    </script>
+</body>
+</html>
