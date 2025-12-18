@@ -175,7 +175,7 @@ Score = (5 × 5 × 4) / 10 = 10 puntos
 | GetConverter() cubre todos InputTypes | 2 | 20% del subtotal<br>• IMPORTANTE: Debe manejar todos los tipos de archivo del cliente<br>• InputTypes no manejados = archivos ignorados silenciosamente<br>• Común error: solo implementar Demographics, olvidar Inventory | Switch/if cubre todos los valores<br>retornados por QualifyFile() | Archivos del cliente no procesados sin error visible |
 | QualifyFile() implementado | 3 | 30% del subtotal<br>• CRÍTICO: Clasifica archivos entrantes por nombre/contenido<br>• Sin él, todos los archivos son InputType.Unknown<br>• Método abstracto - obligatorio | Método existe,<br>retorna InputType<br>basado en análisis de archivo | BLOQUEANTE: Compilation error |
 
-** Código de Referencia con Anotaciones: **
+**Código de Referencia con Anotaciones:**
 
 ```csharp
 // [5 pts] - GetConverter implementation
@@ -228,7 +228,6 @@ protected override InputType QualifyFile(ProcessFile pFile)
         
     return InputType.Unknown; // Will be logged for review
 }
-
 ```
 ** Validación Automatizada:**
 
@@ -490,6 +489,7 @@ Impacto: 5/5 (Afecta todas las transacciones)
 Frecuencia: 5/5 (Muy común olvidarlo)
 Score = (5 × 5 × 5) / 15.6 = 8 puntos
 ```
+
 
 
 
