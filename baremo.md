@@ -634,7 +634,7 @@ Por qué 7 puntos:
 - Sin Configure, el formatter no es configurable por el usuario
 - BaseConfigurationForm es el estándar MDS - custom forms causan bugs
 
-Cálculo:
+**Cálculo:**
 
 ```
 Criticidad: 4/5 (Formatter no configurable)
@@ -785,7 +785,7 @@ Por qué 5 puntos:
 - Sin SaveSettings, el formatter funciona pero pierde configuración
 - Impacto en usabilidad, no en funcionalidad core
 
-Cálculo:
+**Cálculo:**
 
 ```Criticidad: 3/5 (Pérdida de configuración, no bloqueante)
 Impacto: 3/5 (Afecta solo persistencia)
@@ -892,67 +892,54 @@ public ValidationResult ValidateSaveSettings(Type formatterType)
 }
 ```
 
-3. FILEHELPERS Y RECORD TYPES (18 puntos)
-📌 Justificación del Peso Total: 18 puntos (18% del score)
+## 3. FILEHELPERS Y RECORD TYPES (18 puntos)
+### 📌 Justificación del Peso Total: 18 puntos (18% del score)
 Razón: FileHelpers es el motor de parsing que convierte archivos de texto del cliente en objetos C#. Errores aquí causan:
 
-Pérdida de datos: Campos no parseados
-Corrupción de datos: Parsing incorrecto de decimales/fechas
-Runtime exceptions: Tipos incompatibles
-Impacto de Fallo:
+- Pérdida de datos: Campos no parseados
+- Corrupción de datos: Parsing incorrecto de decimales/fechas
+- Runtime exceptions: Tipos incompatibles
 
-Datos del cliente se pierden silenciosamente
-Datos incorrectos se insertan en Cupload (corrupción de DB)
-Exceptions durante procesamiento
-Evidencia de Criticidad del Contexto:
+### Impacto de Fallo:
+- Datos del cliente se pierden silenciosamente
+- Datos incorrectos se insertan en Cupload (corrupción de DB)
+- Exceptions durante procesamiento
+
+### Evidencia de Criticidad del Contexto:
 
 "Wrong FileHelpers package and decorators" (MDS Project Follow-UP) "Schema naming inconsistencies" (MDS Project Follow-UP)
 
-Cálculo:
-
+**Cálculo:**
+```
 Criticidad: 5/5 (Pérdida/corrupción de datos)
 Impacto: 4/5 (Afecta calidad de datos)
 Frecuencia: 4/5 (Errores comunes en atributos)
 Score = (5 × 4 × 4) / 4.4 = 18 puntos
-3.1 Atributos de Clase Record (6 puntos)
-Justificación del Subtotal: 6 puntos (33.3% de FileHelpers)
+```
+
+## 3.1 Atributos de Clase Record (6 puntos)
+## Justificación del Subtotal: 6 puntos (33.3% de FileHelpers)
 Por qué 6 puntos:
+- Atributos de clase definen el modo de parsing completo
+- Sin [DelimitedRecord] o [FixedLengthRecord], FileHelpers no sabe cómo parsear
+- [IgnoreEmptyLines] previene errores frecuentes en archivos médicos
 
-Atributos de clase definen el modo de parsing completo
-Sin [DelimitedRecord] o [FixedLengthRecord], FileHelpers no sabe cómo parsear
-[IgnoreEmptyLines] previene errores frecuentes en archivos médicos
-Cálculo:
+**Cálculo:**
+- Criticidad: 5/5 (BLOQUEANTE sin atributo principal)
+- Impacto: 5/5 (Afecta parsing completo)
+- Frecuencia: 3/5 (Moderado - generadores suelen incluirlo)
+- Score = (5 × 5 × 3) / 12.5 = 6 puntos
 
-Criticidad: 5/5 (BLOQUEANTE sin atributo principal)
-Impacto: 5/5 (Afecta parsing completo)
-Frecuencia: 3/5 (Moderado - generadores suelen incluirlo)
-Score = (5 × 5 × 3) / 12.5 = 6 puntos
-Criterio	Puntos	Justificación del Puntaje	Forma de Validación	Penalización por Incumplimiento
-[DelimitedRecord] o [FixedLengthRecord]	3	50% del subtotal
-• CRÍTICO: Define el modo fundamental de parsing
-• Sin esto, FileHelpers lanza exception al intentar parsear
-• Debe coincidir con formato real del archivo del cliente	Atributo de clase presente:
-[DelimitedRecord("\t")] o
-[FixedLengthRecord]	BLOQUEANTE:
-FileHelpers exception:
-"Class must have DelimitedRecord or FixedLengthRecord attribute"
-[IgnoreEmptyLines]	2	33.3% del subtotal
-• IMPORTANTE: Archivos médicos frecuentemente tienen líneas vacías
-• Sin esto, FileHelpers intenta parsear líneas vacías y falla
-• Previene errores de "line too short"	Atributo presente:
-[IgnoreEmptyLines]
-(para archivos delimitados)	Parsing errors en líneas vacías:
-"Line X is too short",
-datos perdidos
-Clase sealed	1	16.7% del subtotal
-• BEST PRACTICE: Record types son DTOs, no deben heredarse
-• sealed previene uso incorrecto en futuro
-• Mejora rendimiento mínimo	public sealed class
-en declaración	Ninguna (best practice),
-posible uso incorrecto futuro
-Código de Referencia con Anotaciones:
+| Criterio | Puntos | Justificación del Puntaje | Forma de Validación | Penalización por Incumplimiento |
+|----------|--------|---------------------------|---------------------|--------------------------------|
+| [DelimitedRecord] o [FixedLengthRecord] | 3 | 50% del subtotal<br>• CRÍTICO: Define el modo fundamental de parsing<br>• Sin esto, FileHelpers lanza exception al intentar parsear<br>• Debe coincidir con formato real del archivo del cliente | Atributo de clase presente:<br>[DelimitedRecord("\t")] o<br>[FixedLengthRecord] | BLOQUEANTE:<br>FileHelpers exception:<br>"Class must have DelimitedRecord or FixedLengthRecord attribute" |
+| [IgnoreEmptyLines] | 2 | 33.3% del subtotal<br>• IMPORTANTE: Archivos médicos frecuentemente tienen líneas vacías<br>• Sin esto, FileHelpers intenta parsear líneas vacías y falla<br>• Previene errores de "line too short" | Atributo presente:<br>[IgnoreEmptyLines]<br>(para archivos delimitados) | Parsing errors en líneas vacías:<br>"Line X is too short",<br>datos perdidos |
+| Clase sealed | 1 | 16.7% del subtotal<br>• BEST PRACTICE: Record types son DTOs, no deben heredarse<br>• sealed previene uso incorrecto en futuro<br>• Mejora rendimiento mínimo | public sealed class<br>en declaración | Ninguna (best practice),<br>posible uso incorrecto futuro |
 
-csharp
+
+**Código de Referencia con Anotaciones:**
+
+```csharp
 // [3 pts] - DelimitedRecord attribute (CRITICAL)
 // WHY CRITICAL: Tells FileHelpers this is a tab-delimited file
 // ALTERNATIVES: [FixedLengthRecord] for fixed-width files
@@ -979,10 +966,11 @@ public sealed class InventoryRecordType
 {
     // Field definitions...
 }
+```
 
-Validación Automatizada:
+**Validación Automatizada:**
 
-csharp
+```csharp
 public ValidationResult ValidateRecordTypeClassAttributes(Type recordType)
 {
     var result = new ValidationResult 
@@ -1060,58 +1048,37 @@ public ValidationResult ValidateRecordTypeClassAttributes(Type recordType)
     
     return result;
 }
-3.2 Atributos de Campo (6 puntos)
-Justificación del Subtotal: 6 puntos (33.3% de FileHelpers)
+```
+
+## 3.2 Atributos de Campo (6 puntos)
+### Justificación del Subtotal: 6 puntos (33.3% de FileHelpers)
+
 Por qué 6 puntos:
 
-Los atributos de campo controlan el parsing de cada columna
-Configuración incorrecta = datos corruptos o exceptions
-Fechas y decimales en formatos médicos requieren conversión especial
-[FieldTrim] es crítico para matching de datos (lookups en DB)
-Cálculo:
+- Los atributos de campo controlan el parsing de cada columna
+- Configuración incorrecta = datos corruptos o exceptions
+- Fechas y decimales en formatos médicos requieren conversión especial
+- [FieldTrim] es crítico para matching de datos (lookups en DB)
 
+**Cálculo:**
+```
 Criticidad: 5/5 (Datos corruptos/perdidos)
 Impacto: 4/5 (Afecta cada campo)
 Frecuencia: 5/5 (Muy común configurar mal)
 Score = (5 × 4 × 5) / 16.7 = 6 puntos
-Criterio	Puntos	Justificación del Puntaje	Forma de Validación	Penalización por Incumplimiento
-[FieldQuoted] o [FieldFixedLength]	2	33.3% del subtotal
-• CRÍTICO: Define cómo parsear cada campo individual
-• [FieldQuoted] para CSV - maneja comillas y delimitadores dentro del valor
-• [FieldFixedLength(X)] para fixed-width - define ancho de columna
-• Configuración incorrecta = parsing incorrecto de datos	Atributo correcto por campo:
-[FieldQuoted] para delimited
-[FieldFixedLength(10)] para fixed	Datos parseados incorrectamente,
-columnas desalineadas,
-valores truncados
-[FieldTrim(TrimMode.Both)]	1.5	25% del subtotal
-• IMPORTANTE: Archivos médicos tienen espacios extra en valores
-• Sin trim, "SMITH " ≠ "SMITH" en lookups de DB
-• Causa fallos en joins y búsquedas de cuentas
-• Aplica a todos los campos string	Presente en campos string:
-[FieldTrim(TrimMode.Both)]	Fallos en matching de datos,
-lookups no encuentran registros,
-duplicados por espacios
-[FieldConverter] para tipos especiales	1.5	25% del subtotal
-• CRÍTICO: Fechas en formatos médicos son no-estándar
-• Decimales pueden tener formato especial (sin punto decimal)
-• Sin converter correcto = exception o valor incorrecto
-• EJEMPLOS: "20231215" → DateTime, "12345" → 123.45m	[FieldConverter(typeof(MDSDecimalConverter))]
-[FieldConverter(typeof(MDSDateConverter))]
-[FieldConverter(typeof(ClarioneseDateConverter))]	BLOQUEANTE:
-FormatException al parsear,
-o datos incorrectos insertados silenciosamente
-[FieldNullValue] para defaults	1	16.7% del subtotal
-• IMPORTANTE: Campos opcionales necesitan valores por defecto
-• Sin esto, nulls causan exceptions en DB insert
-• Previene NullReferenceException en handlers
-• EJEMPLOS: decimal → 0, DateTime → DateTime.MinValue	[FieldNullValue(typeof(decimal), "0")]
-[FieldNullValue(typeof(DateTime), "1900-01-01")]	NullReferenceException en handlers,
-DB constraint violation,
-datos inconsistentes
-Código de Referencia Completo con Anotaciones:
+```
+| Criterio | Puntos | Justificación del Puntaje | Forma de Validación | Penalización por Incumplimiento |
+|----------|--------|---------------------------|---------------------|--------------------------------|
+| [FieldQuoted] o [FieldFixedLength] | 2 | 33.3% del subtotal<br>• CRÍTICO: Define cómo parsear cada campo individual<br>• [FieldQuoted] para CSV - maneja comillas y delimitadores dentro del valor<br>• [FieldFixedLength(X)] para fixed-width - define ancho de columna<br>• Configuración incorrecta = parsing incorrecto de datos | Atributo correcto por campo:<br>[FieldQuoted] para delimited<br>[FieldFixedLength(10)] para fixed | Datos parseados incorrectamente,<br>columnas desalineadas,<br>valores truncados |
+| [FieldTrim(TrimMode.Both)] | 1.5 | 25% del subtotal<br>• IMPORTANTE: Archivos médicos tienen espacios extra en valores<br>• Sin trim, "SMITH " ≠ "SMITH" en lookups de DB<br>• Causa fallos en joins y búsquedas de cuentas<br>• Aplica a todos los campos string | Presente en campos string:<br>[FieldTrim(TrimMode.Both)] | Fallos en matching de datos,<br>lookups no encuentran registros,<br>duplicados por espacios |
+| [FieldConverter] para tipos especiales | 1.5 | 25% del subtotal<br>• CRÍTICO: Fechas en formatos médicos son no-estándar<br>• Decimales pueden tener formato especial (sin punto decimal)<br>• Sin converter correcto = exception o valor incorrecto<br>• EJEMPLOS: "20231215" → DateTime, "12345" → 123.45m | [FieldConverter(typeof(MDSDecimalConverter))]<br>[FieldConverter(typeof(MDSDateConverter))]<br>[FieldConverter(typeof(ClarioneseDateConverter))] | BLOQUEANTE:<br>FormatException al parsear,<br>o datos incorrectos insertados silenciosamente |
+| [FieldNullValue] para defaults | 1 | 16.7% del subtotal<br>• IMPORTANTE: Campos opcionales necesitan valores por defecto<br>• Sin esto, nulls causan exceptions en DB insert<br>• Previene NullReferenceException en handlers<br>• EJEMPLOS: decimal → 0, DateTime → DateTime.MinValue | [FieldNullValue(typeof(decimal), "0")]<br>[FieldNullValue(typeof(DateTime), "1900-01-01")] | NullReferenceException en handlers,<br>DB constraint violation,<br>datos inconsistentes |
 
-csharp
+
+
+**Código de Referencia Completo con Anotaciones:**
+
+```csharp
 [IgnoreEmptyLines]
 [DelimitedRecord("\t")]
 public sealed class InventoryRecordType
@@ -1182,9 +1149,9 @@ public sealed class InventoryRecordType
     [FieldNullValue(typeof(string), "SP")] // Default to Self Pay if empty
     public string FinClass;
 }
-Validación Automatizada Inteligente:
+**Validación Automatizada Inteligente:**
 
-csharp
+```csharp
 public ValidationResult ValidateRecordTypeFieldAttributes(Type recordType)
 {
     var result = new ValidationResult 
@@ -1353,43 +1320,35 @@ private bool IsNullableOrOptional(Type fieldType)
     return Nullable.GetUnderlyingType(fieldType) != null || 
            !fieldType.IsValueType;
 }
-3.3 Field Mapping a Base de Datos (6 puntos)
-Justificación del Subtotal: 6 puntos (33.3% de FileHelpers)
+```
+
+## 3.3 Field Mapping a Base de Datos (6 puntos)
+### Justificación del Subtotal: 6 puntos (33.3% de FileHelpers)
 Por qué 6 puntos:
 
-[FieldMapping] es el puente crítico entre archivo parseado y DB
-Sin esto, datos parseados correctamente no se persisten (pérdida total)
-TableDestination incorrecto = corrupción silenciosa de datos
-Mapeo a columnas inexistentes = runtime exception
-Cálculo:
+- [FieldMapping] es el puente crítico entre archivo parseado y DB
+- Sin esto, datos parseados correctamente no se persisten (pérdida total)
+- TableDestination incorrecto = corrupción silenciosa de datos
+- Mapeo a columnas inexistentes = runtime exception
 
+**Cálculo:**
+
+```
 Criticidad: 5/5 (Pérdida o corrupción de datos)
 Impacto: 5/5 (Afecta persistencia completa)
 Frecuencia: 4/5 (Común mapear incorrectamente)
 Score = (5 × 5 × 4) / 16.7 = 6 puntos
-Criterio	Puntos	Justificación del Puntaje	Forma de Validación	Penalización por Incumplimiento
-[FieldMapping] attributes presentes	4	66.7% del subtotal
-• CRÍTICO: Sin esto, datos parseados NO se escriben a DB
-• Es el conector entre objeto C# y tabla Cupload
-• Cobertura mínima: 80% de campos deben estar mapeados
-• Campos no mapeados = pérdida silenciosa de datos del cliente	Atributo presente en >80% campos:
-[FieldMapping("accountnumber",
-TableDestination.Master)]	CRÍTICO:
-Datos no se persisten,
-pérdida total de información parseada
-TableDestination correctos	2	33.3% del subtotal
-• CRÍTICO: Mapeo incorrecto = tabla equivocada
-• EJEMPLO: Insurance data en Master table = corrupción
-• Validar contra schema de Cupload (uplmaster, upltrans, uplinsurance)
-• Error silencioso - no genera exception, corrompe datos	Valores correctos:
-TableDestination.Master
-TableDestination.Trans
-TableDestination.Insurance	CRÍTICO:
-Corrupción silenciosa de datos en Cupload,
-impacto en negocio
-Código de Referencia con Schema de Cupload:
+```
 
-csharp
+| Criterio | Puntos | Justificación del Puntaje | Forma de Validación | Penalización por Incumplimiento |
+|----------|--------|---------------------------|---------------------|--------------------------------|
+| [FieldMapping] attributes presentes | 4 | 66.7% del subtotal<br>• CRÍTICO: Sin esto, datos parseados NO se escriben a DB<br>• Es el conector entre objeto C# y tabla Cupload<br>• Cobertura mínima: 80% de campos deben estar mapeados<br>• Campos no mapeados = pérdida silenciosa de datos del cliente | Atributo presente en >80% campos:<br>[FieldMapping("accountnumber",<br>TableDestination.Master)] | CRÍTICO:<br>Datos no se persisten,<br>pérdida total de información parseada |
+| TableDestination correctos | 2 | 33.3% del subtotal<br>• CRÍTICO: Mapeo incorrecto = tabla equivocada<br>• EJEMPLO: Insurance data en Master table = corrupción<br>• Validar contra schema de Cupload (uplmaster, upltrans, uplinsurance)<br>• Error silencioso - no genera exception, corrompe datos | Valores correctos:<br>TableDestination.Master<br>TableDestination.Trans<br>TableDestination.Insurance | CRÍTICO:<br>Corrupción silenciosa de datos en Cupload,<br>impacto en negocio |
+
+
+**Código de Referencia con Schema de Cupload:**
+
+```csharp
 [IgnoreEmptyLines]
 [DelimitedRecord("\t")]
 public sealed class InventoryRecordType
@@ -1458,9 +1417,11 @@ public sealed class InventoryRecordType
     // NO [FieldMapping] attribute - this field is ignored
     public string ClientCustomField;
 }
-Schema Cupload de Referencia (para validación):
+```
 
-csharp
+**Schema Cupload de Referencia (para validación):**
+
+```csharp
 // Simplified Cupload schema for validation
 public static class CuploadSchema
 {
@@ -1488,11 +1449,6 @@ public static class CuploadSchema
         Columns = new[]
         {
             new Column("accountnumber", typeof(string), 20, required: true),
-            new Column("trans
-
-
-continua
-markdown
             new Column("transactioncode", typeof(string), 10, required: true),
             new Column("transactiondate", typeof(DateTime)),
             new Column("transactionamount", typeof(decimal)),
@@ -1515,9 +1471,11 @@ markdown
         }
     };
 }
-Validación Automatizada con Schema Check:
+```
 
-csharp
+**Validación Automatizada con Schema Check:**
+
+```csharp
 public ValidationResult ValidateFieldMappings(Type recordType)
 {
     var result = new ValidationResult 
@@ -1687,68 +1645,58 @@ private bool IsNumericType(Type type)
            type == typeof(decimal) || type == typeof(double) || 
            type == typeof(float);
 }
-4. HANDLERS Y LÓGICA DE NEGOCIO (17 puntos)
-📌 Justificación del Peso Total: 17 puntos (17% del score)
+```
+
+## 4. HANDLERS Y LÓGICA DE NEGOCIO (17 puntos)
+### 📌 Justificación del Peso Total: 17 puntos (17% del score)
 Razón: Los handlers implementan la lógica de negocio específica del formatter:
 
-DemographicsHandler: Procesa cuentas, actualiza balances, maneja recall protection
-TransactionHandler: Carga transacciones en batch
-InventoryHandler: Combina parsing FileHelpers + lógica de negocio
-Impacto de Fallo:
+- DemographicsHandler: Procesa cuentas, actualiza balances, maneja recall protection
+- TransactionHandler: Carga transacciones en batch
+- InventoryHandler: Combina parsing FileHelpers + lógica de negocio
 
-Herencia incorrecta = compilation errors
-Lógica faltante = datos incompletos o incorrectos
-Account cache no utilizado = violación de reglas de recalled accounts
-Evidencia de Criticidad del Contexto:
+**Impacto de Fallo:**
+
+- Herencia incorrecta = compilation errors
+- Lógica faltante = datos incompletos o incorrectos
+- Account cache no utilizado = violación de reglas de recalled accounts
+
+**Evidencia de Criticidad del Contexto:**
 
 "Handlers not inheriting from Meditech base classes" (MDS Project Follow-UP) "Incorrect transaction loading logic" (MDS Project Follow-UP)
 
-Cálculo:
+**Cálculo:**
 
+```
 Criticidad: 4/5 (Impacta lógica de negocio)
 Impacto: 4/5 (Afecta procesamiento de datos)
 Frecuencia: 5/5 (Errores muy comunes en handlers)
 Score = (4 × 4 × 5) / 4.7 = 17 puntos
-4.1 DemographicsHandler (7 puntos)
+```
+### 4.1 DemographicsHandler (7 puntos)
 Justificación del Subtotal: 7 puntos (41.2% de Handlers)
 Por qué 7 puntos:
 
-Es el handler más crítico - procesa información de cuentas
-Recall protection es requisito legal/de negocio
-Errores aquí afectan a todas las cuentas del cliente
-Cálculo:
+- Es el handler más crítico - procesa información de cuentas
+- Recall protection es requisito legal/de negocio
+- Errores aquí afectan a todas las cuentas del cliente
 
+**Cálculo:**
+```
 Criticidad: 5/5 (Procesa datos críticos de cuentas)
 Impacto: 5/5 (Afecta todas las cuentas)
 Frecuencia: 4/5 (Común heredar de clase incorrecta)
 Score = (5 × 5 × 4) / 14.3 = 7 puntos
-Criterio	Puntos	Justificación del Puntaje	Forma de Validación	Penalización por Incumplimiento
-Hereda de MedBaseCollectionsHandler	3	42.8% del subtotal
-• CRÍTICO: BaseCollectionsHandler es abstracto - no usar clase base correcta
-• MedBaseCollectionsHandler tiene lógica específica de Meditech
-• Incluye: cross-walk application, field defaults, validations
-• Error del MVP: heredar de clase genérica	class DemographicsHandler :
-MedBaseCollectionsHandler	BLOQUEANTE:
-Compilation error o
-lógica de negocio faltante
-Constructor correcto	1.5	21.4% del subtotal
-• IMPORTANTE: Recibe converter reference + file context
-• Constructor incorrecto = runtime exception al instanciar	public DemographicsHandler(
-BaseConverter conv, ProcessFile file)
-: base(conv, file)	Runtime exception:
-"No suitable constructor found"
-Usa AccountCache para recall check	2.5	35.8% del subtotal
-• CRÍTICO: Violación de reglas de negocio si no se verifica
-• Recalled accounts no deben recibir nuevas transacciones
-• Legal/compliance issue en industria médica
-• EJEMPLO: Account deleted por disputa legal, no debe reactivarse	Código llama:
-if (converter.Accounts.IsRecalled(acctNum))
-return; // Skip recalled account	CRÍTICO:
-Violación de reglas de negocio,
-posibles problemas legales
-Código de Referencia con Anotaciones:
+```
+| Criterio | Puntos | Justificación del Puntaje | Forma de Validación | Penalización por Incumplimiento |
+|----------|--------|---------------------------|---------------------|--------------------------------|
+| Hereda de MedBaseCollectionsHandler | 3 | 42.8% del subtotal<br>• CRÍTICO: BaseCollectionsHandler es abstracto - no usar clase base correcta<br>• MedBaseCollectionsHandler tiene lógica específica de Meditech<br>• Incluye: cross-walk application, field defaults, validations<br>• Error del MVP: heredar de clase genérica | `class DemographicsHandler : MedBaseCollectionsHandler` | BLOQUEANTE:<br>Compilation error o<br>lógica de negocio faltante |
+| Constructor correcto | 1.5 | 21.4% del subtotal<br>• IMPORTANTE: Recibe converter reference + file context<br>• Constructor incorrecto = runtime exception al instanciar | `public DemographicsHandler(BaseConverter conv, ProcessFile file) : base(conv, file)` | Runtime exception:<br>"No suitable constructor found" |
+| Usa AccountCache para recall check | 2.5 | 35.8% del subtotal<br>• CRÍTICO: Violación de reglas de negocio si no se verifica<br>• Recalled accounts no deben recibir nuevas transacciones<br>• Legal/compliance issue en industria médica<br>• EJEMPLO: Account deleted por disputa legal, no debe reactivarse | Código llama:<br>`if (converter.Accounts.IsRecalled(acctNum))`<br>`return; // Skip recalled account` | CRÍTICO:<br>Violación de reglas de negocio,<br>posibles problemas legales |
 
-csharp
+**Código de Referencia con Anotaciones:**
+
+```csharp
 // [3 pts] - Correct inheritance
 // WHY CRITICAL: MedBaseCollectionsHandler provides 20+ methods specific to Meditech
 // INCLUDES: ApplyCrossWalks(), SetDefaults(), ValidateRequiredFields()
@@ -1804,9 +1752,11 @@ public class DemographicsHandler : MedBaseCollectionsHandler
         SaveToDatabase(record);
     }
 }
-Validación Automatizada:
+```
 
-csharp
+**Validación Automatizada:**
+
+```csharp
 public ValidationResult ValidateDemographicsHandler(Type handlerType)
 {
     var result = new ValidationResult 
@@ -1904,40 +1854,34 @@ public ValidationResult ValidateDemographicsHandler(Type handlerType)
     
     return result;
 }
-4.2 TransactionHandler (5 puntos)
+```
+
+## 4.2 TransactionHandler (5 puntos)
 Justificación del Subtotal: 5 puntos (29.4% de Handlers)
 Por qué 5 puntos:
 
-Menor peso que Demographics (7) porque las transacciones son secundarias a las cuentas
-Sin embargo, errores aquí causan pérdida completa de historial de transacciones
-LoadTransactions() es el método crítico - debe estar implementado
-Cálculo:
+- Menor peso que Demographics (7) porque las transacciones son secundarias a las cuentas
+- Sin embargo, errores aquí causan pérdida completa de historial de transacciones
+- LoadTransactions() es el método crítico - debe estar implementado
 
+**Cálculo:**
+
+```
 Criticidad: 4/5 (Pérdida de datos de transacciones)
 Impacto: 4/5 (Afecta historial completo)
 Frecuencia: 4/5 (Común no implementar correctamente)
 Score = (4 × 4 × 4) / 12.8 = 5 puntos
-Criterio	Puntos	Justificación del Puntaje	Forma de Validación	Penalización por Incumplimiento
-Hereda de MedBaseTransactionHandler	2	40% del subtotal
-• IMPORTANTE: Contiene lógica de batch loading de transacciones
-• Incluye aplicación de cross-walks de trans codes
-• Validaciones de tipos de transacción (P, A, I, C)	class TransactionHandler :
-MedBaseTransactionHandler	BLOQUEANTE:
-Lógica de batch loading faltante
-Constructor correcto	1	20% del subtotal
-• IMPORTANTE: Similar a Demographics handler	public TransactionHandler(
-BaseConverter conv, ProcessFile file)
-: base(conv, file)	Runtime exception al instanciar
-Implementa LoadTransactions()	2	40% del subtotal
-• CRÍTICO: Es el método que carga transacciones en batch
-• Sin esto, transacciones se pierden completamente
-• Debe crear DataTable y llamar bulk insert	Override de LoadTransactions()
-que retorna DataTable	CRÍTICO:
-Pérdida total de transacciones,
-solo demographics se procesan
-Código de Referencia:
+```
 
-csharp
+| Criterio | Puntos | Justificación del Puntaje | Forma de Validación | Penalización por Incumplimiento |
+|----------|--------|---------------------------|---------------------|--------------------------------|
+| Hereda de MedBaseTransactionHandler | 2 | 40% del subtotal<br>• IMPORTANTE: Contiene lógica de batch loading de transacciones<br>• Incluye aplicación de cross-walks de trans codes<br>• Validaciones de tipos de transacción (P, A, I, C) | `class TransactionHandler : MedBaseTransactionHandler` | BLOQUEANTE:<br>Lógica de batch loading faltante |
+| Constructor correcto | 1 | 20% del subtotal<br>• IMPORTANTE: Similar a Demographics handler | `public TransactionHandler(BaseConverter conv, ProcessFile file) : base(conv, file)` | Runtime exception al instanciar |
+| Implementa LoadTransactions() | 2 | 40% del subtotal<br>• CRÍTICO: Es el método que carga transacciones en batch<br>• Sin esto, transacciones se pierden completamente<br>• Debe crear DataTable y llamar bulk insert | Override de LoadTransactions()<br>que retorna DataTable | CRÍTICO:<br>Pérdida total de transacciones,<br>solo demographics se procesan |
+
+**Código de Referencia:**
+
+```csharp
 // [2 pts] - Correct inheritance
 // WHY: MedBaseTransactionHandler provides batch loading infrastructure
 // INCLUDES: CreateTransactionDataTable(), ApplyTransCrossWalks(), BulkInsert()
@@ -1982,9 +1926,11 @@ public class TransactionHandler : MedBaseTransactionHandler
         return dt;
     }
 }
-Validación Automatizada:
+```
 
-csharp
+**Validación Automatizada:**
+
+```csharp
 public ValidationResult ValidateTransactionHandler(Type handlerType)
 {
     var result = new ValidationResult 
@@ -2056,67 +2002,53 @@ public ValidationResult ValidateTransactionHandler(Type handlerType)
     
     return result;
 }
-4.3 InventoryHandler (si aplica) (5 puntos)
+```
+
+## 4.3 InventoryHandler (si aplica) (5 puntos)
 Justificación del Subtotal: 5 puntos (29.4% de Handlers)
 Por qué 5 puntos:
+- CONDICIONAL: Solo si el cliente tiene inventory files
+- Combina FileHelpers parsing + handler logic
+- Menor peso que otros handlers porque no todos los clientes lo requieren
 
-CONDICIONAL: Solo si el cliente tiene inventory files
-Combina FileHelpers parsing + handler logic
-Menor peso que otros handlers porque no todos los clientes lo requieren
-Cálculo:
-
+**Cálculo:**
+```
 Criticidad: 3/5 (No todos los clientes lo necesitan)
 Impacto: 4/5 (Si se necesita, es crítico)
 Frecuencia: 3/5 (Moderado - ~50% clientes)
 Score = (3 × 4 × 3) / 7.2 = 5 puntos
-Criterio	Puntos	Justificación del Puntaje	Forma de Validación	Penalización por Incumplimiento
-Hereda de MedBaseGenericFileHandler	2	40% del subtotal
-• IMPORTANTE: Proporciona infraestructura de FileHelpers
-• Maneja parsing automático de record types
-• Incluye error handling y logging	class InventoryHandler :
-MedBaseGenericFileHandler<RecordType>	Lógica de parsing manual,
-código duplicado
-Constructor recibe typeof(RecordType)	1.5	30% del subtotal
-• IMPORTANTE: Le dice al handler qué record type usar para parsing
-• Sin esto, FileHelpers no sabe qué estructura esperar	public InventoryHandler(...)
-: base(conv, file, typeof(InventoryRecordType))	Runtime exception:
-"Record type not specified"
-ProcessRecord implementado	1.5	30% del subtotal
-• IMPORTANTE: Lógica específica por registro parseado
-• Aplicación de cross-walks, validaciones, inserts	Override de ProcessRecord
-con lógica de negocio	Datos parseados pero no procesados,
-no se persisten
-Código de Referencia:
+```
 
-CONDICIONAL: Solo si el cliente tiene inventory files
-Combina FileHelpers parsing + handler logic
-Menor peso que otros handlers porque no todos los clientes lo requieren
-Cálculo:
+| Criterio | Puntos | Justificación del Puntaje | Forma de Validación | Penalización por Incumplimiento |
+|----------|--------|---------------------------|---------------------|--------------------------------|
+| Hereda de MedBaseGenericFileHandler | 2 | 40% del subtotal<br>• IMPORTANTE: Proporciona infraestructura de FileHelpers<br>• Maneja parsing automático de record types<br>• Incluye error handling y logging | `class InventoryHandler : MedBaseGenericFileHandler<RecordType>` | Lógica de parsing manual,<br>código duplicado |
+| Constructor recibe typeof(RecordType) | 1.5 | 30% del subtotal<br>• IMPORTANTE: Le dice al handler qué record type usar para parsing<br>• Sin esto, FileHelpers no sabe qué estructura esperar | `public InventoryHandler(...) : base(conv, file, typeof(InventoryRecordType))` | Runtime exception:<br>"Record type not specified" |
+| ProcessRecord implementado | 1.5 | 30% del subtotal<br>• IMPORTANTE: Lógica específica por registro parseado<br>• Aplicación de cross-walks, validaciones, inserts | Override de ProcessRecord<br>con lógica de negocio | Datos parseados pero no procesados,<br>no se persisten |
 
+**Código de Referencia:**
+
+- CONDICIONAL: Solo si el cliente tiene inventory files
+- Combina FileHelpers parsing + handler logic
+- Menor peso que otros handlers porque no todos los clientes lo requieren
+
+**Cálculo:**
+```
 Criticidad: 3/5 (No todos los clientes lo necesitan)
 Impacto: 4/5 (Si se necesita, es crítico)
 Frecuencia: 3/5 (Moderado - ~50% clientes)
 Score = (3 × 4 × 3) / 7.2 = 5 puntos
-Criterio	Puntos	Justificación del Puntaje	Forma de Validación	Penalización por Incumplimiento
-Hereda de MedBaseGenericFileHandler	2	40% del subtotal
-• IMPORTANTE: Proporciona infraestructura de FileHelpers
-• Maneja parsing automático de record types
-• Incluye error handling y logging	class InventoryHandler :
-MedBaseGenericFileHandler<RecordType>	Lógica de parsing manual,
-código duplicado
-Constructor recibe typeof(RecordType)	1.5	30% del subtotal
-• IMPORTANTE: Le dice al handler qué record type usar para parsing
-• Sin esto, FileHelpers no sabe qué estructura esperar	public InventoryHandler(...)
-: base(conv, file, typeof(InventoryRecordType))	Runtime exception:
-"Record type not specified"
-ProcessRecord implementado	1.5	30% del subtotal
-• IMPORTANTE: Lógica específica por registro parseado
-• Aplicación de cross-walks, validaciones, inserts	Override de ProcessRecord
-con lógica de negocio	Datos parseados pero no procesados,
-no se persisten
-Código de Referencia:
+```
 
-csharp
+| Criterio | Puntos | Justificación del Puntaje | Forma de Validación | Penalización por Incumplimiento |
+|----------|--------|---------------------------|---------------------|--------------------------------|
+| Hereda de MedBaseGenericFileHandler | 2 | 40% del subtotal<br>• IMPORTANTE: Proporciona infraestructura de FileHelpers<br>• Maneja parsing automático de record types<br>• Incluye error handling y logging | `class InventoryHandler : MedBaseGenericFileHandler<RecordType>` | Lógica de parsing manual,<br>código duplicado |
+| Constructor recibe typeof(RecordType) | 1.5 | 30% del subtotal<br>• IMPORTANTE: Le dice al handler qué record type usar para parsing<br>• Sin esto, FileHelpers no sabe qué estructura esperar | `public InventoryHandler(...) : base(conv, file, typeof(InventoryRecordType))` | Runtime exception:<br>"Record type not specified" |
+| ProcessRecord implementado | 1.5 | 30% del subtotal<br>• IMPORTANTE: Lógica específica por registro parseado<br>• Aplicación de cross-walks, validaciones, inserts | Override de ProcessRecord<br>con lógica de negocio | Datos parseados pero no procesados,<br>no se persisten |
+
+
+**Código de Referencia:**
+
+```csharp
 // [2 pts] - Inheritance with generic record type
 // WHY: MedBaseGenericFileHandler<T> provides automatic FileHelpers parsing
 // BENEFIT: Framework automatically parses file using InventoryRecordType attributes
@@ -2165,9 +2097,11 @@ public class InventoryHandler : MedBaseGenericFileHandler<InventoryRecordType>
         SaveRecordToMaster(record);
     }
 }
-Validación Automatizada:
+```
 
-csharp
+**Validación Automatizada:**
+
+```csharp
 public ValidationResult ValidateInventoryHandler(Type handlerType)
 {
     var result = new ValidationResult 
@@ -2259,69 +2193,57 @@ public ValidationResult ValidateInventoryHandler(Type handlerType)
     
     return result;
 }
-5. CROSS-WALKS Y CONFIGURACIÓN (12 puntos)
+```
+
+## 5. CROSS-WALKS Y CONFIGURACIÓN (12 puntos)
 📌 Justificación del Peso Total: 12 puntos (12% del score)
 Razón: Cross-walks son mapeos configurables entre códigos del cliente y códigos estándar MDS:
+- Transaction Codes: Mapean códigos de transacción del cliente a tipos MDS (P, A, I, C)
+- Financial Classes: Mapean clases financieras del cliente a queues MDS (SP, COM, MCR, MCD)
 
-Transaction Codes: Mapean códigos de transacción del cliente a tipos MDS (P, A, I, C)
-Financial Classes: Mapean clases financieras del cliente a queues MDS (SP, COM, MCR, MCD)
-Impacto de Fallo:
+**Impacto de Fallo:**
 
-Sin cross-walks: 100% de códigos sin mapear → datos rechazados
-Arrays vacíos: Configuración imposible → formatter inutilizable sin developer
-Estructura incorrecta: Runtime exceptions al cargar configuración
-Evidencia de Criticidad del Contexto:
+- Sin cross-walks: 100% de códigos sin mapear → datos rechazados
+- Arrays vacíos: Configuración imposible → formatter inutilizable sin developer
+- Estructura incorrecta: Runtime exceptions al cargar configuración
 
-"Identifies required converters" (proc_mds2) "Verifies all sample codes are mapped" (mds_act2)
+**Evidencia de Criticidad del Contexto:**
 
-Cálculo:
+"Identifies required converters" (proc_mds2) 
+"Verifies all sample codes are mapped" (mds_act2)
 
-Criticidad: 4/5 (Datos sin mapear son rechazados)
+**Cálculo:**
+
+```Criticidad: 4/5 (Datos sin mapear son rechazados)
 Impacto: 4/5 (Afecta todas las transacciones/cuentas)
 Frecuencia: 3/5 (Moderado - estructuras conocidas)
 Score = (4 × 4 × 3) / 4 = 12 puntos
-5.1 Transaction Code Items (6 puntos)
+```
+
+### 5.1 Transaction Code Items (6 puntos)
 Justificación del Subtotal: 6 puntos (50% de Cross-Walks)
 Por qué 6 puntos:
+- Mayor peso que Financial Classes porque cada transacción requiere mapeo
+- Sin estos mapeos, todas las transacciones fallan validación en Cupload
+- Estructura incorrecta causa runtime exception al cargar cross-walks
 
-Mayor peso que Financial Classes porque cada transacción requiere mapeo
-Sin estos mapeos, todas las transacciones fallan validación en Cupload
-Estructura incorrecta causa runtime exception al cargar cross-walks
-Cálculo:
-
+**Cálculo:**
+```
 Criticidad: 5/5 (Todas las transacciones fallan sin esto)
 Impacto: 5/5 (Afecta historial completo de transacciones)
 Frecuencia: 3/5 (Estructura conocida pero errores comunes)
 Score = (5 × 5 × 3) / 12.5 = 6 puntos
-Criterio	Puntos	Justificación del Puntaje	Forma de Validación	Penalización por Incumplimiento
-Array TransactionCodeItems existe	2	33.3% del subtotal
-• CRÍTICO: Sin este array, cross-walk no se puede configurar
-• LoadSettings lanza NullReferenceException
-• Usado por TransCodeCrossWalkStore	Array estático presente:
-private static TransactionCodeItem[]
-TransactionCodeItems	BLOQUEANTE:
-NullReferenceException en LoadSettings,
-formatter no arranca
-Array tiene elementos iniciales	2	33.3% del subtotal
-• IMPORTANTE: Sin códigos sample, usuarios no saben qué mapear
-• Best practice: incluir los 5-10 códigos más comunes del cliente
-• Facilita configuración inicial	Array tiene al menos 3 elementos:
-new TransactionCodeItem[] {
-  new(...), new(...), ...
-}	Configuración difícil para usuarios,
-múltiples iteraciones de setup
-Estructura correcta de items	2	33.3% del subtotal
-• IMPORTANTE: Cada item debe tener ClientCode y TransType
-• TransType debe ser P, A, I, o C (Payment, Adjustment, Info, Charge)
-• ClientCode debe ser string válido del sistema del cliente	Items con estructura:
-new TransactionCodeItem(
-  "CHG", // ClientCode
-  "C",   // TransType
-  "Charge")	Runtime exception al aplicar cross-walk,
-validación falla
-Código de Referencia con Anotaciones:
+```
 
-csharp
+| Criterio | Puntos | Justificación del Puntaje | Forma de Validación | Penalización por Incumplimiento |
+|----------|--------|---------------------------|---------------------|--------------------------------|
+| Array TransactionCodeItems existe | 2 | 33.3% del subtotal<br>• CRÍTICO: Sin este array, cross-walk no se puede configurar<br>• LoadSettings lanza NullReferenceException<br>• Usado por TransCodeCrossWalkStore | Array estático presente:<br>`private static TransactionCodeItem[] TransactionCodeItems` | BLOQUEANTE:<br>NullReferenceException en LoadSettings,<br>formatter no arranca |
+| Array tiene elementos iniciales | 2 | 33.3% del subtotal<br>• IMPORTANTE: Sin códigos sample, usuarios no saben qué mapear<br>• Best practice: incluir los 5-10 códigos más comunes del cliente<br>• Facilita configuración inicial | Array tiene al menos 3 elementos:<br>`new TransactionCodeItem[] {`<br>`  new(...), new(...), ...`<br>`}` | Configuración difícil para usuarios,<br>múltiples iteraciones de setup |
+| Estructura correcta de items | 2 | 33.3% del subtotal<br>• IMPORTANTE: Cada item debe tener ClientCode y TransType<br>• TransType debe ser P, A, I, o C (Payment, Adjustment, Info, Charge)<br>• ClientCode debe ser string válido del sistema del cliente | Items con estructura:<br>`new TransactionCodeItem(`<br>`  "CHG", // ClientCode`<br>`  "C",   // TransType`<br>`  "Charge")` | Runtime exception al aplicar cross-walk,<br>validación falla |
+
+**Código de Referencia con Anotaciones:**
+
+```csharp
 public class PriRiver : BaseConverter, IConverterSettings, IAccountCache
 {
     // [2 pts] - Array declaration (CRITICAL)
@@ -2391,9 +2313,10 @@ public class PriRiver : BaseConverter, IConverterSettings, IAccountCache
         new MiscCodeItem("AUTO", "Auto Insurance"),
     };
 }
-Validación Automatizada:
+```
 
-csharp
+**Validación Automatizada:**
+```csharp
 public ValidationResult ValidateTransactionCodeItems(Type formatterType)
 {
     var result = new ValidationResult 
@@ -2528,45 +2451,31 @@ private bool IsValidTransType(string transType)
            transType == "I" || // Info
            transType == "C";   // Charge
 }
-5.2 Financial Class Items (6 puntos)
+```
+
+## 5.2 Financial Class Items (6 puntos)
 Justificación del Subtotal: 6 puntos (50% de Cross-Walks)
 Por qué 6 puntos:
+- Igual peso que Transaction Codes porque ambos son igualmente críticos
+- Financial classes determinan queue assignment (impacto directo en negocio)
+- Sin mapeos, cuentas no se clasifican correctamente → estrategia de colección incorrecta
 
-Igual peso que Transaction Codes porque ambos son igualmente críticos
-Financial classes determinan queue assignment (impacto directo en negocio)
-Sin mapeos, cuentas no se clasifican correctamente → estrategia de colección incorrecta
-Cálculo:
-
+**Cálculo:**
+```
 Criticidad: 5/5 (Clasificación incorrecta = estrategia incorrecta)
 Impacto: 5/5 (Afecta todas las cuentas)
 Frecuencia: 3/5 (Estructura conocida)
 Score = (5 × 5 × 3) / 12.5 = 6 puntos
-Criterio	Puntos	Justificación del Puntaje	Forma de Validación	Penalización por Incumplimiento
-Array FinancialClassItems existe	2	33.3% del subtotal
-• CRÍTICO: Sin este array, financial class cross-walk no funciona
-• LoadSettings lanza NullReferenceException
-• Usado por FinancialClassCrossWalkStore	Array estático presente:
-private static MiscCodeItem[]
-FinancialClassItems	BLOQUEANTE:
-NullReferenceException en LoadSettings
-Array tiene elementos iniciales	2	33.3% del subtotal
-• IMPORTANTE: Debe incluir las clases más comunes
-• EJEMPLOS: SP, COM, MCR, MCD
-• Facilita setup inicial por parte de Mitch/Shawna	Array tiene al menos 4 elementos:
-SP, COM, MCR, MCD	Configuración difícil,
-múltiples iteraciones
-Estructura correcta de items	2	33.3% del subtotal
-• IMPORTANTE: Cada item debe tener ClientCode y Description
-• ClientCode se mapea a MDS standard codes	Items con estructura:
-new MiscCodeItem(
-  "SP",        // ClientCode
-  "Self Pay")  // Description	Runtime exception al configurar,
-mapeos no funcionan
-Código de Referencia:
+```
+| Criterio | Puntos | Justificación del Puntaje | Forma de Validación | Penalización por Incumplimiento |
+|----------|--------|---------------------------|---------------------|--------------------------------|
+| Array FinancialClassItems existe | 2 | 33.3% del subtotal<br>• CRÍTICO: Sin este array, financial class cross-walk no funciona<br>• LoadSettings lanza NullReferenceException<br>• Usado por FinancialClassCrossWalkStore | Array estático presente:<br>`private static MiscCodeItem[] FinancialClassItems` | BLOQUEANTE:<br>NullReferenceException en LoadSettings |
+| Array tiene elementos iniciales | 2 | 33.3% del subtotal<br>• IMPORTANTE: Debe incluir las clases más comunes<br>• EJEMPLOS: SP, COM, MCR, MCD<br>• Facilita setup inicial por parte de Mitch/Shawna | Array tiene al menos 4 elementos:<br>SP, COM, MCR, MCD | Configuración difícil,<br>múltiples iteraciones |
+| Estructura correcta de items | 2 | 33.3% del subtotal<br>• IMPORTANTE: Cada item debe tener ClientCode y Description<br>• ClientCode se mapea a MDS standard codes | Items con estructura:<br>`new MiscCodeItem(`<br>`  "SP",        // ClientCode`<br>`  "Self Pay")  // Description` | Runtime exception al configurar,<br>mapeos no funcionan |
 
-Validación Automatizada:
+**Validación Automatizada:**
 
-csharp
+```csharp
 public ValidationResult ValidateFinancialClassItems(Type formatterType)
 {
     var result = new ValidationResult 
@@ -2713,11 +2622,10 @@ public ValidationResult ValidateFinancialClassItems(Type formatterType)
     
     return result;
 }
-6. ROBUSTEZ Y EDGE CASES (8 puntos)
-📌 Justificación del Peso Total: 8 puntos (8% del score)
-Razón: Esta sección cubre defensividad del código y manejo de **
+```
 
-markdown
+## 6. ROBUSTEZ Y EDGE CASES (8 puntos)
+📌 Justificación del Peso Total: 8 puntos (8% del score)
 **Razón:** Esta sección cubre **defensividad del código** y manejo de **casos extremos** que causan crashes en producción:
 - **Null checks**: Previenen NullReferenceException
 - **Empty file handling**: Archivos vacíos no deben crashear el sistema
@@ -2734,12 +2642,16 @@ markdown
 > *"Some nonsensical or invalid code"* (MDS Project Follow-UP)
 
 **Cálculo:**
-Criticidad: 3/5 (No bloqueante pero causa crashes) Impacto: 3/5 (Afecta estabilidad) Frecuencia: 5/5 (Edge cases muy comunes en producción) Score = (3 × 3 × 5) / 5.6 = 8 puntos
-
+```
+Criticidad: 3/5 (No bloqueante pero causa crashes)
+Impacto: 3/5 (Afecta estabilidad)
+Frecuencia: 5/5 (Edge cases muy comunes en producción)
+Score = (3 × 3 × 5) / 5.6 = 8 puntos
+```
 
 ---
 
-## 6.1 Null Safety y Defensive Coding (4 puntos)
+### 6.1 Null Safety y Defensive Coding (4 puntos)
 
 | Criterio | Puntos | Justificación | Validación | Penalización |
 |----------|--------|---------------|------------|--------------|
@@ -2793,9 +2705,11 @@ protected override void ProcessRecord(object pRecord)
     // Safe to proceed with processing
     ProcessRecordInternal(record, converter);
 }
-Validación Automatizada:
+```
 
-csharp
+**Validación Automatizada:**
+
+```csharp
 public ValidationResult ValidateNullSafety(Type handlerType)
 {
     var result = new ValidationResult 
@@ -2865,24 +2779,18 @@ public ValidationResult ValidateNullSafety(Type handlerType)
     
     return result;
 }
-6.2 Error Handling y Logging (4 puntos)
-Criterio	Puntos	Justificación	Validación	Penalización
-Try-catch en operaciones críticas	2	50% del subtotal
-• IMPORTANTE: DB operations pueden fallar (network, constraints)
-• Sin try-catch, una falla detiene todo el batch	Try-catch alrededor de:
-SaveToDatabase()
-BulkInsert()	Batch completo falla por un registro malo
-Logging con LogError/LogWarning	2	50% del subtotal
-• CRÍTICO: Sin logs, debugging en producción es imposible
-• MVP error: usar Console.WriteLine en lugar de framework logging
-• DEBE usar: LogError(), LogWarning(), LogInfo()	Llamadas a:
-LogError(message)
-LogWarning(message)
-NO Console.WriteLine	Debugging imposible,
-issues no detectables
-Código de Referencia:
+```
 
-csharp
+### 6.2 Error Handling y Logging (4 puntos)
+
+| Criterio | Puntos | Justificación | Validación | Penalización |
+|----------|--------|---------------|------------|--------------|
+| Try-catch en operaciones críticas | 2 | 50% del subtotal<br>• IMPORTANTE: DB operations pueden fallar (network, constraints)<br>• Sin try-catch, una falla detiene todo el batch | Try-catch alrededor de:<br>SaveToDatabase()<br>BulkInsert() | Batch completo falla por un registro malo |
+| Logging con LogError/LogWarning | 2 | 50% del subtotal<br>• CRÍTICO: Sin logs, debugging en producción es imposible<br>• MVP error: usar Console.WriteLine en lugar de framework logging<br>• DEBE usar: LogError(), LogWarning(), LogInfo() | Llamadas a:<br>LogError(message)<br>LogWarning(message)<br>NO Console.WriteLine | Debugging imposible,<br>issues no detectables |
+
+**Código de Referencia:**
+
+```csharp
 protected override void ProcessRecord(object pRecord)
 {
     var record = pRecord as InventoryRecordType;
@@ -2925,9 +2833,11 @@ protected override void ProcessRecord(object pRecord)
         CurrentCount++; // Always increment counter
     }
 }
-Validación Automatizada:
+```
 
-csharp
+**Validación Automatizada:**
+
+```csharp
 public ValidationResult ValidateErrorHandling(Type handlerType)
 {
     var result = new ValidationResult 
@@ -3008,41 +2918,44 @@ public ValidationResult ValidateErrorHandling(Type handlerType)
     
     return result;
 }
-7. DOCUMENTACIÓN Y LEGIBILIDAD (5 puntos)
+
+```
+
+## 7. DOCUMENTACIÓN Y LEGIBILIDAD (5 puntos)
 📌 Justificación del Peso Total: 5 puntos (5% del score)
 Razón: Código sin documentación es no mantenible por equipo MDS:
 
-README.md: Instrucciones de configuración para Mitch/Shawna
-XML comments: Documentación inline para developers
-Naming conventions: Código auto-documentado
-Impacto de Fallo:
+- README.md: Instrucciones de configuración para Mitch/Shawna
+- XML comments: Documentación inline para developers
+- Naming conventions: Código auto-documentado
 
-Mitch/Shawna no pueden configurar el formatter sin ayuda
-Future developers no entienden la lógica
-Multiple support tickets por falta de documentación
-Evidencia de Criticidad del Contexto:
+**Impacto de Fallo:**
+
+- Future developers no entienden la lógica
+- Multiple support tickets por falta de documentación
+
+**Evidencia de Criticidad del Contexto:**
 
 "Overly detailed README; missing standard .csproj structure" (MDS Project Follow-UP) "Confusing variable naming" (MDS Project Follow-UP)
 
-Cálculo:
-
+**Cálculo:**
+```
 Criticidad: 2/5 (No impacta funcionalidad)
 Impacto: 3/5 (Impacta mantenibilidad)
 Frecuencia: 5/5 (Muy común olvidar documentar)
 Score = (2 × 3 × 5) / 6 = 5 puntos
-7.1 README.md (3 puntos)
-Criterio	Puntos	Justificación	Validación	Penalización
-README exists con estructura estándar	1.5	50% del subtotal
-• IMPORTANTE: Mitch/Shawna necesitan instrucciones de configuración
-• Debe incluir: Client info, File specs, Cross-walk setup	Archivo README.md existe
-Secciones: Client Info, Files, Cross-Walks	Support tickets por falta de instrucciones
-Cross-walk configuration documented	1.5	50% del subtotal
-• CRÍTICO: Sin esto, usuarios no saben cómo configurar códigos
-• Debe explicar cómo usar ConverterManager UI	Sección "Cross-Walk Configuration"
-con ejemplos de UI	Múltiples iteraciones de configuración
-Template de README.md:
+```
 
-markdown
+### 7.1 README.md (3 puntos)
+
+| Criterio | Puntos | Justificación | Validación | Penalización |
+|----------|--------|---------------|------------|--------------|
+| README exists con estructura estándar | 1.5 | 50% del subtotal<br>• IMPORTANTE: Mitch/Shawna necesitan instrucciones de configuración<br>• Debe incluir: Client info, File specs, Cross-walk setup | Archivo README.md existe<br>Secciones: Client Info, Files, Cross-Walks | Support tickets por falta de instrucciones |
+| Cross-walk configuration documented | 1.5 | 50% del subtotal<br>• CRÍTICO: Sin esto, usuarios no saben cómo configurar códigos<br>• Debe explicar cómo usar ConverterManager UI | Sección "Cross-Walk Configuration"<br>con ejemplos de UI | Múltiples iteraciones de configuración |
+
+**Template de README.md:**
+
+```markdown
 # PriRiver - River Medical Center Formatter
 
 ## Client Information
@@ -3102,9 +3015,11 @@ CHG → C → Charge PSP → P → Payment Self Pay PINS → P → Payment Insur
 - **Developer**: [Your Name]
 - **Date Created**: 2024-01-15
 - **Last Updated**: 2024-01-15
-Validación Automatizada:
+```
 
-csharp
+**Validación Automatizada:**
+
+```csharp
 public ValidationResult ValidateReadme(string formatterPath)
 {
     var result = new ValidationResult 
@@ -3195,20 +3110,18 @@ public ValidationResult ValidateReadme(string formatterPath)
     
     return result;
 }
-7.2 Code Comments y Naming (2 puntos)
-Criterio	Puntos	Justificación	Validación	Penalización
-XML comments en métodos públicos	1	50% del subtotal
-• IMPORTANTE: Permite IntelliSense en Visual Studio
-• Documenta propósito de handlers	XML comments /// <summary>
-en handlers públicos	Developers no entienden propósito
-Variable naming descriptivo	1	50% del subtotal
-• IMPORTANTE: MVP error: "Confusing variable naming"
-• CORRECTO: accountNumber, transactionCode
-• INCORRECTO: x, tmp, var1	Variables con nombres descriptivos
-NO: single letters (excepto loops)	Código difícil de mantener
-Código de Referencia:
+```
 
-csharp
+### 7.2 Code Comments y Naming (2 puntos)
+
+| Criterio | Puntos | Justificación | Validación | Penalización |
+|----------|--------|---------------|------------|--------------|
+| XML comments en métodos públicos | 1 | 50% del subtotal<br>• IMPORTANTE: Permite IntelliSense en Visual Studio<br>• Documenta propósito de handlers | XML comments /// <summary><br>en handlers públicos | Developers no entienden propósito |
+| Variable naming descriptivo | 1 | 50% del subtotal<br>• IMPORTANTE: MVP error: "Confusing variable naming"<br>• CORRECTO: accountNumber, transactionCode<br>• INCORRECTO: x, tmp, var1 | Variables con nombres descriptivos<br>NO: single letters (excepto loops) | Código difícil de mantener |
+
+**Código de Referencia:**
+
+```csharp
 /// <summary>
 /// Handles demographics/inventory file processing for River Medical Center.
 /// Processes account information and applies Meditech-specific business rules.
@@ -3264,9 +3177,11 @@ public class DemographicsHandler : MedBaseCollectionsHandler
         // Process record...
     }
 }
-Validación Automatizada:
+```
 
-csharp
+**Validación Automatizada:**
+
+```csharp
 public ValidationResult ValidateCodeQuality(Type handlerType)
 {
     var result = new ValidationResult 
@@ -3364,10 +3279,9 @@ private bool HasXmlComment(MemberInfo member)
         a.GetType().Name.Contains("Description") || 
         a.GetType().Name.Contains("Summary"));
 }
+```
 
-
-
-8. RESUMEN Y SCORING FINAL
+## 8. RESUMEN Y SCORING FINAL
 📊 Distribución de Puntos (Total: 100)
 ┌─────────────────────────────────────────────────────────────┐
 │                    SCORING BREAKDOWN                         │
@@ -3408,8 +3322,8 @@ private bool HasXmlComment(MemberInfo member)
 
 TOTAL: 100 points
 
-📋 Validation Report Template
-csharp
+## 📋 Validation Report Template
+```csharp
 public class FormatterValidationReport
 {
     public string FormatterName { get; set; }
@@ -3504,6 +3418,7 @@ public class FormatterValidationReport
     }
 }
 
+```
 
 
 
