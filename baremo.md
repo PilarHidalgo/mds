@@ -150,39 +150,31 @@ public ValidationResult ValidateBaseArchitecture(Type formatterType)
     
     return result;
 }
-1.2 Implementación de Métodos Abstractos Obligatorios (10 puntos)
-Justificación del Subtotal: 10 puntos (40% de Arquitectura)
+```
+## 1.2 Implementación de Métodos Abstractos Obligatorios (10 puntos)
+### Justificación del Subtotal: 10 puntos (40% de Arquitectura)
 Por qué 10 puntos:
 
-GetConverter() y QualifyFile() son métodos abstractos en BaseConverter
-Sin implementación, el código no compila
-Son el punto de entrada al procesamiento de archivos
-Errores aquí resultan en archivos ignorados silenciosamente
-Cálculo:
+- GetConverter() y QualifyFile() son métodos abstractos en BaseConverter
+- Sin implementación, el código no compila
+- Son el punto de entrada al procesamiento de archivos
+- Errores aquí resultan en archivos ignorados silenciosamente
 
+Cálculo:
+```
 Criticidad: 5/5 (Compilation error)
 Impacto: 5/5 (Ningún archivo se procesa)
 Frecuencia: 4/5 (Común en generación automática)
 Score = (5 × 5 × 4) / 10 = 10 puntos
-Criterio	Puntos	Justificación del Puntaje	Forma de Validación	Penalización por Incumplimiento
-GetConverter() implementado	5	50% del subtotal
-• CRÍTICO: Es el router que devuelve el handler apropiado
-• Sin él, ningún archivo se procesa
-• Llamado por el pipeline en ProcessFile()
-• Método abstracto - obligatorio	Método existe, no es abstracto,
-retorna BaseConversionClass
-según InputType	BLOQUEANTE: Compilation error
-GetConverter() cubre todos InputTypes	2	20% del subtotal
-• IMPORTANTE: Debe manejar todos los tipos de archivo del cliente
-• InputTypes no manejados = archivos ignorados silenciosamente
-• Común error: solo implementar Demographics, olvidar Inventory	Switch/if cubre todos los valores
-retornados por QualifyFile()	Archivos del cliente no procesados sin error visible
-QualifyFile() implementado	3	30% del subtotal
-• CRÍTICO: Clasifica archivos entrantes por nombre/contenido
-• Sin él, todos los archivos son InputType.Unknown
-• Método abstracto - obligatorio	Método existe,
-retorna InputType
-basado en análisis de archivo	BLOQUEANTE: Compilation error
+
+```
+
+| Criterio | Puntos | Justificación del Puntaje | Forma de Validación | Penalización por Incumplimiento |
+|----------|--------|---------------------------|---------------------|--------------------------------|
+| GetConverter() implementado | 5 | 50% del subtotal<br>• CRÍTICO: Es el router que devuelve el handler apropiado<br>• Sin él, ningún archivo se procesa<br>• Llamado por el pipeline en ProcessFile()<br>• Método abstracto - obligatorio | Método existe, no es abstracto,<br>retorna BaseConversionClass<br>según InputType | BLOQUEANTE: Compilation error |
+| GetConverter() cubre todos InputTypes | 2 | 20% del subtotal<br>• IMPORTANTE: Debe manejar todos los tipos de archivo del cliente<br>• InputTypes no manejados = archivos ignorados silenciosamente<br>• Común error: solo implementar Demographics, olvidar Inventory | Switch/if cubre todos los valores<br>retornados por QualifyFile() | Archivos del cliente no procesados sin error visible |
+| QualifyFile() implementado | 3 | 30% del subtotal<br>• CRÍTICO: Clasifica archivos entrantes por nombre/contenido<br>• Sin él, todos los archivos son InputType.Unknown<br>• Método abstracto - obligatorio | Método existe,<br>retorna InputType<br>basado en análisis de archivo | BLOQUEANTE: Compilation error |
+
 Código de Referencia con Anotaciones:
 
 csharp
@@ -236,9 +228,11 @@ protected override InputType QualifyFile(ProcessFile pFile)
         
     return InputType.Unknown; // Will be logged for review
 }
+
+```
 Validación Automatizada:
 
-csharp
+```csharp
 public ValidationResult ValidateAbstractMethods(Type formatterType)
 {
     var result = new ValidationResult { Category = "Abstract Methods", MaxScore = 10 };
@@ -307,44 +301,37 @@ private List<InputType> AnalyzeInputTypeCoverage(MethodInfo method)
     if (methodBody.Contains("InputType.Skip")) covered.Add(InputType.Skip);
     
     return covered;
-}
-1.3 Propiedades y Constantes del Framework (5 puntos)
-Justificación del Subtotal: 5 puntos (20% de Arquitectura)
+} ```
+
+
+## 1.3 Propiedades y Constantes del Framework (5 puntos)
+### Justificación del Subtotal: 5 puntos (20% de Arquitectura)
+
 Por qué 5 puntos:
 
-Menor peso que subsecciones anteriores porque no son bloqueantes
-Sin embargo, su ausencia causa bugs silenciosos en producción
-Son best practices del framework MDS
-Cálculo:
+- Menor peso que subsecciones anteriores porque no son bloqueantes
+- Sin embargo, su ausencia causa bugs silenciosos en producción
+- Son best practices del framework MDS
 
+Cálculo:
+```
 Criticidad: 3/5 (Bugs en producción, no bloqueante)
 Impacto: 3/5 (Afecta logging y configuración)
 Frecuencia: 4/5 (Frecuentemente olvidados)
 Score = (3 × 3 × 4) / 7.2 = 5 puntos
-Criterio	Puntos	Justificación del Puntaje	Forma de Validación	Penalización por Incumplimiento
-ClientCode como constante pública	2	40% del subtotal
-• IMPORTANTE: Usado en 15+ lugares del framework
-• Logging, DB queries, cross-walk paths
-• Hardcodear el valor causa inconsistencias
-• Facilita debugging y auditoría	public const string ClientCode = "XXX"
-presente en clase	Bugs silenciosos en producción,
-logs inconsistentes
-Propiedades de Interfaces	2	40% del subtotal
-• IMPORTANTE: Accounts y Settings son accedidas por el framework
-• Deben existir y ser inicializadas en constructor
-• El framework asume que están disponibles	Properties Accounts y Settings
-con getters/setters públicos,
-inicializadas en constructor	Runtime NullReferenceException
-al acceder propiedades
-AccountType enum (si multi-tipo)	1	20% del subtotal
-• CONDICIONAL: Solo para clientes con múltiples líneas de negocio
-• Facilita segregación de lógica (Early Out vs Bad Debt)
-• Best practice para claridad del código	Enum definido si cliente
-tiene >1 account type	Lógica de negocio mezclada,
-código menos mantenible
+
+```
+| Criterio | Puntos | Justificación del Puntaje | Forma de Validación | Penalización por Incumplimiento |
+|----------|--------|---------------------------|---------------------|--------------------------------|
+| GetConverter() implementado | 5 | 50% del subtotal<br>• CRÍTICO: Es el router que devuelve el handler apropiado<br>• Sin él, ningún archivo se procesa<br>• Llamado por el pipeline en ProcessFile()<br>• Método abstracto - obligatorio | Método existe, no es abstracto,<br>retorna BaseConversionClass<br>según InputType | BLOQUEANTE: Compilation error |
+| GetConverter() cubre todos InputTypes | 2 | 20% del subtotal<br>• IMPORTANTE: Debe manejar todos los tipos de archivo del cliente<br>• InputTypes no manejados = archivos ignorados silenciosamente<br>• Común error: solo implementar Demographics, olvidar Inventory | Switch/if cubre todos los valores<br>retornados por QualifyFile() | Archivos del cliente no procesados sin error visible |
+| QualifyFile() implementado | 3 | 30% del subtotal<br>• CRÍTICO: Clasifica archivos entrantes por nombre/contenido<br>• Sin él, todos los archivos son InputType.Unknown<br>• Método abstracto - obligatorio | Método existe,<br>retorna InputType<br>basado en análisis de archivo | BLOQUEANTE: Compilation error |
+
+
+
 Código de Referencia:
 
-csharp
+```csharp
 public class PriRiver : BaseConverter, IConverterSettings, IAccountCache
 {
     // [2 pts] - ClientCode constant
@@ -376,9 +363,11 @@ public class PriRiver : BaseConverter, IConverterSettings, IAccountCache
         // Settings initialized in LoadSettings() override
     }
 }
+
+```
 Validación Automatizada:
 
-csharp
+```csharp
 public ValidationResult ValidatePropertiesAndConstants(Type formatterType)
 {
     var result = new ValidationResult { Category = "Properties & Constants", MaxScore = 5 };
@@ -458,42 +447,48 @@ public ValidationResult ValidatePropertiesAndConstants(Type formatterType)
     
     return result;
 }
+```
 
 ## 2. PIPELINE DE PROCESAMIENTO Y LIFECYCLE (20 puntos)
 ### 📌 Justificación del Peso Total: 20 puntos (20% del score)
 Razón: El pipeline controla el lifecycle completo del formatter:
 
-Inicialización: LoadSettings() carga configuración y cross-walks
-Configuración: Configure() permite al usuario definir mapeos
-Persistencia: SaveSettings() guarda cambios
-Impacto de Fallo:
+- Inicialización: LoadSettings() carga configuración y cross-walks
+- Configuración: Configure() permite al usuario definir mapeos
+- Persistencia: SaveSettings() guarda cambios
 
-Sin LoadSettings: Cross-walks no cargan → todas las transacciones sin mapear
-Sin Configure: Usuario no puede configurar el formatter
-Sin SaveSettings: Configuración se pierde entre ejecuciones
-Evidencia de Criticidad del Contexto:
+### Impacto de Fallo:
+- Sin LoadSettings: Cross-walks no cargan → todas las transacciones sin mapear
+- Sin Configure: Usuario no puede configurar el formatter
+- Sin SaveSettings: Configuración se pierde entre ejecuciones
+
+### Evidencia de Criticidad del Contexto:
 
 "Missing LoadSettings() and required overrides" (MDS Project Follow-UP)
 
 Cálculo:
-
+```
 Criticidad: 4/5 (Causa fallos en runtime)
 Impacto: 5/5 (Afecta todas las ejecuciones)
 Frecuencia: 5/5 (Error muy común en generación)
 Score = (4 × 5 × 5) / 5 = 20 puntos
-2.1 LoadSettings Override (8 puntos)
-Justificación del Subtotal: 8 puntos (40% de Pipeline)
+```
+
+## 2.1 LoadSettings Override (8 puntos)
+### Justificación del Subtotal: 8 puntos (40% de Pipeline)
 Por qué 8 puntos:
 
-Es el punto de entrada del lifecycle
-Sin LoadSettings, los cross-walks nunca se cargan
-Resulta en 100% de transacciones sin mapear
-Error más común según feedback del MVP
-Cálculo:
+- Es el punto de entrada del lifecycle
+- Sin LoadSettings, los cross-walks nunca se cargan
+- Resulta en 100% de transacciones sin mapear
+- Error más común según feedback del MVP
 
+Cálculo:
+```
 Criticidad: 5/5 (Sin cross-walks, procesamiento falla)
 Impacto: 5/5 (Afecta todas las transacciones)
 Frecuencia: 5/5 (Muy común olvidarlo)
 Score = (5 × 5 × 5) / 15.6 = 8 puntos
-| Criterio | Puntos | Justificación del Puntaje | Forma de Validación | Penalización por Incumplimiento |
+```
+
 
