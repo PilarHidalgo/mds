@@ -502,7 +502,129 @@ public override void LoadSettings()
 }
 ```
 
-(Annotated validation-agent logic preserved in full.)
+**Validation agent logic** 
+```csharp
+public ValidationResult ValidateLoadSettings(Type formatterType)
+{
+    var result = new ValidationResult 
+    { 
+        Category = "LoadSettings", 
+        MaxScore = 8 
+    };
+    
+    // Check 1: Override exists (3 pts)
+    var method = formatterType.GetMethod("LoadSettings", 
+        BindingFlags.NonPublic | BindingFlags.Instance);
+    
+    if (method == null || method.DeclaringType == typeof(BaseConverter))
+    {
+        result.AddCriticalError(
+            "BLOCKER: LoadSettings() not overridden",
+            "Impact: Cross-walks will not load, all transactions will be unmapped",
+            "Fix: Add 'protected override void LoadSettings(ConverterCmd cmd)'"
+        );
+        return result; // Don't continue - nothing to validate
+    }
+    result.Score += 3;
+    result.AddEvidence("✓ LoadSettings() override present");
+    
+    // Decompile method body for analysis
+    var methodBody = DecompileMethodBody(method);
+    
+    // Check 2: TransCodeCrossWalkStore initialization (2.5 pts)
+    if (!methodBody.Contains("TransCodeCrossWalkStore"))
+    {
+        result.AddCriticalError(
+            "BLOCKER: TransCodeCrossWalkStore not initialized",
+            "Impact: ALL transaction codes will be unmapped",
+            "Error in production: 'Transaction code not found in cross-walk'",
+            "Fix: Add 'Meditech.TransCodeCrossWalkStore = new TransactionCodeCrossWalkBase(...)'"
+        );
+    }
+    else
+    {
+        // Verify it's using TransactionCodeCrossWalkBase
+        if (methodBody.Contains("new TransactionCodeCrossWalkBase"))
+        {
+            result.Score += 2.5;
+            result.AddEvidence("✓ TransCodeCrossWalkStore initialized correctly");
+        }
+        else
+        {
+            result.AddWarning(
+                "TransCodeCrossWalkStore initialized but not using TransactionCodeCrossWalkBase",
+                "May cause compatibility issues with framework"
+            );
+            result.Score += 1.5; // Partial credit
+        }
+    }
+    
+    // Check 3: FinancialClassCrossWalkStore initialization (2.5 pts)
+    if (!methodBody.Contains("FinancialClassCrossWalkStore"))
+    {
+        result.AddCriticalError(
+            "BLOCKER: FinancialClassCrossWalkStore not initialized",
+            "Impact: Financial classes won't map to MDS codes (SP, COM, MCR, MCD)",
+            "Business Impact: Accounts assigned to wrong collection queues",
+            "Fix: Add 'Meditech.FinancialClassCrossWalkStore = new MiscCodeCrossWalkBase(...)'"
+        );
+    }
+    else
+    {
+        if (methodBody.Contains("new MiscCodeCrossWalkBase"))
+        {
+            result.Score += 2.5;
+            result.AddEvidence("✓ FinancialClassCrossWalkStore initialized correctly");
+        }
+        else
+        {
+            result.AddWarning(
+                "FinancialClassCrossWalkStore initialized but not using MiscCodeCrossWalkBase"
+            );
+            result.Score += 1.5; // Partial credit
+        }
+    }
+    
+    return result;
+}
+```
+**Reference code**
+```csharp
+// [3 pts] - Override declaration
+protected override void LoadSettings(ConverterCmd pConverterCmd)
+{
+    // WHY CRITICAL: This is called once at the start of each formatter execution
+    // IMPACT: Without this override, cross-walks are never loaded
+    // FREQUENCY: Very common error - MVP formatters often missing this
+    
+    // [2.5 pts] - Transaction codes initialization
+    // WHY CRITICAL: Every transaction in demographic files needs code mapping
+    // EXAMPLES: "CHG" → Charge, "PSP" → Payment Self Pay, "PMCR" → Payment Medicare
+    // IMPACT: Without this, ALL transactions fail validation at Cupload insert
+    // ERROR MESSAGE: "Transaction code 'CHG' not found in cross-walk"
+    Meditech.Meditech.TransCodeCrossWalkStore = new TransactionCodeCrossWalkBase(
+        pConverterCmd.ProfileID,      // Links to client-specific configuration
+        "TransactionCodes",            // XML node name in config file
+        GetConfigFileSpec(),           // Path: C:\MDS\Configs\ClientXXX.xml
+        TransactionCodeItems           // Static array defined in this class
+    );
+    
+    // [2.5 pts] - Financial class initialization
+    // WHY CRITICAL: Determines queue assignment (SP, COM, MCR, MCD)
+    // BUSINESS IMPACT: Wrong queue = wrong collection strategy = revenue loss
+    // EXAMPLES: "SP" → Self Pay, "BC" → Blue Cross, "MCR" → Medicare
+    // IMPACT: Accounts classified incorrectly, sent to wrong collectors
+    Meditech.Meditech.FinancialClassCrossWalkStore = new MiscCodeCrossWalkBase(
+        pConverterCmd.ProfileID,
+        "FinancialClasses",
+        GetConfigFileSpec(),
+        FinancialClassItems
+    );
+    
+    // Initialize Settings object (not scored separately, but required)
+    Settings = new ConverterSettings(GetConfigFileSpec(), pConverterCmd);
+}
+```
 
 ---
 
@@ -539,7 +661,131 @@ public override void Configure()
 }
 ```
 
-(All handler-binding logic and scoring annotations translated.)
+**Validation agent logic** 
+```csharp
+public ValidationResult ValidateConfigure(Type formatterType)
+{
+    var result = new ValidationResult 
+    { 
+        Category = "Configure", 
+        MaxScore = 7 
+    };
+    
+    var method = formatterType.GetMethod("Configure", 
+        BindingFlags.NonPublic | BindingFlags.Instance);
+    
+    if (method == null)
+    {
+        result.AddWarning(
+            "Configure() not overridden - using base implementation",
+            "Impact: Default configuration UI only, may miss client-specific needs"
+        );
+        return result;
+    }
+    
+    var methodBody = DecompileMethodBody(method);
+    
+    // Check 1: BaseConfigurationForm usage (3 pts)
+    if (!methodBody.Contains("BaseConfigurationForm"))
+    {
+        // Check if using custom Windows Forms (anti-pattern)
+        if (methodBody.Contains("new Form") || methodBody.Contains(": Form"))
+        {
+            result.AddError(
+                "Using custom Windows Forms instead of BaseConfigurationForm",
+                "Impact: Inconsistent UI, potential bugs in persistence",
+                "MVP Feedback: Custom forms had 'confusing variable naming'",
+                "Fix: Use BaseConfigurationForm for standard UI"
+            );
+        }
+        else
+        {
+            result.AddWarning("Cannot determine configuration form type");
+        }
+    }
+    else
+    {
+        result.Score += 3;
+        result.AddEvidence("✓ Using BaseConfigurationForm (standard UI)");
+    }
+    
+    // Check 2: Transaction Codes tab (2 pts)
+    bool hasTransCodesTab = 
+        methodBody.Contains("TransCodeBrowseControl") || 
+        (methodBody.Contains("AddCrossWalk") && methodBody.Contains("Transaction"));
+    
+    if (!hasTransCodesTab)
+    {
+        result.AddCriticalError(
+            "Transaction Codes cross-walk tab missing",
+            "Impact: Users (Mitch/Shawna) cannot configure transaction code mappings",
+            "Result: Formatter unusable without developer intervention",
+            "Fix: Add 'ConfigForm.AddCrossWalk(TransCodes, \"Transaction Codes\")'"
+        );
+    }
+    else
+    {
+        result.Score += 2;
+        result.AddEvidence("✓ Transaction Codes cross-walk tab present");
+    }
+    
+    // Check 3: Financial Classes tab (2 pts)
+    bool hasFinClassesTab = 
+        methodBody.Contains("MiscCodeBrowseControl") || 
+        (methodBody.Contains("AddCrossWalk") && methodBody.Contains("Financial"));
+    
+    if (!hasFinClassesTab)
+    {
+        result.AddCriticalError(
+            "Financial Classes cross-walk tab missing",
+            "Impact: Users cannot configure financial class mappings",
+            "Business Impact: Account classification will fail",
+            "Fix: Add 'ConfigForm.AddCrossWalk(MiscCodes, \"Financial Classes\")'"
+        );
+    }
+    else
+    {
+        result.Score += 2;
+        result.AddEvidence("✓ Financial Classes cross-walk tab present");
+    }
+    
+    return result;
+}
+```
+**Reference code**
+```csharp
+// [7 pts total] - Configure override
+protected override bool Configure(ConverterCmd pConverterCmd)
+{
+    // [3 pts] - Using BaseConfigurationForm (not custom Windows Forms)
+    // WHY IMPORTANT: Standard UI, logging, validation, persistence all built-in
+    // ANTI-PATTERN: Creating custom Form causes bugs (per MVP feedback)
+    // MVP ISSUE: "Confusing variable naming" in custom UIs
+    BaseConfigurationForm ConfigForm = new BaseConfigurationForm(pConverterCmd);
+    
+    // [2 pts] - Transaction Codes cross-walk tab
+    // WHO USES: Mitch/Shawna during client setup
+    // WHAT IT DOES: Allows mapping client codes → MDS standard codes
+    // EXAMPLE: Client code "CHG001" → MDS code "C" (Charge)
+    // WITHOUT THIS: Developers must manually edit XML files (not scalable)
+    TransCodeBrowseControl TransCodes = new TransCodeBrowseControl(
+        pConverterCmd, 
+        TransTypeSelections // Array of P, A, I, C types
+    );
+    ConfigForm.AddCrossWalk(TransCodes, "Transaction Codes");
+    
+    // [2 pts] - Financial Classes cross-walk tab
+    // WHO USES: Mitch/Shawna during client setup
+    // WHAT IT DOES: Maps client financial classes → MDS queues (SP, COM, MCR, MCD)
+    // BUSINESS IMPACT: Determines collection strategy per account
+    // EXAMPLE: Client "BLUECROSS" → MDS "BC" (Commercial)
+    MiscCodeBrowseControl MiscCodes = new MiscCodeBrowseControl(pConverterCmd);
+    ConfigForm.AddCrossWalk(MiscCodes, "Financial Classes");
+    
+    // Show configuration dialog to user
+    return Configure(pConverterCmd, ConfigForm);
+}
+```
 
 ---
 
@@ -568,12 +814,94 @@ Score = (3 × 4 × 4) / 9.6 ≈ 5 points
 | Persists Cross-Walks | 2 | Required for learning systems | Repository save | Regression |
 | Calls base.SaveSettings | 1 | Framework consistency | Explicit base call | Partial persistence |
 
-### Reference Pattern
+**Validation agent logic** 
 ```csharp
-public override void SaveSettings()
+public ValidationResult ValidateSaveSettings(Type formatterType)
 {
-    SaveCrossWalks();
-    base.SaveSettings();
+    var result = new ValidationResult 
+    { 
+        Category = "SaveSettings", 
+        MaxScore = 5 
+    };
+    
+    // Check 1: Override exists (2 pts)
+    var method = formatterType.GetMethod("SaveSettings", 
+        BindingFlags.NonPublic | BindingFlags.Instance);
+    
+    if (method == null || method.DeclaringType == typeof(BaseConverter))
+    {
+        result.AddWarning(
+            "SaveSettings() not overridden",
+            "Impact: Configuration changes will not persist between executions",
+            "User Impact: Must reconfigure every time",
+            "Fix: Add 'protected override void SaveSettings()'"
+        );
+        return result;
+    }
+    result.Score += 2;
+    result.AddEvidence("✓ SaveSettings() override present");
+    
+    var methodBody = DecompileMethodBody(method);
+    
+    // Check 2: TransCodeCrossWalkStore saved (1.5 pts)
+    if (!methodBody.Contains("TransCodeCrossWalkStore") || !methodBody.Contains(".Save()"))
+    {
+        result.AddWarning(
+            "TransCodeCrossWalkStore not saved",
+            "Impact: Transaction code mappings will be lost after Configure dialog closes"
+        );
+    }
+    else
+    {
+        result.Score += 1.5;
+        result.AddEvidence("✓ TransCodeCrossWalkStore.Save() called");
+    }
+    
+    // Check 3: FinancialClassCrossWalkStore saved (1.5 pts)
+    if (!methodBody.Contains("FinancialClassCrossWalkStore") || !methodBody.Contains(".Save()"))
+    {
+        result.AddWarning(
+            "FinancialClassCrossWalkStore not saved",
+            "Impact: Financial class mappings will be lost after Configure dialog closes"
+        );
+    }
+    else
+    {
+        result.Score += 1.5;
+        result.AddEvidence("✓ FinancialClassCrossWalkStore.Save() called");
+    }
+    
+    return result;
+}
+```
+**Reference code**
+```csharp
+// [2 pts] - SaveSettings override
+protected override void SaveSettings()
+{
+    // WHY IMPORTANT: Called after user clicks "Save" in Configure dialog
+    // IMPACT: Without this, all configuration changes are lost
+    // USER IMPACT: Mitch/Shawna must reconfigure every time
+    
+    // [1.5 pts] - Save transaction codes
+    // PERSISTS TO: C:\MDS\Configs\ClientXXX.xml (TransactionCodes node)
+    if (Meditech.Meditech.TransCodeCrossWalkStore != null)
+    {
+        Meditech.Meditech.TransCodeCrossWalkStore.Save();
+    }
+    
+    // [1.5 pts] - Save financial classes
+    // PERSISTS TO: C:\MDS\Configs\ClientXXX.xml (FinancialClasses node)
+    if (Meditech.Meditech.FinancialClassCrossWalkStore != null)
+    {
+        Meditech.Meditech.FinancialClassCrossWalkStore.Save();
+    }
+    
+    // Save other settings (if any)
+    if (Settings != null)
+    {
+        Settings.Save();
+    }
 }
 ```
 
@@ -630,15 +958,117 @@ Score = (4 × 5 × 3) / 10 = 6 points
 | IgnoreEmptyLines / TrimOptions | 1 | Prevents phantom records | Attribute flags | Garbage records |
 | Encoding explicitly defined | 1 | Prevents character loss | Encoding property | Data truncation |
 
-### Reference Pattern
+**Validation agent logic** 
 ```csharp
-[DelimitedRecord("|")]
-[IgnoreEmptyLines]
-[IgnoreFirst]
-public class InputRecord
+public ValidationResult ValidateRecordTypeClassAttributes(Type recordType)
 {
+    var result = new ValidationResult 
+    { 
+        Category = "Record Type Class Attributes", 
+        MaxScore = 6 
+    };
+    
+    // Check 1: DelimitedRecord or FixedLengthRecord (3 pts)
+    var delimitedAttr = recordType.GetCustomAttribute<DelimitedRecordAttribute>();
+    var fixedLengthAttr = recordType.GetCustomAttribute<FixedLengthRecordAttribute>();
+    
+    if (delimitedAttr == null && fixedLengthAttr == null)
+    {
+        result.AddCriticalError(
+            "BLOCKER: Missing [DelimitedRecord] or [FixedLengthRecord] attribute",
+            "Impact: FileHelpers cannot parse the file",
+            "Exception: 'Type must have DelimitedRecord or FixedLengthRecord attribute'",
+            "Fix: Add [DelimitedRecord(\"\\t\")] or [FixedLengthRecord] to class"
+        );
+        return result; // Don't continue - this is blocker
+    }
+    
+    result.Score += 3;
+    if (delimitedAttr != null)
+    {
+        result.AddEvidence($"✓ [DelimitedRecord] with delimiter: '{delimitedAttr.Delimiter}'");
+    }
+    else
+    {
+        result.AddEvidence($"✓ [FixedLengthRecord] format");
+    }
+    
+    // Check 2: IgnoreEmptyLines (2 pts) - only for delimited files
+    if (delimitedAttr != null)
+    {
+        var ignoreEmptyAttr = recordType.GetCustomAttribute<IgnoreEmptyLinesAttribute>();
+        
+        if (ignoreEmptyAttr == null)
+        {
+            result.AddWarning(
+                "Missing [IgnoreEmptyLines] attribute",
+                "Impact: Blank lines in file will cause parsing errors",
+                "Common in medical exports: Meditech includes blank lines every 100 records",
+                "Fix: Add [IgnoreEmptyLines] to class"
+            );
+        }
+        else
+        {
+            result.Score += 2;
+            result.AddEvidence("✓ [IgnoreEmptyLines] present - handles blank lines");
+        }
+    }
+    else
+    {
+        // Fixed-length files don't need IgnoreEmptyLines (full credit)
+        result.Score += 2;
+        result.AddEvidence("✓ Fixed-length format - blank line handling not needed");
+    }
+    
+    // Check 3: Sealed class (1 pt)
+    if (!recordType.IsSealed)
+    {
+        result.AddInfo(
+            "Class not sealed",
+            "Best Practice: Record types should be sealed (prevents inheritance)",
+            "Fix: Change 'public class' to 'public sealed class'"
+        );
+    }
+    else
+    {
+        result.Score += 1;
+        result.AddEvidence("✓ Class is sealed (best practice)");
+    }
+    
+    return result;
 }
 ```
+**Reference code**
+```csharp
+// [3 pts] - DelimitedRecord attribute (CRITICAL)
+// WHY CRITICAL: Tells FileHelpers this is a tab-delimited file
+// ALTERNATIVES: [FixedLengthRecord] for fixed-width files
+// IMPACT: Without this, FileHelpers cannot parse the file at all
+// EXCEPTION: "Type must have DelimitedRecord or FixedLengthRecord attribute"
+[DelimitedRecord("\t")]  // Tab-delimited (common in medical exports)
+// [DelimitedRecord(",")]  // CSV
+// [DelimitedRecord("|")]  // Pipe-delimited
+// [FixedLengthRecord()]   // Fixed-width format
+
+// [2 pts] - IgnoreEmptyLines attribute (IMPORTANT)
+// WHY IMPORTANT: Medical system exports often have blank lines between records
+// REAL EXAMPLE: Meditech exports include blank line after every 100 records
+// WITHOUT THIS: FileHelpers tries to parse blank line →
+// WITHOUT THIS: FileHelpers tries to parse blank line → "Line too short" error
+// IMPACT: Data loss - processing stops at first blank line
+[IgnoreEmptyLines]
+
+// [1 pt] - Sealed class (BEST PRACTICE)
+// WHY SEALED: Record types are DTOs (Data Transfer Objects), not meant for inheritance
+// BENEFIT: Prevents future developers from incorrectly extending this class
+// PERFORMANCE: Minor performance improvement (virtual call optimization)
+public sealed class InventoryRecordType
+{
+    // Field definitions...
+}
+
+```
+
 
 ---
 
@@ -668,11 +1098,250 @@ Score = (4 × 4 × 4) / 10.6 ≈ 6 points
 | FieldLength / FieldTrim | 1.5 | Prevents overflow/truncation | Attribute values | Data loss |
 | Converter or format specified | 1 | Ensures type correctness | Converter attribute | Invalid values |
 
-### Reference Pattern
+
+**Validation agent logic** 
 ```csharp
-[FieldOrder(1)]
-[FieldTrim(TrimMode.Both)]
-public string AccountNumber;
+public ValidationResult ValidateRecordTypeFieldAttributes(Type recordType)
+{
+    var result = new ValidationResult 
+    { 
+        Category = "Field Attributes", 
+        MaxScore = 6 
+    };
+    
+    var fields = recordType.GetFields(BindingFlags.Public | BindingFlags.Instance);
+    
+    // Scoring accumulators
+    double lengthAttributeScore = 0;
+    double trimAttributeScore = 0;
+    double converterScore = 0;
+    double nullValueScore = 0;
+    
+    foreach (var field in fields)
+    {
+        // Check 1: FieldQuoted/FieldFixedLength (max 2 pts total)
+        bool hasLengthAttribute = 
+            field.GetCustomAttribute<FieldQuotedAttribute>() != null ||
+            field.GetCustomAttribute<FieldFixedLengthAttribute>() != null;
+        
+        if (!hasLengthAttribute)
+        {
+            result.AddWarning(
+                $"Field '{field.Name}' missing length attribute",
+                "Expected: [FieldQuoted] for delimited or [FieldFixedLength] for fixed-width"
+            );
+        }
+        else
+        {
+            // Award 0.1 pt per field, up to max 2 pts
+            lengthAttributeScore += Math.Min(0.1, 2.0 - lengthAttributeScore);
+        }
+        
+        // Check 2: FieldTrim for string fields (max 1.5 pts total)
+        if (field.FieldType == typeof(string))
+        {
+            var trimAttr = field.GetCustomAttribute<FieldTrimAttribute>();
+            
+            if (trimAttr == null)
+            {
+                result.AddWarning(
+                    $"String field '{field.Name}' missing [FieldTrim]",
+                    "Impact: Spaces will cause lookup failures",
+                    "Example: 'SMITH ' won't match 'SMITH' in database"
+                );
+            }
+            else if (trimAttr.TrimMode != TrimMode.Both)
+            {
+                result.AddWarning(
+                    $"Field '{field.Name}' uses TrimMode.{trimAttr.TrimMode}",
+                    "Recommendation: Use TrimMode.Both for safety"
+                );
+                trimAttributeScore += Math.Min(0.05, 1.5 - trimAttributeScore); // Partial credit
+            }
+            else
+            {
+                // Award 0.075 pt per string field, up to max 1.5 pts
+                trimAttributeScore += Math.Min(0.075, 1.5 - trimAttributeScore);
+            }
+        }
+        
+        // Check 3: FieldConverter for date/decimal fields (max 1.5 pts total)
+        if (field.FieldType == typeof(DateTime) || 
+            field.FieldType == typeof(DateTime?) ||
+            field.FieldType == typeof(decimal) || 
+            field.FieldType == typeof(decimal?))
+        {
+            var converterAttr = field.GetCustomAttribute<FieldConverterAttribute>();
+            
+            if (converterAttr == null)
+            {
+                result.AddCriticalError(
+                    $"CRITICAL: Field '{field.Name}' ({field.FieldType.Name}) missing [FieldConverter]",
+                    "Impact: Parsing will fail or produce incorrect values",
+                    field.FieldType == typeof(decimal) || field.FieldType == typeof(decimal?) 
+                        ? "Medical systems often store amounts without decimal point (12345 = $123.45)"
+                        : "Medical systems use non-standard date formats (20231215 = 2023-12-15)",
+                    $"Fix: Add [FieldConverter(typeof({GetRecommendedConverter(field.FieldType)}))]"
+                );
+            }
+            else
+            {
+                // Validate correct converter type
+                Type expectedConverter = GetExpectedConverterType(field.FieldType);
+                
+                if (converterAttr.Converter == expectedConverter ||
+                    IsAcceptableConverter(converterAttr.Converter, field.FieldType))
+                {
+                    // Award 0.15 pt per special field, up to max 1.5 pts
+                    converterScore += Math.Min(0.15, 1.5 - converterScore);
+                }
+                else
+                {
+                    result.AddWarning(
+                        $"Field '{field.Name}' uses unexpected converter: {converterAttr.Converter.Name}",
+                        $"Expected: {expectedConverter.Name} or compatible"
+                    );
+                    converterScore += Math.Min(0.08, 1.5 - converterScore); // Partial credit
+                }
+            }
+        }
+        
+        // Check 4: FieldNullValue for nullable/optional fields (max 1 pt total)
+        if (IsNullableOrOptional(field.FieldType))
+        {
+            var nullValueAttr = field.GetCustomAttribute<FieldNullValueAttribute>();
+            
+            if (nullValueAttr != null)
+            {
+                // Award 0.05 pt per field, up to max 1 pt
+                nullValueScore += Math.Min(0.05, 1.0 - nullValueScore);
+            }
+            // Note: Not warning if missing - this is optional best practice
+        }
+    }
+    
+    // Add accumulated scores
+    result.Score += lengthAttributeScore;
+    result.Score += trimAttributeScore;
+    result.Score += converterScore;
+    result.Score += nullValueScore;
+    
+    // Add summary evidence
+    result.AddEvidence($"✓ Length attributes: {lengthAttributeScore:F2}/2.0 pts");
+    result.AddEvidence($"✓ Trim attributes: {trimAttributeScore:F2}/1.5 pts");
+    result.AddEvidence($"✓ Converters: {converterScore:F2}/1.5 pts");
+    result.AddEvidence($"✓ Null values: {nullValueScore:F2}/1.0 pts");
+    
+    return result;
+}
+
+private string GetRecommendedConverter(Type fieldType)
+{
+    if (fieldType == typeof(decimal) || fieldType == typeof(decimal?))
+        return "MDSDecimalConverter";
+    if (fieldType == typeof(DateTime) || fieldType == typeof(DateTime?))
+        return "MDSDateConverter or ClarioneseDateConverter";
+    return "unknown";
+}
+
+private Type GetExpectedConverterType(Type fieldType)
+{
+    if (fieldType == typeof(decimal) || fieldType == typeof(decimal?))
+        return typeof(MDSDecimalConverter);
+    if (fieldType == typeof(DateTime) || fieldType == typeof(DateTime?))
+        return typeof(MDSDateConverter);
+    return null;
+}
+
+private bool IsAcceptableConverter(Type converterType, Type fieldType)
+{
+    // Accept multiple valid converters for DateTime
+    if (fieldType == typeof(DateTime) || fieldType == typeof(DateTime?))
+    {
+        return converterType == typeof(MDSDateConverter) ||
+               converterType == typeof(ClarioneseDateConverter);
+    }
+    return false;
+}
+
+private bool IsNullableOrOptional(Type fieldType)
+{
+    return Nullable.GetUnderlyingType(fieldType) != null || 
+           !fieldType.IsValueType;
+}
+```
+**Reference code**
+```csharp
+[IgnoreEmptyLines]
+[DelimitedRecord("\t")]
+public sealed class InventoryRecordType
+{
+    // FIELD 1: Account Number (string field example)
+    
+    // [0.1 pt] - FieldQuoted (handles quotes in CSV)
+    // WHY: If account number contains delimiter (rare but possible)
+    // EXAMPLE: "ACC,123" in CSV would break without QuoteMode
+    [FieldQuoted(QuoteMode.OptionalForRead)]
+    
+    // [0.075 pt] - FieldTrim (removes spaces)
+    // WHY CRITICAL: DB lookup for "ACC123 " won't find "ACC123"
+    // REAL IMPACT: Account not found → creates duplicate instead of update
+    // MEDITECH ISSUE: Exports add trailing spaces to fixed-width fields
+    [FieldTrim(TrimMode.Both)]
+    public string AccountNum;
+    
+    // FIELD 2: Bill Balance (decimal field example)
+    
+    [FieldQuoted(QuoteMode.OptionalForRead)]
+    [FieldTrim(TrimMode.Both)]
+    
+    // [0.15 pt] - FieldConverter for decimal (CRITICAL)
+    // WHY CRITICAL: Medical systems store amounts without decimal point
+    // EXAMPLE: "12345" in file represents $123.45
+    // WITHOUT THIS: Would parse as 12345.00 (100x error!)
+    // MDSDecimalConverter divides by 100
+    [FieldConverter(typeof(MDSDecimalConverter))]
+    
+    // [0.05 pt] - FieldNullValue (handles missing values)
+    // WHY: Empty balance in file should default to 0, not null
+    // WITHOUT THIS: NullReferenceException when summing balances
+    [FieldNullValue(typeof(decimal), "0")]
+    public decimal BillBal;
+    
+    // FIELD 3: Service Date (DateTime field example)
+    
+    [FieldQuoted(QuoteMode.OptionalForRead)]
+    [FieldTrim(TrimMode.Both)]
+    
+    // [0.15 pt] - FieldConverter for DateTime (CRITICAL)
+    // WHY CRITICAL: Medical systems use non-standard date formats
+    // MEDITECH: "20231215" (yyyyMMdd) - no separators
+    // CLARION: Custom format with different separators
+    // WITHOUT THIS: FormatException "String was not recognized as valid DateTime"
+    [FieldConverter(typeof(MDSDateConverter))]
+    // OR for Clarion systems:
+    // [FieldConverter(typeof(ClarioneseDateConverter))]
+    
+    // [0.05 pt] - FieldNullValue for optional dates
+    // WHY: Missing date should default to MinValue or specific sentinel
+    [FieldNullValue(typeof(DateTime), "1900-01-01")]
+    public DateTime ServiceDate;
+    
+    // FIELD 4: Transaction Code (string, simple)
+    
+    [FieldQuoted(QuoteMode.OptionalForRead)]
+    [FieldTrim(TrimMode.Both)]
+    public string TransCode; // No converter needed - simple string
+    
+    // FIELD 5: Financial Class (string with special handling)
+    
+    [FieldQuoted(QuoteMode.OptionalForRead)]
+    [FieldTrim(TrimMode.Both)]
+    
+    // Optional: FieldNullValue for empty financial class
+    [FieldNullValue(typeof(string), "SP")] // Default to Self Pay if empty
+    public string FinClass;
+}
 ```
 
 ---
@@ -711,6 +1380,131 @@ A formatter **fails data-ingestion standards** if any of the following occur:
 - Record or field attributes are missing or implicit
 - Delimiters or encodings do not match the input source
 - Parsed fields cannot be safely persisted to the database
+
+**Validation agent logic** 
+```csharp
+// Simplified Cupload schema for validation
+public static class CuploadSchema
+{
+    public static readonly TableSchema MasterTable = new TableSchema
+    {
+        Name = "uplmaster",
+        Columns = new[]
+        {
+            new Column("accountnumber", typeof(string), 20, required: true),
+            new Column("membercode", typeof(string), 3, required: true),
+            new Column("loadexe", typeof(string), 50, required: true),
+            new Column("accountbalance", typeof(decimal)),
+            new Column("patientname", typeof(string), 50),
+            new Column("acctbaseclass", typeof(string), 10),
+            new Column("originalcreditor", typeof(string), 50),
+            new Column("ssn", typeof(string), 11),
+            new Column("dateofbirth", typeof(DateTime)),
+            // ... 51 more columns (total 60)
+        }
+    };
+    
+    public static readonly TableSchema TransTable = new TableSchema
+    {
+        Name = "upltrans",
+        Columns = new[]
+        {
+            new Column("accountnumber", typeof(string), 20, required: true),
+            new Column("transactioncode", typeof(string), 10, required: true),
+            new Column("transactiondate", typeof(DateTime)),
+            new Column("transactionamount", typeof(decimal)),
+            new Column("transactiontype", typeof(string), 1),
+            // ... more transaction columns
+        }
+    };
+    
+    public static readonly TableSchema InsuranceTable = new TableSchema
+    {
+        Name = "uplinsurance",
+        Columns = new[]
+        {
+            new Column("accountnumber", typeof(string), 20, required: true),
+            new Column("insurancename", typeof(string), 50),
+            new Column("policynumber", typeof(string), 30),
+            new Column("groupnumber", typeof(string), 30),
+            new Column("insuredname", typeof(string), 50),
+            // ... more insurance columns
+        }
+    };
+}
+```
+**Reference code**
+```csharp
+[IgnoreEmptyLines]
+[DelimitedRecord("\t")]
+public sealed class InventoryRecordType
+{
+    // MASTER TABLE FIELDS (uplmaster - 60 columns)
+    
+    // [0.2 pt] - Account Number (PRIMARY KEY)
+    // SCHEMA: uplmaster.accountnumber VARCHAR(20) NOT NULL
+    // WHY CRITICAL: Primary key for account lookup
+    [FieldQuoted(QuoteMode.OptionalForRead)]
+    [FieldTrim(TrimMode.Both)]
+    [FieldMapping("accountnumber", TableDestination.Master)]
+    public string AccountNum;
+    
+    // [0.2 pt] - Member Code (REQUIRED)
+    // SCHEMA: uplmaster.membercode VARCHAR(3) NOT NULL
+    // WHY: Links to client in MDS system
+    [FieldQuoted(QuoteMode.OptionalForRead)]
+    [FieldTrim(TrimMode.Both)]
+    [FieldMapping("membercode", TableDestination.Master)]
+    public string MemberCode;
+    
+    // [0.2 pt] - Account Balance
+    // SCHEMA: uplmaster.accountbalance DECIMAL(18,2)
+    // NOTE: TableDestination.Master is correct for demographics/inventory
+    [FieldQuoted(QuoteMode.OptionalForRead)]
+    [FieldTrim(TrimMode.Both)]
+    [FieldConverter(typeof(MDSDecimalConverter))]
+    [FieldNullValue(typeof(decimal), "0")]
+    [FieldMapping("accountbalance", TableDestination.Master)]
+    public decimal BillBal;
+    
+    // [0.2 pt] - Patient Name
+    // SCHEMA: uplmaster.patientname VARCHAR(50)
+    [FieldQuoted(QuoteMode.OptionalForRead)]
+    [FieldTrim(TrimMode.Both)]
+    [FieldMapping("patientname", TableDestination.Master)]
+    public string PatientName;
+    
+    // [0.2 pt] - Financial Class
+    // SCHEMA: uplmaster.acctbaseclass VARCHAR(10)
+    // WRONG DESTINATION EXAMPLE: TableDestination.Trans would corrupt data!
+    [FieldQuoted(QuoteMode.OptionalForRead)]
+    [FieldTrim(TrimMode.Both)]
+    [FieldMapping("acctbaseclass", TableDestination.Master)]
+    public string FinClass;
+    
+    // TRANSACTION TABLE FIELDS (upltrans - if this were a transaction file)
+    // NOTE: This example shows WRONG usage - transactions should be in separate handler
+    
+    // ANTI-PATTERN (DO NOT DO THIS):
+    // [FieldMapping("transactioncode", TableDestination.Trans)] // WRONG!
+    // This field is in InventoryRecordType which maps to Master table
+    // Transactions should be in separate TransactionRecordType
+    
+    // INSURANCE TABLE FIELDS (uplinsurance)
+    // Similar principle - insurance data needs separate record type
+    
+    // UNMAPPED FIELD EXAMPLE (client-specific, not in Cupload schema)
+    
+    // [0 pts] - Not mapped (intentionally)
+    // WHY: Client has custom field not in MDS schema
+    // IMPACT: Data parsed but not persisted (acceptable if documented)
+    [FieldQuoted(QuoteMode.OptionalForRead)]
+    [FieldTrim(TrimMode.Both)]
+    // NO [FieldMapping] attribute - this field is ignored
+    public string ClientCustomField;
+}
+```
+
 
 
 # 4. HANDLERS & BUSINESS LOGIC IMPLEMENTATION (17 points)
@@ -753,10 +1547,165 @@ Score = (4 × 4 × 3) / 9.6 ≈ 5 points
 | Correct InputType routing | 2 | Prevents misclassification | Switch / map validation | Wrong business rules |
 | Default / fallback handler | 1 | Prevents data loss | Default path exists | Unhandled records |
 
-### Reference Pattern
+**Validation agent logic** 
 ```csharp
-Handlers.Add(InputType.Claims, new ClaimsHandler());
+public ValidationResult ValidateDemographicsHandler(Type handlerType)
+{
+    var result = new ValidationResult 
+    { 
+        Category = "DemographicsHandler", 
+        MaxScore = 7 
+    };
+    
+    // Check 1: Inheritance (3 pts)
+    if (!handlerType.IsSubclassOf(typeof(MedBaseCollectionsHandler)))
+    {
+        // Check if using wrong base class
+        if (handlerType.IsSubclassOf(typeof(BaseCollectionsHandler)))
+        {
+            result.AddCriticalError(
+                "Handler inherits from BaseCollectionsHandler instead of MedBaseCollectionsHandler",
+                "Impact: Missing 20+ Meditech-specific methods",
+                "Examples of missing logic: cross-walk application, field defaults, validations",
+                "Fix: Change inheritance to 'MedBaseCollectionsHandler'"
+            );
+            result.Score += 1.0; // Partial credit - at least it compiles
+        }
+        else
+        {
+            result.AddCriticalError(
+                "BLOCKER: Handler does not inherit from MedBaseCollectionsHandler",
+                "Expected: class DemographicsHandler : MedBaseCollectionsHandler",
+                "Impact: Compilation errors or completely missing business logic"
+            );
+            return result; // Blocker - don't continue
+        }
+    }
+    else
+    {
+        result.Score += 3.0;
+        result.AddEvidence("✓ Inherits from MedBaseCollectionsHandler");
+    }
+    
+    // Check 2: Constructor (1.5 pts)
+    var ctor = handlerType.GetConstructor(new[] 
+    { 
+        typeof(BaseConverter), 
+        typeof(ProcessFile) 
+    });
+    
+    if (ctor == null)
+    {
+        result.AddCriticalError(
+            "Constructor signature incorrect",
+            "Expected: public DemographicsHandler(BaseConverter conv, ProcessFile file)",
+            "Impact: Framework cannot instantiate handler via reflection",
+            "Runtime error: 'No suitable constructor found'"
+        );
+    }
+    else
+    {
+        result.Score += 1.5;
+        result.AddEvidence("✓ Constructor signature correct");
+    }
+    
+    // Check 3: Recall protection (2.5 pts)
+    var processRecordMethod = handlerType.GetMethod("ProcessRecord", 
+        BindingFlags.NonPublic | BindingFlags.Instance);
+    
+    if (processRecordMethod != null)
+    {
+        var methodBody = DecompileMethodBody(processRecordMethod);
+        
+        bool hasRecallCheck = 
+            methodBody.Contains("IsRecalled") ||
+            (methodBody.Contains("Accounts") && methodBody.Contains("recall"));
+        
+        if (!hasRecallCheck)
+        {
+            result.AddCriticalError(
+                "CRITICAL: No recall protection check in ProcessRecord",
+                "Business Rule: Recalled accounts must not be reactivated",
+                "Legal Impact: Violates compliance requirements",
+                "Example Code: if (converter.Accounts.IsRecalled(acctNum)) return;",
+                "Fix: Add recall check before processing account"
+            );
+        }
+        else
+        {
+            result.Score += 2.5;
+            result.AddEvidence("✓ Recall protection check present");
+        }
+    }
+    else
+    {
+        result.AddWarning(
+            "Cannot validate ProcessRecord method - not found or not accessible"
+        );
+    }
+    
+    return result;
+}
 ```
+**Reference code**
+```csharp
+// [3 pts] - Correct inheritance
+// WHY CRITICAL: MedBaseCollectionsHandler provides 20+ methods specific to Meditech
+// INCLUDES: ApplyCrossWalks(), SetDefaults(), ValidateRequiredFields()
+// MVP ERROR: Inheriting from generic BaseCollectionsHandler = missing logic
+// IMPACT: Manual implementation of 500+ lines of standard logic
+public class DemographicsHandler : MedBaseCollectionsHandler
+{
+    // [1.5 pts] - Constructor with correct signature
+    // WHY: Framework instantiates handlers via reflection using this signature
+    // PARAMETERS:
+    //   - pBaseConverter: Reference to parent formatter (access to Settings, Accounts)
+    //   - pInputFile: File being processed (name, path, metadata)
+    // IMPACT: Wrong signature = reflection fails = runtime exception
+    public DemographicsHandler(BaseConverter pBaseConverter, ProcessFile pInputFile)
+        : base(pBaseConverter, pInputFile)
+    {
+        // Constructor body usually empty - base handles initialization
+    }
+    
+    // Override of ProcessRecord (called for each line in file)
+    protected override void ProcessRecord(object pRecord)
+    {
+        // Cast to specific record type
+        var record = pRecord as InventoryRecordType;
+        if (record == null) return;
+        
+        // [2.5 pts] - Recall protection check (CRITICAL BUSINESS RULE)
+        // WHY CRITICAL: Legal/compliance requirement
+        // SCENARIO: Account deleted due to dispute/bankruptcy/legal issue
+        // RULE: Once recalled, account cannot be reactivated by new file uploads
+        // WITHOUT THIS: System automatically reactivates recalled accounts = VIOLATION
+        var converter = BaseConverter as PriRiver; // Cast to access Accounts
+        
+        if (converter?.Accounts != null)
+        {
+            // Check if account is in recall cache (deleted accounts)
+            if (converter.Accounts.IsRecalled(record.AccountNum))
+            {
+                // Log and skip - do NOT process this account
+                LogWarning($"Account {record.AccountNum} is recalled - skipping");
+                return; // Critical - exit without processing
+            }
+        }
+        
+        // Continue with normal processing...
+        // Apply cross-walks (financial class mapping)
+        ApplyCrossWalks(record);
+        
+        // Set defaults for required fields
+        SetMandatoryDefaults(record);
+        
+        // Insert or update in Cupload database
+        SaveToDatabase(record);
+    }
+}
+```
+
 
 ---
 
@@ -785,13 +1734,128 @@ Score = (5 × 4 × 3) / 8.6 ≈ 7 points
 | Conditional logic complete | 2 | Handles all scenarios | Branch coverage | Edge-case failure |
 | Uses cross-walks correctly | 2 | Consistent classification | Lookup validation | Mislabeling |
 
-### Reference Pattern
+**Validation agent logic** 
 ```csharp
-if (!CrossWalk.TryGetValue(code, out result))
+public ValidationResult ValidateTransactionHandler(Type handlerType)
 {
-    result = DefaultValue;
+    var result = new ValidationResult 
+    { 
+        Category = "TransactionHandler", 
+        MaxScore = 5 
+    };
+    
+    // Check 1: Inheritance (2 pts)
+    if (!handlerType.IsSubclassOf(typeof(MedBaseTransactionHandler)))
+    {
+        result.AddCriticalError(
+            "Handler does not inherit from MedBaseTransactionHandler",
+            "Impact: Batch loading logic missing",
+            "Fix: class TransactionHandler : MedBaseTransactionHandler"
+        );
+        return result;
+    }
+    result.Score += 2.0;
+    result.AddEvidence("✓ Inherits from MedBaseTransactionHandler");
+    
+    // Check 2: Constructor (1 pt)
+    var ctor = handlerType.GetConstructor(new[] 
+    { 
+        typeof(BaseConverter), 
+        typeof(ProcessFile) 
+    });
+    
+    if (ctor == null)
+    {
+        result.AddError("Constructor signature incorrect");
+    }
+    else
+    {
+        result.Score += 1.0;
+        result.AddEvidence("✓ Constructor signature correct");
+    }
+    
+    // Check 3: LoadTransactions implementation (2 pts)
+    var method = handlerType.GetMethod("LoadTransactions", 
+        BindingFlags.NonPublic | BindingFlags.Instance);
+    
+    if (method == null || method.DeclaringType != handlerType)
+    {
+        result.AddCriticalError(
+            "CRITICAL: LoadTransactions() not implemented",
+            "Impact: Transactions will NOT be loaded - complete data loss",
+            "This is the only method that persists transactions to upltrans table",
+            "Fix: Override 'protected override DataTable LoadTransactions()'"
+        );
+    }
+    else
+    {
+        // Verify it returns DataTable
+        if (method.ReturnType != typeof(DataTable))
+        {
+            result.AddError(
+                "LoadTransactions() has wrong return type",
+                $"Expected: DataTable, Found: {method.ReturnType.Name}"
+            );
+            result.Score += 1.0; // Partial credit
+        }
+        else
+        {
+            result.Score += 2.0;
+            result.AddEvidence("✓ LoadTransactions() implemented correctly");
+        }
+    }
+    
+    return result;
 }
 ```
+**Reference code**
+```csharp
+// [2 pts] - Correct inheritance
+// WHY: MedBaseTransactionHandler provides batch loading infrastructure
+// INCLUDES: CreateTransactionDataTable(), ApplyTransCrossWalks(), BulkInsert()
+public class TransactionHandler : MedBaseTransactionHandler
+{
+    // [1 pt] - Constructor
+    public TransactionHandler(BaseConverter pBaseConverter, ProcessFile pInputFile)
+        : base(pBaseConverter, pInputFile)
+    {
+    }
+    
+    // [2 pts] - LoadTransactions implementation (CRITICAL)
+    // WHY CRITICAL: This is THE method that actually persists transactions
+    // FLOW:
+    //   1. Create DataTable with upltrans schema
+    //   2. For each transaction in file, add row to DataTable
+    //   3. Return DataTable → framework does bulk insert
+    // WITHOUT THIS: Transactions parsed but never saved = complete data loss
+    protected override DataTable LoadTransactions()
+    {
+        // Create DataTable matching upltrans schema
+        DataTable dt = CreateTransactionDataTable();
+        
+        // Read transaction file (could be separate file or embedded in demographics)
+        foreach (var record in ReadTransactionRecords())
+        {
+            // Apply cross-walk: client code → MDS standard code
+            string mdsTransCode = ApplyTransCodeCrossWalk(record.TransCode);
+            
+            // Create row
+            DataRow row = dt.NewRow();
+            row["accountnumber"] = record.AccountNum;
+            row["transactioncode"] = mdsTransCode;
+            row["transactiondate"] = record.TransDate;
+            row["transactionamount"] = record.TransAmount;
+            row["transactiontype"] = DetermineTransType(mdsTransCode); // P, A, I, C
+            
+            dt.Rows.Add(row);
+        }
+        
+        // Framework will bulk insert this DataTable into upltrans
+        return dt;
+    }
+}
+```
+
 
 ---
 
@@ -854,6 +1918,153 @@ A formatter **fails the business-logic standard** if:
 - Business rules diverge from specifications
 - Errors are swallowed or unlogged
 
+  **Validation agent logic** 
+```csharp
+public ValidationResult ValidateInventoryHandler(Type handlerType)
+{
+    var result = new ValidationResult 
+    { 
+        Category = "InventoryHandler", 
+        MaxScore = 5 
+    };
+    
+    // Check 1: Inheritance from generic base (2 pts)
+    Type baseType = handlerType.BaseType;
+    
+    if (baseType == null || !baseType.IsGenericType)
+    {
+        result.AddError(markdown
+        result.AddError(
+            "Handler does not inherit from MedBaseGenericFileHandler<T>",
+            "Impact: Must implement FileHelpers parsing manually (300+ lines)",
+            "Fix: class InventoryHandler : MedBaseGenericFileHandler<InventoryRecordType>"
+        );
+        return result;
+    }
+    
+    Type genericTypeDef = baseType.GetGenericTypeDefinition();
+    if (genericTypeDef != typeof(MedBaseGenericFileHandler<>))
+    {
+        result.AddWarning(
+            $"Handler inherits from unexpected base: {baseType.Name}",
+            "Expected: MedBaseGenericFileHandler<RecordType>"
+        );
+        result.Score += 1.0; // Partial credit
+    }
+    else
+    {
+        result.Score += 2.0;
+        Type recordType = baseType.GetGenericArguments()[0];
+        result.AddEvidence($"✓ Inherits from MedBaseGenericFileHandler<{recordType.Name}>");
+    }
+    
+    // Check 2: Constructor passes record type (1.5 pts)
+    var ctors = handlerType.GetConstructors();
+    bool hasCorrectCtor = false;
+    
+    foreach (var ctor in ctors)
+    {
+        var parameters = ctor.GetParameters();
+        
+        // Check for constructor with typeof() call in base()
+        // This is validated by decompiling constructor body
+        var ctorBody = DecompileConstructorBody(ctor);
+        
+        if (ctorBody.Contains("typeof(") && ctorBody.Contains("RecordType"))
+        {
+            hasCorrectCtor = true;
+            break;
+        }
+    }
+    
+    if (!hasCorrectCtor)
+    {
+        result.AddWarning(
+            "Constructor may not be passing record type to base",
+            "Expected pattern: base(conv, file, typeof(InventoryRecordType))",
+            "Impact: FileHelpers may not know which record structure to use"
+        );
+    }
+    else
+    {
+        result.Score += 1.5;
+        result.AddEvidence("✓ Constructor passes record type to base");
+    }
+    
+    // Check 3: ProcessRecord implementation (1.5 pts)
+    var method = handlerType.GetMethod("ProcessRecord", 
+        BindingFlags.NonPublic | BindingFlags.Instance);
+    
+    if (method == null || method.DeclaringType != handlerType)
+    {
+        result.AddWarning(
+            "ProcessRecord() not overridden",
+            "Impact: Parsed records won't be processed or persisted",
+            "Fix: Override 'protected override void ProcessRecord(object pRecord)'"
+        );
+    }
+    else
+    {
+        result.Score += 1.5;
+        result.AddEvidence("✓ ProcessRecord() implemented");
+    }
+    
+    return result;
+}
+```
+**Reference code**
+```csharp
+// [2 pts] - Inheritance with generic record type
+// WHY: MedBaseGenericFileHandler<T> provides automatic FileHelpers parsing
+// BENEFIT: Framework automatically parses file using InventoryRecordType attributes
+// ALTERNATIVE: Manual parsing with StreamReader (300+ lines of code)
+public class InventoryHandler : MedBaseGenericFileHandler<InventoryRecordType>
+{
+    // [1.5 pts] - Constructor passes record type to base
+    // WHY: Tells FileHelpers engine which record structure to use
+    // IMPACT: Without typeof(), FileHelpers doesn't know how to parse
+    public InventoryHandler(
+        BaseConverter pBaseConverter, 
+        ProcessFile pInputFile, 
+        Type pRecordType) // Must be typeof(InventoryRecordType)
+        : base(pBaseConverter, pInputFile, pRecordType)
+    {
+    }
+    
+    // Simplified constructor that hardcodes record type (common pattern)
+    public InventoryHandler(
+        BaseConverter pBaseConverter, 
+        ProcessFile pInputFile)
+        : base(pBaseConverter, pInputFile, typeof(InventoryRecordType)) // [1.5 pts]
+    {
+    }
+    
+    // [1.5 pts] - ProcessRecord override
+    // WHY: Called by framework for each parsed record
+    // PARAMETERS: pRecord is already parsed InventoryRecordType object
+    // RESPONSIBILITY: Business logic, cross-walks, persistence
+    protected override void ProcessRecord(object pRecord)
+    {
+        var record = pRecord as InventoryRecordType;
+        if (record == null) return;
+        
+        // Apply cross-walks (financial class mapping)
+        var converter = BaseConverter as PriRiver;
+        record.FinClass = converter?.ApplyFinancialClassCrossWalk(record.FinClass) ?? record.FinClass;
+        
+        // Business logic: calculate fields, apply defaults
+        if (record.BillBal == 0 && record.PaidAmount > 0)
+        {
+            record.BillBal = record.PaidAmount; // Example business rule
+        }
+        
+        // Persist to database
+        SaveRecordToMaster(record);
+    }
+}
+```
+
+
 
 # 5. CROSS-WALKS & CONFIGURATION MANAGEMENT (12 points)
 
@@ -896,10 +2107,216 @@ Score = (4 × 4 × 3) / 9.6 ≈ 5 points
 | Default / unknown handling | 1 | Prevents null propagation | Fallback logic | Silent nulls |
 | Versionable structure | 1 | Supports evolution | Metadata present | Breaking changes |
 
-### Reference Pattern
+**Validation agent logic** 
 ```csharp
-Dictionary<string, AccountType> AccountTypeCrossWalk;
+public ValidationResult ValidateTransactionCodeItems(Type formatterType)
+{
+    var result = new ValidationResult 
+    { 
+        Category = "Transaction Code Cross-Walk", 
+        MaxScore = 6 
+    };
+    
+    // Check 1: Array exists (2 pts)
+    var field = formatterType.GetField("TransactionCodeItems", 
+        BindingFlags.NonPublic | BindingFlags.Static);
+    
+    if (field == null)
+    {
+        result.AddCriticalError(
+            "BLOCKER: TransactionCodeItems array not found",
+            "Impact: NullReferenceException in LoadSettings()",
+            "Formatter will crash on startup",
+            "Fix: Add 'private static TransactionCodeItem[] TransactionCodeItems'"
+        );
+        return result; // Blocker
+    }
+    
+    result.Score += 2.0;
+    result.AddEvidence("✓ TransactionCodeItems array exists");
+    
+    // Get array value
+    var arrayValue = field.GetValue(null) as Array;
+    
+    if (arrayValue == null)
+    {
+        result.AddCriticalError(
+            "TransactionCodeItems is null",
+            "Impact: Cross-walk cannot be configured"
+        );
+        return result;
+    }
+    
+    // Check 2: Array has elements (2 pts)
+    int itemCount = arrayValue.Length;
+    
+    if (itemCount == 0)
+    {
+        result.AddCriticalError(
+            "TransactionCodeItems array is empty",
+            "Impact: Users have no sample codes to configure",
+            "Best Practice: Include 5-10 most common client transaction codes",
+            "Fix: Add sample codes like 'CHG' (Charge), 'PSP' (Payment Self Pay), etc."
+        );
+    }
+    else if (itemCount < 3)
+    {
+        result.AddWarning(
+            $"TransactionCodeItems has only {itemCount} items",
+            "Recommendation: Include at least 5-10 common codes for easier setup"
+        );
+        result.Score += 1.0; // Partial credit
+    }
+    else
+    {
+        result.Score += 2.0;
+        result.AddEvidence($"✓ TransactionCodeItems has {itemCount} initial codes");
+    }
+    
+    // Check 3: Structure validation (2 pts)
+    int validItems = 0;
+    int totalItems = itemCount;
+    var structureErrors = new List<string>();
+    
+    for (int i = 0; i < arrayValue.Length; i++)
+    {
+        var item = arrayValue.GetValue(i);
+        if (item == null)
+        {
+            structureErrors.Add($"Item {i}: null");
+            continue;
+        }
+        
+        // Validate ClientCode
+        var clientCodeProp = item.GetType().GetProperty("ClientCode");
+        var clientCode = clientCodeProp?.GetValue(item) as string;
+        
+        if (string.IsNullOrWhiteSpace(clientCode))
+        {
+            structureErrors.Add($"Item {i}: ClientCode is null or empty");
+            continue;
+        }
+        
+        // Validate TransType
+        var transTypeProp = item.GetType().GetProperty("TransType");
+        var transType = transTypeProp?.GetValue(item) as string;
+        
+        if (transType == null || !IsValidTransType(transType))
+        {
+            structureErrors.Add($"Item {i} ('{clientCode}'): Invalid TransType '{transType}' (must be P, A, I, or C)");
+            continue;
+        }
+        
+        validItems++;
+    }
+    
+    if (validItems == 0 && totalItems > 0)
+    {
+        result.AddCriticalError(
+            "All TransactionCodeItems have invalid structure",
+            "Errors: " + string.Join("; ", structureErrors.Take(5)),
+            "Fix: Ensure format: new TransactionCodeItem(\"CODE\", \"P\", \"Description\")"
+        );
+    }
+    else if (validItems < totalItems)
+    {
+        result.AddWarning(
+            $"Only {validItems}/{totalItems} items have valid structure",
+            "First errors: " + string.Join("; ", structureErrors.Take(3))
+        );
+        // Partial credit based on percentage valid
+        result.Score += 2.0 * (validItems / (double)totalItems);
+    }
+    else
+    {
+        result.Score += 2.0;
+        result.AddEvidence($"✓ All {validItems} items have correct structure (ClientCode, TransType, Description)");
+    }
+    
+    return result;
+}
+
+private bool IsValidTransType(string transType)
+{
+    return transType == "P" || // Payment
+           transType == "A" || // Adjustment
+           transType == "I" || // Info
+           transType == "C";   // Charge
+}
 ```
+**Reference code**
+```csharp
+public class PriRiver : BaseConverter, IConverterSettings, IAccountCache
+{
+    // [2 pts] - Array declaration (CRITICAL)
+    // WHY CRITICAL: This array is referenced by LoadSettings()
+    // USED BY: TransactionCodeCrossWalkStore initialization
+    // WITHOUT THIS: NullReferenceException when formatter starts
+    // STRUCTURE: Array of TransactionCodeItem objects
+    private static TransactionCodeItem[] TransactionCodeItems =
+    {
+        // [Each item contributes to 2 pts for "has initial elements"]
+        // [Each item validates structure for 2 pts "correct structure"]
+        
+        // CHARGE transactions (TransType = "C")
+        // WHY INCLUDE: Most common transaction type in medical billing
+        // CLIENT CODES: These are examples from client's system
+        new TransactionCodeItem(
+            "CHG",        // [Structure check] Client code (what appears in their file)
+            "C",          // [Structure check] Trans type: C = Charge
+            "Charge"      // Description (for UI display)
+        ),
+        new TransactionCodeItem("CHGADJ", "C", "Charge Adjustment"),
+        new TransactionCodeItem("CHRG", "C", "Charge Alternate Code"),
+        
+        // PAYMENT transactions (TransType = "P")
+        // EXAMPLES: Self Pay, Insurance, Medicare, Medicaid
+        new TransactionCodeItem(
+            "PSP",        // Payment Self Pay
+            "P",          // Trans type: P = Payment
+            "Payment Self Pay"
+        ),
+        new TransactionCodeItem("PINS", "P", "Payment Insurance"),
+        new TransactionCodeItem("PMCR", "P", "Payment Medicare"),
+        new TransactionCodeItem("PMCD", "P", "Payment Medicaid"),
+        
+        // ADJUSTMENT transactions (TransType = "A")
+        // EXAMPLES: Write-offs, contractual adjustments
+        new TransactionCodeItem(
+            "ADJWO",      // Adjustment Write Off
+            "A",          // Trans type: A = Adjustment
+            "Adjustment Write Off"
+        ),
+        new TransactionCodeItem("ADJCN", "A", "Contractual Adjustment"),
+        
+        // INFO transactions (TransType = "I")
+        // EXAMPLES: Balance forward, informational only
+        new TransactionCodeItem(
+            "BALFWD",     // Balance Forward
+            "I",          // Trans type: I = Info
+            "Balance Forward"
+        ),
+        
+        // ANTI-PATTERNS TO AVOID:
+        // ❌ new TransactionCodeItem("", "C", "Empty Code") // Empty ClientCode
+        // ❌ new TransactionCodeItem("CHG", "X", "Invalid") // Invalid TransType (not P/A/I/C)
+        // ❌ new TransactionCodeItem(null, "C", "Null")     // Null ClientCode
+    };
+    
+    // Similar pattern for Financial Class Items (see next section)
+    private static MiscCodeItem[] FinancialClassItems = 
+    {
+        new MiscCodeItem("SP", "Self Pay"),
+        new MiscCodeItem("BC", "Blue Cross"),
+        new MiscCodeItem("MCR", "Medicare"),
+        new MiscCodeItem("MCD", "Medicaid"),
+        new MiscCodeItem("COM", "Commercial"),
+        new MiscCodeItem("WC", "Workers Comp"),
+        new MiscCodeItem("AUTO", "Auto Insurance"),
+    };
+}
+```
+
 
 ---
 
@@ -927,48 +2344,155 @@ Score = (3 × 4 × 3) / 9 ≈ 4 points
 | Safe lookup pattern | 1 | Prevents exceptions | TryGetValue usage | Runtime failure |
 | Deterministic resolution | 1 | Consistent results | Unit-test review | Non-repeatable output |
 
-### Reference Pattern
+**Validation agent logic** 
 ```csharp
-if (!AccountTypeMap.TryGetValue(code, out type))
+public ValidationResult ValidateFinancialClassItems(Type formatterType)
 {
-    type = AccountType.Unknown;
+    var result = new ValidationResult 
+    { 
+        Category = "Financial Class Cross-Walk", 
+        MaxScore = 6 
+    };
+    
+    // Check 1: Array exists (2 pts)
+    var field = formatterType.GetField("FinancialClassItems", 
+        BindingFlags.NonPublic | BindingFlags.Static);
+    
+    if (field == null)
+    {
+        result.AddCriticalError(
+            "BLOCKER: FinancialClassItems array not found",
+            "Impact: Financial class cross-walk cannot be configured",
+            "Business Impact: Accounts cannot be assigned to correct collection queues",
+            "Fix: Add 'private static MiscCodeItem[] FinancialClassItems'"
+        );
+        return result;
+    }
+    
+    result.Score += 2.0;
+    result.AddEvidence("✓ FinancialClassItems array exists");
+    
+    // Get array value
+    var arrayValue = field.GetValue(null) as Array;
+    
+    if (arrayValue == null)
+    {
+        result.AddCriticalError(
+            "FinancialClassItems is null",
+            "Impact: Cross-walk initialization will fail"
+        );
+        return result;
+    }
+    
+    // Check 2: Array has elements (2 pts)
+    int itemCount = arrayValue.Length;
+    
+    if (itemCount == 0)
+    {
+        result.AddCriticalError(
+            "FinancialClassItems array is empty",
+            "Impact: No sample classes for users to configure",
+            "Best Practice: Include common classes (SP, COM, MCR, MCD, WC, AUTO)",
+            "Fix: Add sample codes for Self Pay, Commercial, Medicare, Medicaid"
+        );
+    }
+    else if (itemCount < 4)
+    {
+        result.AddWarning(
+            $"FinancialClassItems has only {itemCount} items",
+            "Recommendation: Include at least SP, COM, MCR, MCD (4 main types)"
+        );
+        result.Score += 1.0; // Partial credit
+    }
+    else
+    {
+        result.Score += 2.0;
+        result.AddEvidence($"✓ FinancialClassItems has {itemCount} initial codes");
+        
+        // Bonus validation: Check if common codes are present
+        var commonCodes = new[] { "SP", "COM", "MCR", "MCD" };
+        var presentCodes = new List<string>();
+        
+        for (int i = 0; i < arrayValue.Length; i++)
+        {
+            var item = arrayValue.GetValue(i);
+            var clientCodeProp = item?.GetType().GetProperty("ClientCode");
+            var clientCode = clientCodeProp?.GetValue(item) as string;
+            
+            if (commonCodes.Contains(clientCode?.ToUpper()))
+            {
+                presentCodes.Add(clientCode.ToUpper());
+            }
+        }
+        
+        if (presentCodes.Count >= 3)
+        {
+            result.AddEvidence($"✓ Includes {presentCodes.Count}/4 common codes: {string.Join(", ", presentCodes)}");
+        }
+    }
+    
+    // Check 3: Structure validation (2 pts)
+    int validItems = 0;
+    int totalItems = itemCount;
+    var structureErrors = new List<string>();
+    
+    for (int i = 0; i < arrayValue.Length; i++)
+    {
+        var item = arrayValue.GetValue(i);
+        if (item == null)
+        {
+            structureErrors.Add($"Item {i}: null");
+            continue;
+        }
+        
+        // Validate ClientCode
+        var clientCodeProp = item.GetType().GetProperty("ClientCode");
+        var clientCode = clientCodeProp?.GetValue(item) as string;
+        
+        if (string.IsNullOrWhiteSpace(clientCode))
+        {
+            structureErrors.Add($"Item {i}: ClientCode is null or empty");
+            continue;
+        }
+        
+        // Validate Description (optional but recommended)
+        var descriptionProp = item.GetType().GetProperty("Description");
+        var description = descriptionProp?.GetValue(item) as string;
+        
+        if (string.IsNullOrWhiteSpace(description))
+        {
+            structureErrors.Add($"Item {i} ('{clientCode}'): Description is empty (not critical but recommended)");
+            // Don't fail validation for missing description
+        }
+        
+        validItems++;
+    }
+    
+    if (validItems == 0 && totalItems > 0)
+    {
+        result.AddCriticalError(
+            "All FinancialClassItems have invalid structure",
+            "Errors: " + string.Join("; ", structureErrors.Take(5)),
+            "Fix: Ensure format: new MiscCodeItem(\"CODE\", \"Description\")"
+        );
+    }
+    else if (validItems < totalItems)
+    {
+        result.AddWarning(
+            $"Only {validItems}/{totalItems} items have valid ClientCode",
+            "First errors: " + string.Join("; ", structureErrors.Take(3))
+        );
+        result.Score += 2.0 * (validItems / (double)totalItems);
+    }
+    else
+    {
+        result.Score += 2.0;
+        result.AddEvidence($"✓ All {validItems} items have valid structure (ClientCode, Description)");
+    }
+    
+    return result;
 }
 ```
-
----
-
-## 5.3 Persistence & Configuration Evolution (3 points)
-
-### Subtotal Justification: 3 points (25% of Cross-Walks)
-
-**Why 3 points:**
-- Enables learning systems and incremental refinement
-- Prevents regression between executions
-
-**Score Calculation:**
-```
-Criticality: 3/5
-Impact: 3/5
-Frequency: 3/5
-Score = (3 × 3 × 3) / 9 = 3 points
-```
-
-### Evaluation Criteria
-
-| Criterion | Points | Justification | Validation | Penalty |
-|---------|--------|---------------|------------|---------|
-| Persisted in SaveSettings | 1 | Lifecycle completion | Save call | Lost updates |
-| Backward-compatible changes | 1 | Safe upgrades | Version checks | Breaking configs |
-| Audit traceability | 1 | Compliance support | Metadata / logs | Non-auditable state |
-
----
-
-## Cross-Walk Integrity Summary
-
-A formatter **fails the configuration standard** if:
-- Mappings are hard-coded instead of configurable
-- Unknown values are not handled deterministically
-- Configuration changes are not persisted safely
 
 # 6. ROBUSTNESS, DEFENSIVE CODING & EDGE CASES (8 points)
 
@@ -1009,10 +2533,126 @@ Score = (3 × 3 × 4) / 12 = 3 points
 | Safe string handling | 1 | Avoids trim/parse errors | Guard clauses | Processing abort |
 | Defaults for missing data | 1 | Deterministic output | Default assignment | Silent nulls |
 
-### Reference Pattern
+**Validation agent logic** 
 ```csharp
-var value = string.IsNullOrWhiteSpace(input) ? DefaultValue : input.Trim();
+public ValidationResult ValidateNullSafety(Type handlerType)
+{
+    var result = new ValidationResult 
+    { 
+        Category = "Null Safety & Defensive Coding", 
+        MaxScore = 4 
+    };
+    
+    var processRecordMethod = handlerType.GetMethod("ProcessRecord", 
+        BindingFlags.NonPublic | BindingFlags.Instance);
+    
+    if (processRecordMethod == null)
+    {
+        result.AddWarning("ProcessRecord method not found - cannot validate null safety");
+        return result;
+    }
+    
+    var methodBody = DecompileMethodBody(processRecordMethod);
+    
+    // Check 1: Null checks (2 pts)
+    bool hasNullChecks = 
+        methodBody.Contains("== null") || 
+        methodBody.Contains("!= null") ||
+        methodBody.Contains("?.") || // Null-conditional operator
+        methodBody.Contains("??");   // Null-coalescing operator
+    
+    if (!hasNullChecks)
+    {
+        result.AddWarning(
+            "No null checks detected in ProcessRecord",
+            "Impact: NullReferenceException risk in production",
+            "Recommendation: Add null checks for record, converter, settings"
+        );
+    }
+    else
+    {
+        result.Score += 2.0;
+        result.AddEvidence("✓ Null safety patterns detected");
+    }
+    
+    // Check 2: Required field validation (2 pts)
+    bool hasAccountNumValidation = 
+        methodBody.Contains("AccountNum") && 
+        (methodBody.Contains("IsNullOrEmpty") || methodBody.Contains("IsNullOrWhiteSpace"));
+    
+    bool hasMemberCodeValidation = 
+        methodBody.Contains("MemberCode") && 
+        (methodBody.Contains("IsNullOrEmpty") || methodBody.Contains("IsNullOrWhiteSpace"));
+    
+    if (!hasAccountNumValidation && !hasMemberCodeValidation)
+    {
+        result.AddWarning(
+            "No validation for required fields (AccountNum, MemberCode)",
+            "Impact: DB constraint violations will crash processing"
+        );
+    }
+    else if (hasAccountNumValidation && hasMemberCodeValidation)
+    {
+        result.Score += 2.0;
+        result.AddEvidence("✓ Required fields validated");
+    }
+    else
+    {
+        result.Score += 1.0; // Partial credit
+        result.AddEvidence("✓ Partial required field validation");
+    }
+    
+    return result;
+}
 ```
+**Reference code**
+```csharp
+protected override void ProcessRecord(object pRecord)
+{
+    // [1 pt] - Null check on record
+    var record = pRecord as InventoryRecordType;
+    if (record == null)
+    {
+        LogWarning("Received null record - skipping");
+        return; // Safe exit
+    }
+    
+    // [0.5 pt] - Validate required fields (AccountNumber)
+    if (string.IsNullOrWhiteSpace(record.AccountNum))
+    {
+        LogError("Record missing AccountNumber - skipping");
+        CurrentCount++; // Still count the record
+        return;
+    }
+    
+    // [0.5 pt] - Validate MemberCode
+    if (string.IsNullOrWhiteSpace(record.MemberCode))
+    {
+        LogError($"Account {record.AccountNum} missing MemberCode - skipping");
+        return;
+    }
+    
+    // [0.5 pt] - Safe access to converter with null check
+    var converter = BaseConverter as PriRmarkdown
+    var converter = BaseConverter as PriRiver;
+    if (converter == null)
+    {
+        LogError("Unable to cast BaseConverter to PriRiver");
+        return;
+    }
+    
+    // [0.5 pt] - Safe access to Settings
+    if (converter.Settings == null)
+    {
+        LogError("Converter Settings is null - cannot process");
+        return;
+    }
+    
+    // Safe to proceed with processing
+    ProcessRecordInternal(record, converter);
+}
+```
+
 
 ---
 
@@ -1038,6 +2678,137 @@ Score = (2 × 3 × 3) / 9 = 2 points
 |---------|--------|---------------|------------|---------|
 | Length / range validation | 1 | Prevents overflow | Conditional checks | Truncation |
 | Safe numeric parsing | 1 | Prevents exceptions | TryParse usage | Execution abort |
+
+**Validation agent logic** 
+```csharp
+public ValidationResult ValidateErrorHandling(Type handlerType)
+{
+    var result = new ValidationResult 
+    { 
+        Category = "Error Handling & Logging", 
+        MaxScore = 4 
+    };
+    
+    var processRecordMethod = handlerType.GetMethod("ProcessRecord", 
+        BindingFlags.NonPublic | BindingFlags.Instance);
+    
+    if (processRecordMethod == null)
+    {
+        result.AddWarning("ProcessRecord method not found");
+        return result;
+    }
+    
+    var methodBody = DecompileMethodBody(processRecordMethod);
+    
+    // Check 1: Try-catch blocks (2 pts)
+    bool hasTryCatch = 
+        methodBody.Contains("try") && 
+        methodBody.Contains("catch");
+    
+    if (!hasTryCatch)
+    {
+        result.AddWarning(
+            "No try-catch blocks detected",
+            "Impact: Unhandled exceptions will stop batch processing",
+            "Recommendation: Wrap DB operations in try-catch"
+        );
+    }
+    else
+    {
+        result.Score += 2.0;
+        result.AddEvidence("✓ Try-catch blocks present");
+    }
+    
+    // Check 2: Framework logging (2 pts)
+    bool usesFrameworkLogging = 
+        methodBody.Contains("LogError") || 
+        methodBody.Contains("LogWarning") || 
+        methodBody.Contains("LogInfo");
+    
+    bool usesConsoleLogging = 
+        methodBody.Contains("Console.WriteLine") || 
+        methodBody.Contains("Console.Write");
+    
+    if (usesConsoleLogging && !usesFrameworkLogging)
+    {
+        result.AddCriticalError(
+            "CRITICAL: Using Console.WriteLine instead of framework logging",
+            "Impact: Logs not captured in production environment",
+            "MVP Error: This was identified in prototype review",
+            "Fix: Replace Console.WriteLine with LogError()/LogWarning()"
+        );
+    }
+    else if (!usesFrameworkLogging)
+    {
+        result.AddWarning(
+            "No logging detected",
+            "Impact: Debugging production issues will be impossible"
+        );
+    }
+    else
+    {
+        result.Score += 2.0;
+        result.AddEvidence("✓ Uses framework logging (LogError/LogWarning)");
+        
+        if (usesConsoleLogging)
+        {
+            result.AddWarning(
+                "Mix of Console.WriteLine and framework logging detected",
+                "Recommendation: Use only framework logging for consistency"
+            );
+        }
+    }
+    
+    return result;
+}
+
+```
+**Reference code**
+```csharp
+protected override void ProcessRecord(object pRecord)
+{
+    var record = pRecord as InventoryRecordType;
+    if (record == null) return;
+    
+    // [1 pt] - Try-catch around critical operations
+    try
+    {
+        // Validate required fields
+        if (string.IsNullOrWhiteSpace(record.AccountNum))
+        {
+            // [1 pt] - Use LogWarning (not Console.WriteLine)
+            LogWarning($"Line {CurrentCount}: Missing AccountNumber - skipping record");
+            return;
+        }
+        
+        // Apply business logic
+        ApplyCrossWalks(record);
+        
+        // [1 pt] - Try-catch specifically around DB operation
+        try
+        {
+            SaveToDatabase(record);
+        }
+        catch (SqlException ex)
+        {
+            // [1 pt] - LogError with details
+            LogError($"DB error saving account {record.AccountNum}: {ex.Message}");
+            // Don't rethrow - continue processing other records
+        }
+    }
+    catch (Exception ex)
+    {
+        // [1 pt] - Outer catch for unexpected errors
+        LogError($"Unexpected error processing record {CurrentCount}: {ex.Message}");
+        // Log but don't crash - allow processing to continue
+    }
+    finally
+    {
+        CurrentCount++; // Always increment counter
+    }
+}
+```
+
 
 ---
 
@@ -1132,6 +2903,161 @@ Validate structural and architectural compliance without executing the formatter
 - AST / Roslyn analysis (where available)
 - Rule-based scoring assignment
 
+```markdown
+# PriRiver - River Medical Center Formatter
+
+## Client Information
+- **Client Name**: River Medical Center
+- **Member Code**: RIV
+- **Host System**: Meditech
+- **Effective Date**: 2024-01-15
+- **Contact**: Jane Smith (jane.smith@rivermedical.com)
+
+## File Specifications
+
+### Demographics/Inventory File
+- **Filename Pattern**: `RIV_DEMO_*.txt`
+- **Format**: Tab-delimited
+- **Record Type**: `InventoryRecordType`
+- **Expected Columns**: 25
+- **Sample Location**: `\\mds-share\samples\River\demo_sample.txt`
+
+### Transaction File (if separate)
+- **Filename Pattern**: `RIV_TRANS_*.txt`
+- **Format**: Tab-delimited
+- **Record Type**: `TransactionRecordType`
+
+## Cross-Walk Configuration
+
+### Financial Class Mapping
+Use ConverterManager UI to configure mappings:
+
+1. Open ConverterManager
+2. Select "River Medical" (RIV)
+3. Navigate to "Financial Class Cross-Walks"
+4. Map client codes to MDS queues:
+
+Client Code → MDS Queue
+SP → Self Pay BCBS → Commercial MEDICARE → Medicare MEDICAID → Medicaid WC → Workers Comp
+
+
+### Transaction Code Mapping
+Navigate to "Transaction Code Cross-Walks":
+
+Client Code → Trans Type → Description
+CHG → C → Charge PSP → P → Payment Self Pay PINS → P → Payment Insurance ADJWO → A → Adjustment Write Off
+
+
+## Special Business Rules
+- **Recall Protection**: Enabled (standard)
+- **Bill Number**: Generated from Account Number
+- **Custom Logic**: None
+
+## Testing
+1. Place test file in: `C:\MDS\Input\RIV\`
+2. Run formatter via TaskLauncher
+3. Verify output in: `C:\MDS\Output\RIV\`
+4. Check logs: `C:\MDS\Logs\PriRiver_YYYYMMDD.log`
+
+## Support
+- **Developer**: [Your Name]
+- **Date Created**: 2024-01-15
+- **Last Updated**: 2024-01-15
+```
+
+**Validation agent logic** 
+```csharp
+public ValidationResult ValidateReadme(string formatterPath)
+{
+    var result = new ValidationResult 
+    { 
+        Category = "README Documentation", 
+        MaxScore = 3 
+    };
+    
+    string readmePath = Path.Combine(formatterPath, "README.md");
+    
+    // Check 1: README exists (1.5 pts)
+    if (!File.Exists(readmePath))
+    {
+        result.AddWarning(
+            "README.md not found",
+            "Impact: Mitch/Shawna won't have configuration instructions",
+            "Recommendation: Create README with client info, file specs, cross-walk setup"
+        );
+        return result;
+    }
+    
+    result.Score += 0.5; // File exists
+    
+    string content = File.ReadAllText(readmePath);
+    
+    // Check required sections
+    var requiredSections = new[]
+    {
+        "Client Information",
+        "File Specifications",
+        "Cross-Walk Configuration"
+    };
+    
+    int sectionsFound = 0;
+    foreach (var section in requiredSections)
+    {
+        if (content.Contains(section, StringComparison.OrdinalIgnoreCase))
+        {
+            sectionsFound++;
+        }
+    }
+    
+    if (sectionsFound < 2)
+    {
+        result.AddWarning(
+            $"README missing key sections (found {sectionsFound}/3)",
+            $"Expected: {string.Join(", ", requiredSections)}"
+        );
+        result.Score += 0.5; // Partial credit
+    }
+    else
+    {
+        result.Score += 1.0; // Full credit for structure
+        result.AddEvidence($"✓ README has {sectionsFound}/3 required sections");
+    }
+    
+    // Check 2: Cross-walk configuration documented (1.5 pts)
+    bool hasCrossWalkDocs = 
+        content.Contains("Cross-Walk", StringComparison.OrdinalIgnoreCase) &&
+        (content.Contains("Financial Class") || content.Contains("Transaction Code"));
+    
+    bool hasExamples = 
+        content.Contains("→") || // Arrow notation for mappings
+        content.Contains("->") ||
+        content.Contains("Client Code");
+    
+    if (!hasCrossWalkDocs)
+    {
+        result.AddWarning(
+            "Cross-walk configuration not documented",
+            "Impact: Users won't know how to configure mappings",
+            "Recommendation: Add section explaining ConverterManager UI usage"
+        );
+    }
+    else if (!hasExamples)
+    {
+        result.AddWarning(
+            "Cross-walk documentation lacks examples",
+            "Recommendation: Show sample mappings (SP → Self Pay, etc.)"
+        );
+        result.Score += 0.75; // Partial credit
+    }
+    else
+    {
+        result.Score += 1.5; // Full credit
+        result.AddEvidence("✓ Cross-walk configuration documented with examples");
+    }
+    
+    return result;
+}
+```
 ---
 
 ## 7.2 Runtime & Behavioral Validation Agents
@@ -1166,18 +3092,215 @@ Validate behavior that can only be observed during execution.
 FinalScore = Σ(SectionScore) − Σ(Penalties)
 ```
 
+**Validation agent logic** 
+```csharp
+public ValidationResult ValidateCodeQuality(Type handlerType)
+{
+    var result = new ValidationResult 
+    { 
+        Category = "Code Comments & Naming", 
+        MaxScore = 2 
+    };
+    
+    // Check 1: XML comments (1 pt)
+    var xmlDocs = handlerType.GetCustomAttributes<System.ComponentModel.DescriptionAttribute>();
+    
+    // Check if type has XML summary
+    bool hasClassXmlComment = HasXmlComment(handlerType);
+    
+    var publicMethods = handlerType.GetMethods(BindingFlags.Public | BindingFlags.Instance)
+        .Where(m => m.DeclaringType == handlerType);
+    
+    int methodsWithXml = 0;
+    int totalPublicMethods = publicMethods.Count();
+    
+    foreach (var method in publicMethods)
+    {
+        if (HasXmlComment(method))
+        {
+            methodsWithXml++;
+        }
+    }
+    
+    if (hasClassXmlComment && methodsWithXml > 0)
+    {
+        result.Score += 1.0;
+        result.AddEvidence($"✓ XML comments present (class + {methodsWithXml} methods)");
+    }
+    else if (hasClassXmlComment || methodsWithXml > 0)
+    {
+        result.Score += 0.5;
+        result.AddEvidence("✓ Partial XML documentation");
+    }
+    else
+    {
+        result.AddWarning(
+            "No XML comments detected",
+            "Recommendation: Add /// <summary> to class and public methods"
+        );
+    }
+    
+    // Check 2: Variable naming (1 pt)
+    // This is harder to validate automatically, so we check method names
+    var methods = handlerType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+    
+    int descriptiveNames = 0;
+    int poorNames = 0;
+    
+    foreach (var method in methods)
+    {
+        if (method.DeclaringType != handlerType) continue;
+        
+        string name = method.Name;
+        
+        // Good: PascalCase, descriptive
+        if (name.Length > 3 && char.IsUpper(name[0]))
+        {
+            descriptiveNames++;
+        }
+        // Bad: single letter, tmp, etc.
+        else if (name.Length <= 2 || name.Contains("tmp", StringComparison.OrdinalIgnoreCase))
+        {
+            poorNames++;
+        }
+    }
+    
+    if (poorNames > 0)
+    {
+        result.AddWarning(
+            $"Detected {poorNames} methods with poor naming",
+            "MVP Feedback: 'Confusing variable naming'",
+            "Recommendation: Use descriptive PascalCase names"
+        );
+        result.Score += 0.5;
+    }
+    else if (descriptiveNames > 0)
+    {
+        result.Score += 1.0;
+        result.AddEvidence("✓ Descriptive naming conventions");
+    }
+    
+    return result;
+}
+
+private bool HasXmlComment(MemberInfo member)
+{
+    // In real implementation, would parse XML documentation file
+    // For now, simplified check
+    return member.GetCustomAttributes().Any(a => 
+        a.GetType().Name.Contains("Description") || 
+        a.GetType().Name.Contains("Summary"));
+}
+```
+### Reference code
+
+```csharp
+/// <summary>
+/// Handles demographics/inventory file processing for River Medical Center.
+/// Processes account information and applies Meditech-specific business rules.
+/// </summary>
+/// <remarks>
+/// [1 pt for XML comments]
+/// WHY: Provides IntelliSense documentation for other developers
+/// INCLUDES: Summary, parameters, return values, exceptions
+/// </remarks>
+public class DemographicsHandler : MedBaseCollectionsHandler
+{
+    /// <summary>
+    /// Initializes a new instance of the DemographicsHandler.
+    /// </summary>
+    /// <param name="pBaseConverter">Reference to parent formatter (PriRiver)</param>
+    /// <param name="pInputFile">Input file metadata and path</param>
+    public DemographicsHandler(BaseConverter pBaseConverter, ProcessFile pInputFile)
+        : base(pBaseConverter, pInputFile)
+    {
+    }
+    
+    /// <summary>
+    /// Processes a single demographic record from the input file.
+    /// </summary>
+    /// <param name="pRecord">Parsed record (InventoryRecordType)</param>
+    protected override void ProcessRecord(object pRecord)
+    {
+        // [1 pt for descriptive naming]
+        // GOOD: descriptive variable names
+        var demographicRecord = pRecord as InventoryRecordType;
+        var riverFormatter = BaseConverter as PriRiver;
+        string accountNumber = demographicRecord?.AccountNum;
+        
+        // BAD (MVP error):
+        // var r = pRecord as InventoryRecordType;
+        // var c = BaseConverter as PriRiver;
+        // string x = r?.AccountNum;
+        
+        // Validate required fields
+        if (string.IsNullOrWhiteSpace(accountNumber))
+        {
+            LogWarning($"Line {CurrentCount}: Missing account number");
+            return;
+        }
+        
+        // Check recall status
+        if (riverFormatter?.Accounts?.IsRecalled(accountNumber) == true)
+        {
+            LogInfo($"Account {accountNumber} is recalled - skipping");
+            return;
+        }
+        
+        // Process record...
+    }
+}
+```
+
+
 ---
 
 # 8. FINAL SCORING, DECISION RULES & RELEASE READINESS
 
 ## 8.1 Score Thresholds
 
-| Final Score | Classification | Action |
-|------------|---------------|--------|
-| ≥ 90 | Production Ready | Approve release |
-| 80–89 | Conditionally Approved | Fix noted defects |
-| 70–79 | Not Approved | Remediation required |
-| < 70 | Rejected | Major rework |
+```markdown
+
+┌─────────────────────────────────────────────────────────────┐
+│                    SCORING BREAKDOWN                        │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  1. PROJECT STRUCTURE (16 pts)                    ████████  │
+│     1.1 .csproj File (8 pts)                                │
+│     1.2 AssemblyInfo.cs (8 pts)                             │
+│                                                             │
+│  2. MAIN FORMATTER CLASS (35 pts)                ███████████│
+│     2.1 Class Declaration (12 pts)                          │
+│     2.2 Settings & Configuration (10 pts)                   │
+│     2.3 LoadSettings Override (13 pts)                      │
+│                                                             │
+│  3. FILEHELPERS INTEGRATION (18 pts)             █████████  │
+│     3.1 Record Type Class Attributes (6 pts)                │
+│     3.2 Field Attributes (6 pts)                            │
+│     3.3 Field Mapping to DB (6 pts)                         │
+│                                                             │
+│  4. HANDLERS & BUSINESS LOGIC (17 pts)           ████████   │
+│     4.1 DemographicsHandler (7 pts)                         │
+│     4.2 TransactionHandler (5 pts)                          │
+│     4.3 InventoryHandler (5 pts)                            │
+│                                                             │
+│  5. CROSS-WALKS (12 pts)                         ██████     │
+│     5.1 Transaction Code Items (6 pts)                      │
+│     5.2 Financial Class Items (6 pts)                       │
+│                                                             │
+│  6. ROBUSTNESS & EDGE CASES (8 pts)              ████       │
+│     6.1 Null Safety (4 pts)                                 │
+│     6.2 Error Handling & Logging (4 pts)                    │
+│                                                             │
+│  7. DOCUMENTATION (5 pts)                        ██         │
+│     7.1 README.md (3 pts)                                   │
+│     7.2 Code Comments (2 pts)                               │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+
+TOTAL: 100 points
+```
+
 
 ---
 
@@ -1211,7 +3334,105 @@ To support internal and external audits, the evaluation process must retain:
 > - Final score meets or exceeds the required threshold
 > - Evidence artifacts are archived and reviewable
 
-This ensures the formatter meets **technical, operational, and governance standards**.
+## Validation template
+```markdown
+public class FormatterValidationReport
+{
+    public string FormatterName { get; set; }
+    public DateTime ValidationDate { get; set; }
+    public int TotalScore { get; set; }
+    public int MaxScore { get; set; } = 100;
+    public double Percentage => (TotalScore / (double)MaxScore) * 100;
+    public string Tier => GetTier();
+    
+    public List<CategoryResult> CategoryResults { get; set; }
+    public List<CriticalIssue> CriticalIssues { get; set; }
+    public List<Warning> Warnings { get; set; }
+    public List<string> Recommendations { get; set; }
+    
+    public string GetTier()
+    {
+        if (Percentage >= 90) return "🟢 PRODUCTION READY";
+        if (Percentage >= 75) return "🟡 NEEDS MINOR FIXES";
+        if (Percentage >= 60) return "🟠 NEEDS MODERATE FIXES";
+        return "🔴 MAJOR REWORK REQUIRED";
+    }
+    
+    public string GenerateMarkdownReport()
+    {
+        var sb = new StringBuilder();
+        
+        sb.AppendLine($"# Validation Report: {FormatterName}");
+        sb.AppendLine($"**Date**: {ValidationDate:yyyy-MM-dd HH:mm:ss}");
+        sb.AppendLine($"**Score**: {TotalScore}/{MaxScore} ({Percentage:F1}%)");
+        sb.AppendLine($"**Tier**: {Tier}");
+        sb.AppendLine();
+        
+        // Critical Issues
+        if (CriticalIssues.Any())
+        {
+            sb.AppendLine("## 🔴 Critical Issues");
+            sb.AppendLine();
+            foreach (var issue in CriticalIssues)
+            {
+                sb.AppendLine($"### {issue.Title}");
+                sb.AppendLine($"- **Impact**: {issue.Impact}");
+                sb.AppendLine($"- **Fix**: {issue.Fix}");
+                sb.AppendLine();
+            }
+        }
+        
+        // Warnings
+        if (Warnings.Any())
+        {
+            sb.AppendLine("## ⚠️ Warnings");
+            sb.AppendLine();
+            foreach (var warning in Warnings)
+            {
+                sb.AppendLine($"- {warning.Message}");
+            }
+            sb.AppendLine();
+        }
+        
+        // Category Breakdown
+        sb.AppendLine("## 📊 Score Breakdown");
+        sb.AppendLine();
+        sb.AppendLine("| Category | Score | Max | % |");
+        sb.AppendLine("|----------|-------|-----|---|");
+        
+        foreach (var category in CategoryResults)
+        {
+            double pct = (category.Score / category.MaxScore) * 100;
+            string bar = GetProgressBar(pct);
+            sb.AppendLine($"| {category.Name} | {category.Score:F1} | {category.MaxScore} | {bar} {pct:F1}% |");
+        }
+        
+        sb.AppendLine();
+        
+        // Recommendations
+        if (Recommendations.Any())
+        {
+            sb.AppendLine("## 💡 Recommendations");
+            sb.AppendLine();
+            foreach (var rec in Recommendations)
+            {
+                sb.AppendLine($"- {rec}");
+            }
+        }
+        
+        return sb.ToString();
+    }
+    
+    private string GetProgressBar(double percentage)
+    {
+        int blocks = (int)(percentage / 10);
+        return new string('█', blocks) + new string('░', 10 - blocks);
+    }
+}
+
+```
+
+
 
 
 
