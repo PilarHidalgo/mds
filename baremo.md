@@ -458,4 +458,42 @@ public ValidationResult ValidatePropertiesAndConstants(Type formatterType)
     
     return result;
 }
-2. PIPELINE DE PROCESAMIENTO Y LIFECYCLE (20 puntos)
+
+## 2. PIPELINE DE PROCESAMIENTO Y LIFECYCLE (20 puntos)
+### 📌 Justificación del Peso Total: 20 puntos (20% del score)
+Razón: El pipeline controla el lifecycle completo del formatter:
+
+Inicialización: LoadSettings() carga configuración y cross-walks
+Configuración: Configure() permite al usuario definir mapeos
+Persistencia: SaveSettings() guarda cambios
+Impacto de Fallo:
+
+Sin LoadSettings: Cross-walks no cargan → todas las transacciones sin mapear
+Sin Configure: Usuario no puede configurar el formatter
+Sin SaveSettings: Configuración se pierde entre ejecuciones
+Evidencia de Criticidad del Contexto:
+
+"Missing LoadSettings() and required overrides" (MDS Project Follow-UP)
+
+Cálculo:
+
+Criticidad: 4/5 (Causa fallos en runtime)
+Impacto: 5/5 (Afecta todas las ejecuciones)
+Frecuencia: 5/5 (Error muy común en generación)
+Score = (4 × 5 × 5) / 5 = 20 puntos
+2.1 LoadSettings Override (8 puntos)
+Justificación del Subtotal: 8 puntos (40% de Pipeline)
+Por qué 8 puntos:
+
+Es el punto de entrada del lifecycle
+Sin LoadSettings, los cross-walks nunca se cargan
+Resulta en 100% de transacciones sin mapear
+Error más común según feedback del MVP
+Cálculo:
+
+Criticidad: 5/5 (Sin cross-walks, procesamiento falla)
+Impacto: 5/5 (Afecta todas las transacciones)
+Frecuencia: 5/5 (Muy común olvidarlo)
+Score = (5 × 5 × 5) / 15.6 = 8 puntos
+| Criterio | Puntos | Justificación del Puntaje | Forma de Validación | Penalización por Incumplimiento |
+
