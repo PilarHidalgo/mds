@@ -2713,5 +2713,793 @@ public ValidationResult ValidateFinancialClassItems(Type formatterType)
 📌 Justificación del Peso Total: 8 puntos (8% del score)
 Razón: Esta sección cubre defensividad del código y manejo de **
 
+markdown
+**Razón:** Esta sección cubre **defensividad del código** y manejo de **casos extremos** que causan crashes en producción:
+- **Null checks**: Previenen NullReferenceException
+- **Empty file handling**: Archivos vacíos no deben crashear el sistema
+- **Duplicate handling**: Misma cuenta procesada múltiples veces
+- **Error logging**: Permite debugging en producción
+
+**Impacto de Fallo:**
+- Crashes en producción durante procesamiento nocturno
+- Pérdida de datos cuando error no se captura
+- Debugging imposible sin logs adecuados
+
+**Evidencia de Criticidad del Contexto:**
+> *"Use of non-existent logging"* (MDS Project Follow-UP)
+> *"Some nonsensical or invalid code"* (MDS Project Follow-UP)
+
+**Cálculo:**
+Criticidad: 3/5 (No bloqueante pero causa crashes) Impacto: 3/5 (Afecta estabilidad) Frecuencia: 5/5 (Edge cases muy comunes en producción) Score = (3 × 3 × 5) / 5.6 = 8 puntos
+
+
+---
+
+## 6.1 Null Safety y Defensive Coding (4 puntos)
+
+| Criterio | Puntos | Justificación | Validación | Penalización |
+|----------|--------|---------------|------------|--------------|
+| **Null checks antes de acceder propiedades** | 2 | **50% del subtotal**<br>• IMPORTANTE: Previene NullReferenceException en producción<br>• EJEMPLOS: record null, converter null, Settings null | Uso de null-conditional operators:<br>`record?.Property`<br>`if (record == null) return;` | Runtime crashes en producción cuando datos inesperados |
+| **Validación de campos requeridos** | 2 | **50% del subtotal**<br>• IMPORTANTE: AccountNumber, MemberCode son requeridos<br>• Sin validación, DB constraints fallan = crash | Checks explícitos:<br>`if (string.IsNullOrEmpty(record.AccountNum))`<br>`{ LogError(); return; }` | DB constraint violations,<br>procesamiento se detiene |
+
+**Código de Referencia:**
+
+```csharp
+protected override void ProcessRecord(object pRecord)
+{
+    // [1 pt] - Null check on record
+    var record = pRecord as InventoryRecordType;
+    if (record == null)
+    {
+        LogWarning("Received null record - skipping");
+        return; // Safe exit
+    }
+    
+    // [0.5 pt] - Validate required fields (AccountNumber)
+    if (string.IsNullOrWhiteSpace(record.AccountNum))
+    {
+        LogError("Record missing AccountNumber - skipping");
+        CurrentCount++; // Still count the record
+        return;
+    }
+    
+    // [0.5 pt] - Validate MemberCode
+    if (string.IsNullOrWhiteSpace(record.MemberCode))
+    {
+        LogError($"Account {record.AccountNum} missing MemberCode - skipping");
+        return;
+    }
+    
+    // [0.5 pt] - Safe access to converter with null check
+    var converter = BaseConverter as PriRmarkdown
+    var converter = BaseConverter as PriRiver;
+    if (converter == null)
+    {
+        LogError("Unable to cast BaseConverter to PriRiver");
+        return;
+    }
+    
+    // [0.5 pt] - Safe access to Settings
+    if (converter.Settings == null)
+    {
+        LogError("Converter Settings is null - cannot process");
+        return;
+    }
+    
+    // Safe to proceed with processing
+    ProcessRecordInternal(record, converter);
+}
+Validación Automatizada:
+
+csharp
+public ValidationResult ValidateNullSafety(Type handlerType)
+{
+    var result = new ValidationResult 
+    { 
+        Category = "Null Safety & Defensive Coding", 
+        MaxScore = 4 
+    };
+    
+    var processRecordMethod = handlerType.GetMethod("ProcessRecord", 
+        BindingFlags.NonPublic | BindingFlags.Instance);
+    
+    if (processRecordMethod == null)
+    {
+        result.AddWarning("ProcessRecord method not found - cannot validate null safety");
+        return result;
+    }
+    
+    var methodBody = DecompileMethodBody(processRecordMethod);
+    
+    // Check 1: Null checks (2 pts)
+    bool hasNullChecks = 
+        methodBody.Contains("== null") || 
+        methodBody.Contains("!= null") ||
+        methodBody.Contains("?.") || // Null-conditional operator
+        methodBody.Contains("??");   // Null-coalescing operator
+    
+    if (!hasNullChecks)
+    {
+        result.AddWarning(
+            "No null checks detected in ProcessRecord",
+            "Impact: NullReferenceException risk in production",
+            "Recommendation: Add null checks for record, converter, settings"
+        );
+    }
+    else
+    {
+        result.Score += 2.0;
+        result.AddEvidence("✓ Null safety patterns detected");
+    }
+    
+    // Check 2: Required field validation (2 pts)
+    bool hasAccountNumValidation = 
+        methodBody.Contains("AccountNum") && 
+        (methodBody.Contains("IsNullOrEmpty") || methodBody.Contains("IsNullOrWhiteSpace"));
+    
+    bool hasMemberCodeValidation = 
+        methodBody.Contains("MemberCode") && 
+        (methodBody.Contains("IsNullOrEmpty") || methodBody.Contains("IsNullOrWhiteSpace"));
+    
+    if (!hasAccountNumValidation && !hasMemberCodeValidation)
+    {
+        result.AddWarning(
+            "No validation for required fields (AccountNum, MemberCode)",
+            "Impact: DB constraint violations will crash processing"
+        );
+    }
+    else if (hasAccountNumValidation && hasMemberCodeValidation)
+    {
+        result.Score += 2.0;
+        result.AddEvidence("✓ Required fields validated");
+    }
+    else
+    {
+        result.Score += 1.0; // Partial credit
+        result.AddEvidence("✓ Partial required field validation");
+    }
+    
+    return result;
+}
+6.2 Error Handling y Logging (4 puntos)
+Criterio	Puntos	Justificación	Validación	Penalización
+Try-catch en operaciones críticas	2	50% del subtotal
+• IMPORTANTE: DB operations pueden fallar (network, constraints)
+• Sin try-catch, una falla detiene todo el batch	Try-catch alrededor de:
+SaveToDatabase()
+BulkInsert()	Batch completo falla por un registro malo
+Logging con LogError/LogWarning	2	50% del subtotal
+• CRÍTICO: Sin logs, debugging en producción es imposible
+• MVP error: usar Console.WriteLine en lugar de framework logging
+• DEBE usar: LogError(), LogWarning(), LogInfo()	Llamadas a:
+LogError(message)
+LogWarning(message)
+NO Console.WriteLine	Debugging imposible,
+issues no detectables
+Código de Referencia:
+
+csharp
+protected override void ProcessRecord(object pRecord)
+{
+    var record = pRecord as InventoryRecordType;
+    if (record == null) return;
+    
+    // [1 pt] - Try-catch around critical operations
+    try
+    {
+        // Validate required fields
+        if (string.IsNullOrWhiteSpace(record.AccountNum))
+        {
+            // [1 pt] - Use LogWarning (not Console.WriteLine)
+            LogWarning($"Line {CurrentCount}: Missing AccountNumber - skipping record");
+            return;
+        }
+        
+        // Apply business logic
+        ApplyCrossWalks(record);
+        
+        // [1 pt] - Try-catch specifically around DB operation
+        try
+        {
+            SaveToDatabase(record);
+        }
+        catch (SqlException ex)
+        {
+            // [1 pt] - LogError with details
+            LogError($"DB error saving account {record.AccountNum}: {ex.Message}");
+            // Don't rethrow - continue processing other records
+        }
+    }
+    catch (Exception ex)
+    {
+        // [1 pt] - Outer catch for unexpected errors
+        LogError($"Unexpected error processing record {CurrentCount}: {ex.Message}");
+        // Log but don't crash - allow processing to continue
+    }
+    finally
+    {
+        CurrentCount++; // Always increment counter
+    }
+}
+Validación Automatizada:
+
+csharp
+public ValidationResult ValidateErrorHandling(Type handlerType)
+{
+    var result = new ValidationResult 
+    { 
+        Category = "Error Handling & Logging", 
+        MaxScore = 4 
+    };
+    
+    var processRecordMethod = handlerType.GetMethod("ProcessRecord", 
+        BindingFlags.NonPublic | BindingFlags.Instance);
+    
+    if (processRecordMethod == null)
+    {
+        result.AddWarning("ProcessRecord method not found");
+        return result;
+    }
+    
+    var methodBody = DecompileMethodBody(processRecordMethod);
+    
+    // Check 1: Try-catch blocks (2 pts)
+    bool hasTryCatch = 
+        methodBody.Contains("try") && 
+        methodBody.Contains("catch");
+    
+    if (!hasTryCatch)
+    {
+        result.AddWarning(
+            "No try-catch blocks detected",
+            "Impact: Unhandled exceptions will stop batch processing",
+            "Recommendation: Wrap DB operations in try-catch"
+        );
+    }
+    else
+    {
+        result.Score += 2.0;
+        result.AddEvidence("✓ Try-catch blocks present");
+    }
+    
+    // Check 2: Framework logging (2 pts)
+    bool usesFrameworkLogging = 
+        methodBody.Contains("LogError") || 
+        methodBody.Contains("LogWarning") || 
+        methodBody.Contains("LogInfo");
+    
+    bool usesConsoleLogging = 
+        methodBody.Contains("Console.WriteLine") || 
+        methodBody.Contains("Console.Write");
+    
+    if (usesConsoleLogging && !usesFrameworkLogging)
+    {
+        result.AddCriticalError(
+            "CRITICAL: Using Console.WriteLine instead of framework logging",
+            "Impact: Logs not captured in production environment",
+            "MVP Error: This was identified in prototype review",
+            "Fix: Replace Console.WriteLine with LogError()/LogWarning()"
+        );
+    }
+    else if (!usesFrameworkLogging)
+    {
+        result.AddWarning(
+            "No logging detected",
+            "Impact: Debugging production issues will be impossible"
+        );
+    }
+    else
+    {
+        result.Score += 2.0;
+        result.AddEvidence("✓ Uses framework logging (LogError/LogWarning)");
+        
+        if (usesConsoleLogging)
+        {
+            result.AddWarning(
+                "Mix of Console.WriteLine and framework logging detected",
+                "Recommendation: Use only framework logging for consistency"
+            );
+        }
+    }
+    
+    return result;
+}
+7. DOCUMENTACIÓN Y LEGIBILIDAD (5 puntos)
+📌 Justificación del Peso Total: 5 puntos (5% del score)
+Razón: Código sin documentación es no mantenible por equipo MDS:
+
+README.md: Instrucciones de configuración para Mitch/Shawna
+XML comments: Documentación inline para developers
+Naming conventions: Código auto-documentado
+Impacto de Fallo:
+
+Mitch/Shawna no pueden configurar el formatter sin ayuda
+Future developers no entienden la lógica
+Multiple support tickets por falta de documentación
+Evidencia de Criticidad del Contexto:
+
+"Overly detailed README; missing standard .csproj structure" (MDS Project Follow-UP) "Confusing variable naming" (MDS Project Follow-UP)
+
+Cálculo:
+
+Criticidad: 2/5 (No impacta funcionalidad)
+Impacto: 3/5 (Impacta mantenibilidad)
+Frecuencia: 5/5 (Muy común olvidar documentar)
+Score = (2 × 3 × 5) / 6 = 5 puntos
+7.1 README.md (3 puntos)
+Criterio	Puntos	Justificación	Validación	Penalización
+README exists con estructura estándar	1.5	50% del subtotal
+• IMPORTANTE: Mitch/Shawna necesitan instrucciones de configuración
+• Debe incluir: Client info, File specs, Cross-walk setup	Archivo README.md existe
+Secciones: Client Info, Files, Cross-Walks	Support tickets por falta de instrucciones
+Cross-walk configuration documented	1.5	50% del subtotal
+• CRÍTICO: Sin esto, usuarios no saben cómo configurar códigos
+• Debe explicar cómo usar ConverterManager UI	Sección "Cross-Walk Configuration"
+con ejemplos de UI	Múltiples iteraciones de configuración
+Template de README.md:
+
+markdown
+# PriRiver - River Medical Center Formatter
+
+## Client Information
+- **Client Name**: River Medical Center
+- **Member Code**: RIV
+- **Host System**: Meditech
+- **Effective Date**: 2024-01-15
+- **Contact**: Jane Smith (jane.smith@rivermedical.com)
+
+## File Specifications
+
+### Demographics/Inventory File
+- **Filename Pattern**: `RIV_DEMO_*.txt`
+- **Format**: Tab-delimited
+- **Record Type**: `InventoryRecordType`
+- **Expected Columns**: 25
+- **Sample Location**: `\\mds-share\samples\River\demo_sample.txt`
+
+### Transaction File (if separate)
+- **Filename Pattern**: `RIV_TRANS_*.txt`
+- **Format**: Tab-delimited
+- **Record Type**: `TransactionRecordType`
+
+## Cross-Walk Configuration
+
+### Financial Class Mapping
+Use ConverterManager UI to configure mappings:
+
+1. Open ConverterManager
+2. Select "River Medical" (RIV)
+3. Navigate to "Financial Class Cross-Walks"
+4. Map client codes to MDS queues:
+
+Client Code → MDS Queue
+SP → Self Pay BCBS → Commercial MEDICARE → Medicare MEDICAID → Medicaid WC → Workers Comp
+
+
+### Transaction Code Mapping
+Navigate to "Transaction Code Cross-Walks":
+
+Client Code → Trans Type → Description
+CHG → C → Charge PSP → P → Payment Self Pay PINS → P → Payment Insurance ADJWO → A → Adjustment Write Off
+
+
+## Special Business Rules
+- **Recall Protection**: Enabled (standard)
+- **Bill Number**: Generated from Account Number
+- **Custom Logic**: None
+
+## Testing
+1. Place test file in: `C:\MDS\Input\RIV\`
+2. Run formatter via TaskLauncher
+3. Verify output in: `C:\MDS\Output\RIV\`
+4. Check logs: `C:\MDS\Logs\PriRiver_YYYYMMDD.log`
+
+## Support
+- **Developer**: [Your Name]
+- **Date Created**: 2024-01-15
+- **Last Updated**: 2024-01-15
+Validación Automatizada:
+
+csharp
+public ValidationResult ValidateReadme(string formatterPath)
+{
+    var result = new ValidationResult 
+    { 
+        Category = "README Documentation", 
+        MaxScore = 3 
+    };
+    
+    string readmePath = Path.Combine(formatterPath, "README.md");
+    
+    // Check 1: README exists (1.5 pts)
+    if (!File.Exists(readmePath))
+    {
+        result.AddWarning(
+            "README.md not found",
+            "Impact: Mitch/Shawna won't have configuration instructions",
+            "Recommendation: Create README with client info, file specs, cross-walk setup"
+        );
+        return result;
+    }
+    
+    result.Score += 0.5; // File exists
+    
+    string content = File.ReadAllText(readmePath);
+    
+    // Check required sections
+    var requiredSections = new[]
+    {
+        "Client Information",
+        "File Specifications",
+        "Cross-Walk Configuration"
+    };
+    
+    int sectionsFound = 0;
+    foreach (var section in requiredSections)
+    {
+        if (content.Contains(section, StringComparison.OrdinalIgnoreCase))
+        {
+            sectionsFound++;
+        }
+    }
+    
+    if (sectionsFound < 2)
+    {
+        result.AddWarning(
+            $"README missing key sections (found {sectionsFound}/3)",
+            $"Expected: {string.Join(", ", requiredSections)}"
+        );
+        result.Score += 0.5; // Partial credit
+    }
+    else
+    {
+        result.Score += 1.0; // Full credit for structure
+        result.AddEvidence($"✓ README has {sectionsFound}/3 required sections");
+    }
+    
+    // Check 2: Cross-walk configuration documented (1.5 pts)
+    bool hasCrossWalkDocs = 
+        content.Contains("Cross-Walk", StringComparison.OrdinalIgnoreCase) &&
+        (content.Contains("Financial Class") || content.Contains("Transaction Code"));
+    
+    bool hasExamples = 
+        content.Contains("→") || // Arrow notation for mappings
+        content.Contains("->") ||
+        content.Contains("Client Code");
+    
+    if (!hasCrossWalkDocs)
+    {
+        result.AddWarning(
+            "Cross-walk configuration not documented",
+            "Impact: Users won't know how to configure mappings",
+            "Recommendation: Add section explaining ConverterManager UI usage"
+        );
+    }
+    else if (!hasExamples)
+    {
+        result.AddWarning(
+            "Cross-walk documentation lacks examples",
+            "Recommendation: Show sample mappings (SP → Self Pay, etc.)"
+        );
+        result.Score += 0.75; // Partial credit
+    }
+    else
+    {
+        result.Score += 1.5; // Full credit
+        result.AddEvidence("✓ Cross-walk configuration documented with examples");
+    }
+    
+    return result;
+}
+7.2 Code Comments y Naming (2 puntos)
+Criterio	Puntos	Justificación	Validación	Penalización
+XML comments en métodos públicos	1	50% del subtotal
+• IMPORTANTE: Permite IntelliSense en Visual Studio
+• Documenta propósito de handlers	XML comments /// <summary>
+en handlers públicos	Developers no entienden propósito
+Variable naming descriptivo	1	50% del subtotal
+• IMPORTANTE: MVP error: "Confusing variable naming"
+• CORRECTO: accountNumber, transactionCode
+• INCORRECTO: x, tmp, var1	Variables con nombres descriptivos
+NO: single letters (excepto loops)	Código difícil de mantener
+Código de Referencia:
+
+csharp
+/// <summary>
+/// Handles demographics/inventory file processing for River Medical Center.
+/// Processes account information and applies Meditech-specific business rules.
+/// </summary>
+/// <remarks>
+/// [1 pt for XML comments]
+/// WHY: Provides IntelliSense documentation for other developers
+/// INCLUDES: Summary, parameters, return values, exceptions
+/// </remarks>
+public class DemographicsHandler : MedBaseCollectionsHandler
+{
+    /// <summary>
+    /// Initializes a new instance of the DemographicsHandler.
+    /// </summary>
+    /// <param name="pBaseConverter">Reference to parent formatter (PriRiver)</param>
+    /// <param name="pInputFile">Input file metadata and path</param>
+    public DemographicsHandler(BaseConverter pBaseConverter, ProcessFile pInputFile)
+        : base(pBaseConverter, pInputFile)
+    {
+    }
+    
+    /// <summary>
+    /// Processes a single demographic record from the input file.
+    /// </summary>
+    /// <param name="pRecord">Parsed record (InventoryRecordType)</param>
+    protected override void ProcessRecord(object pRecord)
+    {
+        // [1 pt for descriptive naming]
+        // GOOD: descriptive variable names
+        var demographicRecord = pRecord as InventoryRecordType;
+        var riverFormatter = BaseConverter as PriRiver;
+        string accountNumber = demographicRecord?.AccountNum;
+        
+        // BAD (MVP error):
+        // var r = pRecord as InventoryRecordType;
+        // var c = BaseConverter as PriRiver;
+        // string x = r?.AccountNum;
+        
+        // Validate required fields
+        if (string.IsNullOrWhiteSpace(accountNumber))
+        {
+            LogWarning($"Line {CurrentCount}: Missing account number");
+            return;
+        }
+        
+        // Check recall status
+        if (riverFormatter?.Accounts?.IsRecalled(accountNumber) == true)
+        {
+            LogInfo($"Account {accountNumber} is recalled - skipping");
+            return;
+        }
+        
+        // Process record...
+    }
+}
+Validación Automatizada:
+
+csharp
+public ValidationResult ValidateCodeQuality(Type handlerType)
+{
+    var result = new ValidationResult 
+    { 
+        Category = "Code Comments & Naming", 
+        MaxScore = 2 
+    };
+    
+    // Check 1: XML comments (1 pt)
+    var xmlDocs = handlerType.GetCustomAttributes<System.ComponentModel.DescriptionAttribute>();
+    
+    // Check if type has XML summary
+    bool hasClassXmlComment = HasXmlComment(handlerType);
+    
+    var publicMethods = handlerType.GetMethods(BindingFlags.Public | BindingFlags.Instance)
+        .Where(m => m.DeclaringType == handlerType);
+    
+    int methodsWithXml = 0;
+    int totalPublicMethods = publicMethods.Count();
+    
+    foreach (var method in publicMethods)
+    {
+        if (HasXmlComment(method))
+        {
+            methodsWithXml++;
+        }
+    }
+    
+    if (hasClassXmlComment && methodsWithXml > 0)
+    {
+        result.Score += 1.0;
+        result.AddEvidence($"✓ XML comments present (class + {methodsWithXml} methods)");
+    }
+    else if (hasClassXmlComment || methodsWithXml > 0)
+    {
+        result.Score += 0.5;
+        result.AddEvidence("✓ Partial XML documentation");
+    }
+    else
+    {
+        result.AddWarning(
+            "No XML comments detected",
+            "Recommendation: Add /// <summary> to class and public methods"
+        );
+    }
+    
+    // Check 2: Variable naming (1 pt)
+    // This is harder to validate automatically, so we check method names
+    var methods = handlerType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+    
+    int descriptiveNames = 0;
+    int poorNames = 0;
+    
+    foreach (var method in methods)
+    {
+        if (method.DeclaringType != handlerType) continue;
+        
+        string name = method.Name;
+        
+        // Good: PascalCase, descriptive
+        if (name.Length > 3 && char.IsUpper(name[0]))
+        {
+            descriptiveNames++;
+        }
+        // Bad: single letter, tmp, etc.
+        else if (name.Length <= 2 || name.Contains("tmp", StringComparison.OrdinalIgnoreCase))
+        {
+            poorNames++;
+        }
+    }
+    
+    if (poorNames > 0)
+    {
+        result.AddWarning(
+            $"Detected {poorNames} methods with poor naming",
+            "MVP Feedback: 'Confusing variable naming'",
+            "Recommendation: Use descriptive PascalCase names"
+        );
+        result.Score += 0.5;
+    }
+    else if (descriptiveNames > 0)
+    {
+        result.Score += 1.0;
+        result.AddEvidence("✓ Descriptive naming conventions");
+    }
+    
+    return result;
+}
+
+private bool HasXmlComment(MemberInfo member)
+{
+    // In real implementation, would parse XML documentation file
+    // For now, simplified check
+    return member.GetCustomAttributes().Any(a => 
+        a.GetType().Name.Contains("Description") || 
+        a.GetType().Name.Contains("Summary"));
+}
+
+
+
+8. RESUMEN Y SCORING FINAL
+📊 Distribución de Puntos (Total: 100)
+┌─────────────────────────────────────────────────────────────┐
+│                    SCORING BREAKDOWN                         │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  1. PROJECT STRUCTURE (16 pts)                    ████████  │
+│     1.1 .csproj File (8 pts)                                │
+│     1.2 AssemblyInfo.cs (8 pts)                             │
+│                                                              │
+│  2. MAIN FORMATTER CLASS (35 pts)                ███████████│
+│     2.1 Class Declaration (12 pts)                          │
+│     2.2 Settings & Configuration (10 pts)                   │
+│     2.3 LoadSettings Override (13 pts)                      │
+│                                                              │
+│  3. FILEHELPERS INTEGRATION (18 pts)             █████████  │
+│     3.1 Record Type Class Attributes (6 pts)                │
+│     3.2 Field Attributes (6 pts)                            │
+│     3.3 Field Mapping to DB (6 pts)                         │
+│                                                              │
+│  4. HANDLERS & BUSINESS LOGIC (17 pts)           ████████   │
+│     4.1 DemographicsHandler (7 pts)                         │
+│     4.2 TransactionHandler (5 pts)                          │
+│     4.3 InventoryHandler (5 pts)                            │
+│                                                              │
+│  5. CROSS-WALKS (12 pts)                         ██████     │
+│     5.1 Transaction Code Items (6 pts)                      │
+│     5.2 Financial Class Items (6 pts)                       │
+│                                                              │
+│  6. ROBUSTNESS & EDGE CASES (8 pts)              ████       │
+│     6.1 Null Safety (4 pts)                                 │
+│     6.2 Error Handling & Logging (4 pts)                    │
+│                                                              │
+│  7. DOCUMENTATION (5 pts)                        ██         │
+│     7.1 README.md (3 pts)                                   │
+│     7.2 Code Comments (2 pts)                               │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+
+TOTAL: 100 points
+
+📋 Validation Report Template
+csharp
+public class FormatterValidationReport
+{
+    public string FormatterName { get; set; }
+    public DateTime ValidationDate { get; set; }
+    public int TotalScore { get; set; }
+    public int MaxScore { get; set; } = 100;
+    public double Percentage => (TotalScore / (double)MaxScore) * 100;
+    public string Tier => GetTier();
+    
+    public List<CategoryResult> CategoryResults { get; set; }
+    public List<CriticalIssue> CriticalIssues { get; set; }
+    public List<Warning> Warnings { get; set; }
+    public List<string> Recommendations { get; set; }
+    
+    public string GetTier()
+    {
+        if (Percentage >= 90) return "🟢 PRODUCTION READY";
+        if (Percentage >= 75) return "🟡 NEEDS MINOR FIXES";
+        if (Percentage >= 60) return "🟠 NEEDS MODERATE FIXES";
+        return "🔴 MAJOR REWORK REQUIRED";
+    }
+    
+    public string GenerateMarkdownReport()
+    {
+        var sb = new StringBuilder();
+        
+        sb.AppendLine($"# Validation Report: {FormatterName}");
+        sb.AppendLine($"**Date**: {ValidationDate:yyyy-MM-dd HH:mm:ss}");
+        sb.AppendLine($"**Score**: {TotalScore}/{MaxScore} ({Percentage:F1}%)");
+        sb.AppendLine($"**Tier**: {Tier}");
+        sb.AppendLine();
+        
+        // Critical Issues
+        if (CriticalIssues.Any())
+        {
+            sb.AppendLine("## 🔴 Critical Issues");
+            sb.AppendLine();
+            foreach (var issue in CriticalIssues)
+            {
+                sb.AppendLine($"### {issue.Title}");
+                sb.AppendLine($"- **Impact**: {issue.Impact}");
+                sb.AppendLine($"- **Fix**: {issue.Fix}");
+                sb.AppendLine();
+            }
+        }
+        
+        // Warnings
+        if (Warnings.Any())
+        {
+            sb.AppendLine("## ⚠️ Warnings");
+            sb.AppendLine();
+            foreach (var warning in Warnings)
+            {
+                sb.AppendLine($"- {warning.Message}");
+            }
+            sb.AppendLine();
+        }
+        
+        // Category Breakdown
+        sb.AppendLine("## 📊 Score Breakdown");
+        sb.AppendLine();
+        sb.AppendLine("| Category | Score | Max | % |");
+        sb.AppendLine("|----------|-------|-----|---|");
+        
+        foreach (var category in CategoryResults)
+        {
+            double pct = (category.Score / category.MaxScore) * 100;
+            string bar = GetProgressBar(pct);
+            sb.AppendLine($"| {category.Name} | {category.Score:F1} | {category.MaxScore} | {bar} {pct:F1}% |");
+        }
+        
+        sb.AppendLine();
+        
+        // Recommendations
+        if (Recommendations.Any())
+        {
+            sb.AppendLine("## 💡 Recommendations");
+            sb.AppendLine();
+            foreach (var rec in Recommendations)
+            {
+                sb.AppendLine($"- {rec}");
+            }
+        }
+        
+        return sb.ToString();
+    }
+    
+    private string GetProgressBar(double percentage)
+    {
+        int blocks = (int)(percentage / 10);
+        return new string('█', blocks) + new string('░', 10 - blocks);
+    }
+}
+
+
 
 
