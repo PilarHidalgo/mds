@@ -1149,6 +1149,7 @@ public sealed class InventoryRecordType
     [FieldNullValue(typeof(string), "SP")] // Default to Self Pay if empty
     public string FinClass;
 }
+```
 **Validación Automatizada Inteligente:**
 
 ```csharp
@@ -3283,37 +3284,39 @@ private bool HasXmlComment(MemberInfo member)
 
 ## 8. RESUMEN Y SCORING FINAL
 📊 Distribución de Puntos (Total: 100)
+
+```markdown
 ┌─────────────────────────────────────────────────────────────┐
-│                    SCORING BREAKDOWN                         │
+│                    SCORING BREAKDOWN                        │
 ├─────────────────────────────────────────────────────────────┤
-│                                                              │
+│                                                             │
 │  1. PROJECT STRUCTURE (16 pts)                    ████████  │
 │     1.1 .csproj File (8 pts)                                │
 │     1.2 AssemblyInfo.cs (8 pts)                             │
-│                                                              │
+│                                                             │
 │  2. MAIN FORMATTER CLASS (35 pts)                ███████████│
 │     2.1 Class Declaration (12 pts)                          │
 │     2.2 Settings & Configuration (10 pts)                   │
 │     2.3 LoadSettings Override (13 pts)                      │
-│                                                              │
+│                                                             │
 │  3. FILEHELPERS INTEGRATION (18 pts)             █████████  │
 │     3.1 Record Type Class Attributes (6 pts)                │
 │     3.2 Field Attributes (6 pts)                            │
 │     3.3 Field Mapping to DB (6 pts)                         │
-│                                                              │
+│                                                             │
 │  4. HANDLERS & BUSINESS LOGIC (17 pts)           ████████   │
 │     4.1 DemographicsHandler (7 pts)                         │
 │     4.2 TransactionHandler (5 pts)                          │
 │     4.3 InventoryHandler (5 pts)                            │
-│                                                              │
+│                                                             │
 │  5. CROSS-WALKS (12 pts)                         ██████     │
 │     5.1 Transaction Code Items (6 pts)                      │
 │     5.2 Financial Class Items (6 pts)                       │
-│                                                              │
+│                                                             │
 │  6. ROBUSTNESS & EDGE CASES (8 pts)              ████       │
 │     6.1 Null Safety (4 pts)                                 │
 │     6.2 Error Handling & Logging (4 pts)                    │
-│                                                              │
+│                                                             │
 │  7. DOCUMENTATION (5 pts)                        ██         │
 │     7.1 README.md (3 pts)                                   │
 │     7.2 Code Comments (2 pts)                               │
@@ -3321,6 +3324,7 @@ private bool HasXmlComment(MemberInfo member)
 └─────────────────────────────────────────────────────────────┘
 
 TOTAL: 100 points
+```
 
 ## 📋 Validation Report Template
 ```csharp
@@ -3419,6 +3423,7 @@ public class FormatterValidationReport
 }
 
 ```
+
 
 
 
