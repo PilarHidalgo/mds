@@ -493,6 +493,143 @@ Score = (5 × 5 × 5) / 15.6 = 8 puntos
 ```
 
 
+| Criterio | Puntos | Justificación del Puntaje | Forma de Validación | Penalización por Incumplimiento |
+|----------|--------|---------------------------|---------------------|--------------------------------|
+| GetConverter() implementado | 5 | 50% del subtotal<br>• CRÍTICO: Es el router que devuelve el handler apropiado<br>• Sin él, ningún archivo se procesa<br>• Llamado por el pipeline en ProcessFile()<br>• Método abstracto - obligatorio | Método existe, no es abstracto,<br>retorna BaseConversionClass<br>según InputType | BLOQUEANTE: Compilation error |
+| GetConverter() cubre todos InputTypes | 2 | 20% del subtotal<br>• IMPORTANTE: Debe manejar todos los tipos de archivo del cliente<br>• InputTypes no manejados = archivos ignorados silenciosamente<br>• Común error: solo implementar Demographics, olvidar Inventory | Switch/if cubre todos los valores<br>retornados por QualifyFile() | Archivos del cliente no procesados sin error visible |
+| QualifyFile() implementado | 3 | 30% del subtotal<br>• CRÍTICO: Clasifica archivos entrantes por nombre/contenido<br>• Sin él, todos los archivos son InputType.Unknown<br>• Método abstracto - obligatorio | Método existe,<br>retorna InputType<br>basado en análisis de archivo | BLOQUEANTE: Compilation error |
+
+
+
+Código de Referencia con Anotaciones:
+
+```csharp
+// [5 pts] - GetConverter implementation
+public override BaseConversionClass GetConverter(ProcessFile pFile)
+{
+    // WHY CRITICAL: This is the routing logic for all file processing
+    // IMPACT: If a case is missing, that file type is silently ignored
+    
+    switch (pFile.FileType)
+    {
+        case InputType.Collections:  // [+0.5 pt] Demographics handler
+            return new DemographicsHandler(this, pFile);
+            
+        case InputType.Inventory:    // [+0.5 pt] Inventory handler
+            return new InventoryHandler(this, pFile, typeof(InventoryRecordType));
+            
+        case InputType.Insurance:    // [+0.5 pt] Insurance handler (if applicable)
+            return new InsuranceHandler(this, pFile);
+            
+        case InputType.Skip:         // [+0.5 pt] Known files to skip
+            return null; // Explicitly ignored
+            
+        default:
+            return null;
+    }
+    // [+2 pts if all expected InputTypes covered]
+}
+
+// [3 pts] - QualifyFile implementation
+protected override InputType QualifyFile(ProcessFile pFile)
+{
+    // WHY CRITICAL: Incorrect classification = wrong handler or no processing
+    // IMPACT: Client files may be processed incorrectly or not at all
+    
+    string fileName = pFile.ShortName.ToUpper();
+    
+    // Pattern matching should be specific to avoid conflicts
+    if (fileName.Contains("DEMO") || fileName.Contains("PATIENT"))
+        return InputType.Collections;
+        
+    if (fileName.Contains("INV") || fileName.Contains("INVENTORY"))
+        return InputType.Inventory;
+        
+    if (fileName.Contains("INSURANCE") || fileName.Contains("INS"))
+        return InputType.Insurance;
+        
+    // Files that should be ignored (e.g., Excel exports)
+    if (fileName.EndsWith(".XLSX") || fileName.Contains("BACKUP"))
+        return InputType.Skip;
+        
+    return InputType.Unknown; // Will be logged for review
+}
+```
+
+**Validación Automatizada:**
+
+
+```csharp
+public ValidationResult ValidateAbstractMethods(Type formatterType)
+{
+    var result = new ValidationResult { Category = "Abstract Methods", MaxScore = 10 };
+    
+    // GetConverter validation (5 pts base + 2 pts coverage)
+    var getConverter = formatterType.GetMethod("GetConverter", 
+        BindingFlags.Public | BindingFlags.Instance);
+    
+    if (getConverter == null || getConverter.IsAbstract)
+    {
+        result.AddCriticalError(
+            "BLOCKER: GetConverter() not implemented",
+            "This is an abstract method in BaseConverter - code will not compile"
+        );
+        return result;
+    }
+    result.Score += 5;
+    result.AddEvidence("✓ GetConverter() implemented");
+    
+    // Analyze coverage of InputTypes
+    var inputTypesCovered = AnalyzeInputTypeCoverage(getConverter);
+    var expectedTypes = DetermineExpectedInputTypes(formatterType);
+    
+    if (inputTypesCovered.Count >= expectedTypes.Count)
+    {
+        result.Score += 2;
+        result.AddEvidence($"✓ GetConverter() handles all {expectedTypes.Count} expected InputTypes");
+    }
+    else
+    {
+        result.AddWarning(
+            $"GetConverter() only handles {inputTypesCovered.Count}/{expectedTypes.Count} InputTypes",
+            $"Missing: {string.Join(", ", expectedTypes.Except(inputTypesCovered))}"
+        );
+        // Partial credit
+        result.Score += 2.0 * (inputTypesCovered.Count / (double)expectedTypes.Count);
+    }
+    
+    // QualifyFile validation (3 pts)
+    var qualifyFile = formatterType.GetMethod("QualifyFile", 
+        BindingFlags.NonPublic | BindingFlags.Instance);
+    
+    if (qualifyFile == null || qualifyFile.IsAbstract)
+    {
+        result.AddCriticalError(
+            "BLOCKER: QualifyFile() not implemented",
+            "This is an abstract method in BaseConverter - code will not compile"
+        );
+        return result;
+    }
+    result.Score += 3;
+    result.AddEvidence("✓ QualifyFile() implemented");
+    
+    return result;
+}
+
+private List<InputType> AnalyzeInputTypeCoverage(MethodInfo method)
+{
+    var covered = new List<InputType>();
+    var methodBody = DecompileMethodBody(method);
+    
+    // Analyze switch cases or if statements
+    if (methodBody.Contains("InputType.Collections")) covered.Add(InputType.Collections);
+    if (methodBody.Contains("InputType.Inventory")) covered.Add(InputType.Inventory);
+    if (methodBody.Contains("InputType.Insurance")) covered.Add(InputType.Insurance);
+    if (methodBody.Contains("InputType.Skip")) covered.Add(InputType.Skip);
+    
+    return covered;
+}
+```
 
 
 
