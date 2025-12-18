@@ -488,7 +488,6 @@
                 <strong>🔧 Methodology:</strong> Practical exercises with generated formatters, testing log analysis, common problem identification, debugging practice.
             </div>
         </div>
-
         <!-- Module 8 -->
         <div class="module" id="module8">
             <div class="module-header">
@@ -498,204 +497,356 @@
             
             <div class="objective">
                 <strong>🎯 Objective:</strong> Master the use of the Issue Resolver Agent to correct specific problems through custom prompts.
+            </div>
 
             <div class="topics">
-                <h4>📋 Temas:</h4>
+                <h4>📋 Topics:</h4>
                 <ul>
-                    <li><strong>Client Rule Checklist:</strong> Configuración de reglas específicas por cliente
+                    <li><strong>Common issue types:</strong>
+                        <div class="sub-topics">
+                            - Ambiguous columns (e.g., "Acct Base Class")<br>
+                            - Unknown insurers not in canonical list<br>
+                            - Missing or incorrect business logic<br>
+                            - Compilation errors in specific sections
+                        </div>
+                    </li>
+                    <li>Using the "Issues & Uncertainties" panel: Interpreting system warnings</li>
+                    <li><strong>How to write effective custom prompts:</strong>
+                        <div class="sub-topics">
+                            - Be specific about the section to correct<br>
+                            - Provide relevant business context<br>
+                            - Indicate examples of expected behavior
+                        </div>
+                    </li>
+                    <li><strong>Iterative feedback cycle:</strong>
+                        <div class="sub-topics">
+                            - Test results review<br>
+                            - Custom prompt input<br>
+                            - Regeneration confirmation<br>
+                            - Correction validation
+                        </div>
+                    </li>
+                    <li>Partial Rewrite: Selective regeneration of sections without redoing the entire formatter</li>
+                    <li>Issue Resolution Log: Tracking history of iterative improvements</li>
+                    <li>When to escalate to manual development vs using Issue Resolver</li>
+                </ul>
+            </div>
+
+            <div class="methodology">
+                <strong>🔧 Methodology:</strong> Practical cases of real MDS problem resolution, prompt writing exercises, iterative cycle simulation, analysis of successful and failed cases.
+            </div>
+        </div>
+
+        <!-- Module 9 -->
+        <div class="module" id="module9">
+            <div class="module-header">
+                <div class="module-title">Module 9: System Monitoring, Logging and Troubleshooting</div>
+                <div class="duration">2 hours</div>
+            </div>
+            
+            <div class="objective">
+                <strong>🎯 Objective:</strong> Configure and use monitoring tools to detect problems and diagnose AI agent system failures.
+            </div>
+
+            <div class="topics">
+                <h4>📋 Topics:</h4>
+                <ul>
+                    <li><strong>Logging structure:</strong>
+                        <div class="sub-topics">
+                            - Application logs (<code>/logs</code>)<br>
+                            - Individual agent logs<br>
+                            - Code generation logs<br>
+                            - Testing and validation logs
+                        </div>
+                    </li>
+                    <li><strong>Key metrics to monitor:</strong>
+                        <div class="sub-topics">
+                            - Formatter generation success rate<br>
+                            - Average time per phase (analysis, generation, validation)<br>
+                            - Issues detected vs resolved rate<br>
+                            - Resource usage (CPU, memory, disk)
+                        </div>
+                    </li>
+                    <li>Monitoring tools: Basic dashboard configuration</li>
+                    <li><strong>Common troubleshooting:</strong>
+                        <div class="sub-topics">
+                            - PDF analysis failure: Unsupported format<br>
+                            - Code generation failure: Incomplete template<br>
+                            - Compilation failure: Missing references<br>
+                            - Testing failure: Test DB connection
+                        </div>
+                    </li>
+                    <li>Log analysis for diagnosis: Frequent error patterns</li>
+                    <li>Escalation procedures: When to contact CodeGPT support</li>
+                </ul>
+            </div>
+
+            <div class="methodology">
+                <strong>🔧 Methodology:</strong> Logging tools demonstration, real log analysis exercises, failure scenario simulation, diagnostic practice.
+            </div>
+        </div>
+
+        <!-- Module 10 -->
+        <div class="module" id="module10">
+            <div class="module-header">
+                <div class="module-title">Module 10: Integration with Existing MDS Workflow and Source Control</div>
+                <div class="duration">1.5 hours</div>
+            </div>
+            
+            <div class="objective">
+                <strong>🎯 Objective:</strong> Integrate generated formatters into MDS's existing development and deployment process.
+            </div>
+
+            <div class="topics">
+                <h4>📋 Topics:</h4>
+                <ul>
+                    <li>Human developer role: Formatter "Owner", final supervisor</li>
+                    <li><strong>Human-in-the-loop:</strong> Mandatory supervision points
+                        <div class="sub-topics">
+                            - Spec mapping review<br>
+                            - Business logic review<br>
+                            - Generated code approval<br>
+                            - Final sign-off before commit
+                        </div>
+                    </li>
+                    <li><strong>Source Control integration (pending for Phase 2):</strong>
+                        <div class="sub-topics">
+                            - Branch structure<br>
+                            - Pull request workflow<br>
+                            - Code review process
+                        </div>
+                    </li>
+                    <li><strong>Production deployment:</strong>
+                        <div class="sub-topics">
+                            - Validation in test DB/SQLite before production<br>
+                            - Go/No-Go criteria<br>
+                            - Safe deployment procedure
+                        </div>
+                    </li>
+                    <li><strong>Existing formatter maintenance:</strong>
+                        <div class="sub-topics">
+                            - Client layout change detection (delta/update detection in Phase 2)<br>
+                            - Regeneration vs manual modification<br>
+                            - Formatter versioning
+                        </div>
+                    </li>
+                    <li>Decision documentation: Implementation documentation, configuration notes</li>
+                </ul>
+            </div>
+
+            <div class="methodology">
+                <strong>🔧 Methodology:</strong> Integrated workflow presentation, approval process demonstration, MDS deployment policy discussion.
+            </div>
+        </div>
+
+        <!-- Module 11 -->
+        <div class="module" id="module11">
+            <div class="module-header">
+                <div class="module-title">Module 11: Client-Specific Rules and Business Logic Customization</div>
+                <div class="duration">2 hours</div>
+            </div>
+            
+            <div class="objective">
+                <strong>🎯 Objective:</strong> Configure and maintain client-specific rules and custom business logic in the system.
+            </div>
+
+            <div class="topics">
+                <h4>📋 Topics:</h4>
+                <ul>
+                    <li><strong>Client Rule Checklist:</strong> Client-specific rule configuration
                         <div class="sub-topics">
                             - Hospital vs Physician filter<br>
                             - Insurance name canonicalization<br>
-                            - Member crosswalk específico<br>
+                            - Specific member crosswalk<br>
                             - ADJ-NEG sign inversion<br>
                             - Clarion date normalization
                         </div>
                     </li>
-                    <li>Business Logic Hints: Cómo documentar lógica de negocio para que los agentes la incorporen</li>
-                    <li>Reusable Hints: Creación de biblioteca de hints reutilizables entre clientes similares</li>
-                    <li>Custom converters: Cuándo crear converters específicos vs usar estándar MDS</li>
-                    <li>Field mapping overrides: Manejo de excepciones en mapeo automático</li>
-                    <li>Testing de reglas específicas: Validación de que custom logic se aplicó correctamente</li>
-                    <li>Documentación de customizaciones: Tracking de reglas por cliente</li>
+                    <li>Business Logic Hints: How to document business logic for agents to incorporate</li>
+                    <li>Reusable Hints: Creating library of reusable hints between similar clients</li>
+                    <li>Custom converters: When to create specific converters vs using MDS standard</li>
+                    <li>Field mapping overrides: Handling exceptions in automatic mapping</li>
+                    <li>Specific rule testing: Validation that custom logic was applied correctly</li>
+                    <li>Customization documentation: Tracking rules per client</li>
                 </ul>
             </div>
 
-          <div class="methodology">
-                <strong>🔧 Metodología:</strong> Casos de estudio de clientes MDS reales con reglas específicas, ejercicios de configuración de rules, práctica de creación de hints.
+            <div class="methodology">
+                <strong>🔧 Methodology:</strong> Case studies of real MDS clients with specific rules, rule configuration exercises, hint creation practice.
             </div>
         </div>
 
-        <!-- Módulo 12 -->
+               <!-- Module 12 -->
         <div class="module" id="module12">
             <div class="module-header">
-                <div class="module-title">Módulo 12: Gestión de Datos Sensibles y Compliance PHI</div>
-                <div class="duration">1.5 horas</div>
+                <div class="module-title">Module 12: Sensitive Data Management and PHI Compliance</div>
+                <div class="duration">1.5 hours</div>
             </div>
             
             <div class="objective">
-                <strong>🎯 Objetivo:</strong> Asegurar que el manejo de datos en el sistema cumple con todas las regulaciones PHI y políticas de seguridad MDS.
+                <strong>🎯 Objective:</strong> Ensure that data handling in the system complies with all PHI regulations and MDS security policies.
             </div>
 
             <div class="topics">
-                <h4>📋 Temas:</h4>
+                <h4>📋 Topics:</h4>
                 <ul>
-                    <li>Protected Health Information (PHI): Qué constituye PHI en el contexto de MDS</li>
-                    <li><strong>Flujo de datos sensibles en el sistema:</strong>
+                    <li>Protected Health Information (PHI): What constitutes PHI in the MDS context</li>
+                    <li><strong>Sensitive data flow in the system:</strong>
                         <div class="sub-topics">
-                            - Upload de archivos de clientes<br>
-                            - Almacenamiento temporal en <code>/uploads</code><br>
-                            - Procesamiento por agentes de IA<br>
-                            - Generación de formatters<br>
-                            - Testing con datos reales vs sintéticos
+                            - Client file uploads<br>
+                            - Temporary storage in <code>/uploads</code><br>
+                            - Processing by AI agents<br>
+                            - Formatter generation<br>
+                            - Testing with real vs synthetic data
                         </div>
                     </li>
-                    <li><strong>Políticas de acceso y credenciales:</strong>
+                    <li><strong>Access policies and credentials:</strong>
                         <div class="sub-topics">
-                            - Principio de mínimos privilegios<br>
-                            - Rotación de credenciales<br>
-                            - Auditoría de accesos
+                            - Principle of least privilege<br>
+                            - Credential rotation<br>
+                            - Access auditing
                         </div>
                     </li>
-                    <li>Encriptación de datos en reposo y en tránsito</li>
-                    <li><strong>Políticas de retención y eliminación:</strong>
+                    <li>Data encryption at rest and in transit</li>
+                    <li><strong>Retention and deletion policies:</strong>
                         <div class="sub-topics">
-                            - Limpieza de <code>/temp</code><br>
-                            - Backup de <code>/uploads</code><br>
-                            - Archivado de <code>/output</code>
+                            - <code>/temp</code> cleanup<br>
+                            - <code>/uploads</code> backup<br>
+                            - <code>/output</code> archiving
                         </div>
                     </li>
-                    <li>Logging de acceso a datos sensibles: Audit trails</li>
-                    <li>Compliance con políticas IT de MDS: Alineación con estándares internos</li>
-                    <li>Testing sin datos reales: Uso de datos sintéticos en desarrollo</li>
+                    <li>Sensitive data access logging: Audit trails</li>
+                    <li>Compliance with MDS IT policies: Alignment with internal standards</li>
+                    <li>Testing without real data: Use of synthetic data in development</li>
                 </ul>
             </div>
 
             <div class="methodology">
-                <strong>🔧 Metodología:</strong> Presentación de políticas MDS, revisión de configuraciones de seguridad, ejercicios de verificación de compliance, discusión de casos de uso sensibles.
+                <strong>🔧 Methodology:</strong> MDS policy presentation, security configuration review, compliance verification exercises, sensitive use case discussion.
             </div>
         </div>
 
-        <!-- Módulo 13 -->
+        <!-- Module 13 -->
         <div class="module" id="module13">
             <div class="module-header">
-                <div class="module-title">Módulo 13: Optimización y Control de Costos (Tokens y Recursos)</div>
-                <div class="duration">1.5 horas</div>
+                <div class="module-title">Module 13: Optimization and Cost Control (Tokens and Resources)</div>
+                <div class="duration">1.5 hours</div>
             </div>
             
             <div class="objective">
-                <strong>🎯 Objetivo:</strong> Gestionar el uso de recursos computacionales y tokens de LLM de manera eficiente y predecible.
+                <strong>🎯 Objective:</strong> Manage the use of computational resources and LLM tokens efficiently and predictably.
             </div>
 
             <div class="topics">
-                <h4>📋 Temas:</h4>
+                <h4>📋 Topics:</h4>
                 <ul>
-                    <li><strong>Gestión de tokens de LLM:</strong>
+                    <li><strong>LLM token management:</strong>
                         <div class="sub-topics">
-                            - Comprensión del budget de tokens (200K budget actual)<br>
-                            - Monitoreo de consumo por agente<br>
-                            - Estrategias para reducir consumo (context trimming, caching)
+                            - Understanding token budget (current 200K budget)<br>
+                            - Consumption monitoring per agent<br>
+                            - Strategies to reduce consumption (context trimming, caching)
                         </div>
                     </li>
-                    <li><strong>Uso controlado de compute:</strong>
+                    <li><strong>Controlled compute usage:</strong>
                         <div class="sub-topics">
-                            - Monitoreo de CPU y memoria durante generación<br>
-                            - Identificación de procesos intensivos<br>
-                            - Configuración de límites y throttling
+                            - CPU and memory monitoring during generation<br>
+                            - Intensive process identification<br>
+                            - Limits and throttling configuration
                         </div>
                     </li>
-                    <li><strong>Optimización del Knowledge Base:</strong>
+                    <li><strong>Knowledge Base optimization:</strong>
                         <div class="sub-topics">
-                            - Evitar templates excesivamente grandes<br>
-                            - Modularización de context documents<br>
-                            - Caching de templates frecuentes
+                            - Avoiding excessively large templates<br>
+                            - Context document modularization<br>
+                            - Frequent template caching
                         </div>
                     </li>
-                    <li>Batch processing vs procesamiento individual: Cuándo procesar múltiples formatters</li>
-                    <li>Predictibilidad de workloads: Estimación de recursos para planificación</li>
-                    <li>Monitoreo de costos: Dashboard de uso de recursos</li>
+                    <li>Batch processing vs individual processing: When to process multiple formatters</li>
+                    <li>Workload predictability: Resource estimation for planning</li>
+                    <li>Cost monitoring: Resource usage dashboard</li>
                 </ul>
             </div>
 
             <div class="methodology">
-                <strong>🔧 Metodología:</strong> Análisis de métricas de uso real, ejercicios de optimización de prompts, configuración de limits y alerts.
+                <strong>🔧 Methodology:</strong> Real usage metrics analysis, prompt optimization exercises, limits and alerts configuration.
             </div>
         </div>
 
-        <!-- Módulo 14 -->
+        <!-- Module 14 -->
         <div class="module" id="module14">
             <div class="module-header">
-                <div class="module-title">Módulo 14: Roadmap y Evolución del Sistema: EFI y MCI Tracks</div>
-                <div class="duration">1 hora</div>
+                <div class="module-title">Module 14: System Roadmap and Evolution: EFI and MCI Tracks</div>
+                <div class="duration">1 hour</div>
             </div>
             
             <div class="objective">
-                <strong>🎯 Objetivo:</strong> Comprender la hoja de ruta del proyecto, incluyendo la iniciativa EFI (Efficient Formatter Initiative) y el track opcional MCI (CodeFlow).
+                <strong>🎯 Objective:</strong> Understand the project roadmap, including the EFI (Efficient Formatter Initiative) and the optional MCI (CodeFlow) track.
             </div>
 
             <div class="topics">
-                <h4>📋 Temas:</h4>
+                <h4>📋 Topics:</h4>
                 <ul>
-                    <li><strong>Roadmap general del proyecto:</strong>
+                    <li><strong>General project roadmap:</strong>
                         <div class="sub-topics">
-                            - Fase 1 (MVP): Validación de viabilidad técnica (completada)<br>
-                            - Fase 2 (actual): Multi-agent architecture, UI workflow, despliegue on-premise<br>
-                            - Decisión Go/No-Go: Criterios de evaluación
+                            - Phase 1 (MVP): Technical feasibility validation (completed)<br>
+                            - Phase 2 (current): Multi-agent architecture, UI workflow, on-premise deployment<br>
+                            - Go/No-Go decision: Evaluation criteria
                         </div>
                     </li>
                     <li><strong>EFI (Efficient Formatter Initiative):</strong>
                         <div class="sub-topics">
-                            - Objetivo: Probar y escalar automatización con ganancias de eficiencia medibles<br>
-                            - Proceso "As-is" deep dive<br>
+                            - Objective: Test and scale automation with measurable efficiency gains<br>
+                            - "As-is" process deep dive<br>
                             - POC development & fine-tuning<br>
-                            - Mantenimiento continuo
+                            - Continuous maintenance
                         </div>
                     </li>
-                    <li><strong>MCI (CodeFlow) - Track opcional:</strong>
+                    <li><strong>MCI (CodeFlow) - Optional track:</strong>
                         <div class="sub-topics">
-                            - Objetivo: Onboarding de desarrolladores, desarrollo de skills, expansión de adopción<br>
+                            - Objective: Developer onboarding, skill development, adoption expansion<br>
                             - Masterclass on CodeGPT Platform<br>
                             - IDE integration (Studio/Graphs)<br>
-                            - Casos reales de uso
+                            - Real use cases
                         </div>
                     </li>
-                    <li>Timeline esperado: Nov-Ene, hitos clave</li>
-                    <li><strong>Próximos pasos técnicos:</strong>
+                    <li>Expected timeline: Nov-Jan, key milestones</li>
+                    <li><strong>Next technical steps:</strong>
                         <div class="sub-topics">
                             - Technical formatter Workshop (12-12)<br>
                             - Multi-agent creation and orchestration readiness<br>
-                            - SOW de Fase 2
+                            - Phase 2 SOW
                         </div>
                     </li>
-                    <li><strong>Training continuo:</strong>
+                    <li><strong>Continuous training:</strong>
                         <div class="sub-topics">
-                            - Initial training para Mitch y Shawna<br>
-                            - Follow-up sessions para broader dev team en Fase 2
+                            - Initial training for Mitch and Shawna<br>
+                            - Follow-up sessions for broader dev team in Phase 2
                         </div>
                     </li>
                 </ul>
             </div>
 
             <div class="methodology">
-                <strong>🔧 Metodología:</strong> Presentación de roadmap, discusión de objetivos estratégicos, sesión de Q&A sobre futuro del proyecto.
+                <strong>🔧 Methodology:</strong> Roadmap presentation, strategic objectives discussion, Q&A session about project future.
             </div>
         </div>
 
-        <!-- Módulo 15 -->
+        <!-- Module 15 -->
         <div class="module" id="module15">
             <div class="module-header">
-                <div class="module-title">Módulo 15: Práctica Final: Generación End-to-End de Formatter Real</div>
-                <div class="duration">3 horas</div>
+                <div class="module-title">Module 15: Final Practice: End-to-End Real Formatter Generation</div>
+                <div class="duration">3 hours</div>
             </div>
             
             <div class="objective">
-                <strong>🎯 Objetivo:</strong> Consolidar todo el conocimiento en un ejercicio práctico completo de generación de un formatter real de cliente MDS.
+                <strong>🎯 Objective:</strong> Consolidate all knowledge in a complete practical exercise of generating a real MDS client formatter.
             </div>
 
             <div class="topics">
-                <h4>📋 Temas:</h4>
+                <h4>📋 Topics:</h4>
                 <ul>
-                    <li>Selección de caso de uso real de MDS (ej. nuevo cliente Meditech)</li>
-                    <li><strong>Ejecución completa del workflow:</strong>
+                    <li>Selection of real MDS use case (e.g., new Meditech client)</li>
+                    <li><strong>Complete workflow execution:</strong>
                         <div class="sub-topics">
                             1. Upload & Select Client<br>
                             2. Spec Match & Bounds<br>
@@ -707,41 +858,40 @@
                             8. Approve & Sign in Place
                         </div>
                     </li>
-                    <li>Identificación y resolución de issues encontrados</li>
-                    <li>Validación completa del formatter generado</li>
-                    <li>Documentación del proceso y decisiones tomadas</li>
-                    <li>Presentación de resultados al grupo</li>
+                    <li>Identification and resolution of encountered issues</li>
+                    <li>Complete validation of generated formatter</li>
+                    <li>Process documentation and decisions made</li>
+                    <li>Results presentation to the group</li>
                 </ul>
             </div>
 
             <div class="methodology">
-                <strong>🔧 Metodología:</strong> Ejercicio práctico supervisado en grupos pequeños (2-3 personas), con caso real proporcionado por MDS, presentación final de cada grupo, feedback colectivo.
+                <strong>🔧 Methodology:</strong> Supervised practical exercise in small groups (2-3 people), with real case provided by MDS, final presentation by each group, collective feedback.
             </div>
         </div>
 
-        <!-- Sección de Seguridad -->
+        <!-- Security Section -->
         <div class="security-section">
-            <h2>🔒 Consideraciones de Seguridad y Ética</h2>
+            <h2>🔒 Security and Ethics Considerations</h2>
             
-            <h3>Protección de PHI (Protected Health Information)</h3>
-            <p><strong>⚠️ CRÍTICO:</strong> Todo el procesamiento de datos de pacientes debe cumplir estrictamente con regulaciones HIPAA. Asegurar que los datos sensibles se manejen de acuerdo con las políticas de seguridad de MDS y las mejores prácticas de la industria.</p>
+            <h3>PHI (Protected Health Information) Protection</h3>
+            <p><strong>⚠️ CRITICAL:</strong> All patient data processing must strictly comply with HIPAA regulations. Ensure that sensitive data is handled according to MDS security policies and industry best practices.</p>
             
             <ul>
-                <li><strong>Encriptación obligatoria:</strong> Todos los datos PHI deben estar encriptados tanto en reposo como en tránsito</li>
-                <li><strong>Acceso controlado:</strong> Implementar principio de mínimos privilegios para acceso a datos sensibles</li>
-                <li><strong>Audit trails:</strong> Mantener logs detallados de todos los accesos y modificaciones a datos PHI</li>
-                <li><strong>Retención de datos:</strong> Cumplir con políticas de retención y eliminación segura de datos</li>
-                <li><strong>Testing seguro:</strong> Usar datos sintéticos o anonimizados para desarrollo y testing cuando sea posible</li>
+                <li><strong>Mandatory encryption:</strong> All PHI data must be encrypted both at rest and in transit</li>
+                <li><strong>Controlled access:</strong> Implement principle of least privilege for sensitive data access</li>
+                <li><strong>Audit trails:</strong> Maintain detailed logs of all PHI data access and modifications</li>
+                <li><strong>Data retention:</strong> Comply with data retention and secure deletion policies</li>
+                <li><strong>Secure testing:</strong> Use synthetic or anonymized data for development and testing when possible</li>
             </ul>
         </div>
 
         <!-- Footer -->
         <div style="text-align: center; margin-top: 40px; padding: 20px; background: #34495e; color: white; border-radius: 8px;">
-            <h3>📞 Contacto y Soporte</h3>
-            <p>Para consultas técnicas durante la capacitación, contactar al equipo de soporte CodeGPT</p>
-            <p><strong>Documento generado:</strong> Plan de Capacitación MDS Formatter Builder v2.0</p>
+            <h3>📞 Contact and Support</h3>
+            <p>For technical inquiries during training, contact the CodeGPT support team</p>
+            <p><strong>Document generated:</strong> MDS Formatter Builder Training Plan v2.0</p>
         </div>
     </div>
 </body>
 </html>
-  
