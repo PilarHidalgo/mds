@@ -230,7 +230,7 @@ protected override InputType QualifyFile(ProcessFile pFile)
 }
 ```
 
-** Validación Automatizada:**
+**Validación Automatizada:**
 
 ```csharp
 public ValidationResult ValidateAbstractMethods(Type formatterType)
@@ -491,146 +491,306 @@ Impacto: 5/5 (Afecta todas las transacciones)
 Frecuencia: 5/5 (Muy común olvidarlo)
 Score = (5 × 5 × 5) / 15.6 = 8 puntos
 ```
+| Criterio | Puntos | Justificación del Puntaje | Forma de Validación | Penalización por Incumplimiento |
+|----------|--------|---------------------------|---------------------|--------------------------------|
+| **Override de LoadSettings() presente** | 3 | **37.5% del subtotal**<br>• CRÍTICO: Llamado al inicio de cada ejecución por el framework<br>• Sin override, usa implementación base (vacía)<br>• Cross-walks no se cargan = todas las transacciones sin mapear<br>• Punto de entrada del lifecycle | Método override existe:<br>`protected override void LoadSettings(ConverterCmd cmd)` | **BLOQUEANTE**: Cross-walks no cargan,<br>procesamiento falla |
+| **Inicializa TransCodeCrossWalkStore** | 2.5 | **31.25% del subtotal**<br>• CRÍTICO: Sin esto, TODOS los transaction codes quedan sin mapear<br>• Resulta en transacciones rechazadas en Cupload DB<br>• Afecta al 100% de las transacciones del cliente | Línea presente:<br>`Meditech.TransCodeCrossWalkStore =`<br>`new TransactionCodeCrossWalkBase(...)` | **BLOQUEANTE**: Todas las transacciones fallan validación en Cupload |
+| **Inicializa FinancialClassCrossWalkStore** | 2.5 | **31.25% del subtotal**<br>• CRÍTICO: Sin esto, financial classes no se mapean a códigos MDS<br>• Cuentas se asignan incorrectamente a queues<br>• Impacto directo en estrategia de colección | Línea presente:<br>`Meditech.FinancialClassCrossWalkStore =`<br>`new MiscCodeCrossWalkBase(...)` | **BLOQUEANTE**: Asignación incorrecta de cuentas (impacto de negocio) |
 
+**Código de Referencia con Anotaciones de Puntaje:**
+
+```csharp
+// [3 pts] - Override declaration
+protected override void LoadSettings(ConverterCmd pConverterCmd)
+{
+    // WHY CRITICAL: This is called once at the start of each formatter execution
+    // IMPACT: Without this override, cross-walks are never loaded
+    // FREQUENCY: Very common error - MVP formatters often missing this
+    
+    // [2.5 pts] - Transaction codes initialization
+    // WHY CRITICAL: Every transaction in demographic files needs code mapping
+    // EXAMPLES: "CHG" → Charge, "PSP" → Payment Self Pay, "PMCR" → Payment Medicare
+    // IMPACT: Without this, ALL transactions fail validation at Cupload insert
+    // ERROR MESSAGE: "Transaction code 'CHG' not found in cross-walk"
+    Meditech.Meditech.TransCodeCrossWalkStore = new TransactionCodeCrossWalkBase(
+        pConverterCmd.ProfileID,      // Links to client-specific configuration
+        "TransactionCodes",            // XML node name in config file
+        GetConfigFileSpec(),           // Path: C:\MDS\Configs\ClientXXX.xml
+        TransactionCodeItems           // Static array defined in this class
+    );
+    
+    // [2.5 pts] - Financial class initialization
+    // WHY CRITICAL: Determines queue assignment (SP, COM, MCR, MCD)
+    // BUSINESS IMPACT: Wrong queue = wrong collection strategy = revenue loss
+    // EXAMPLES: "SP" → Self Pay, "BC" → Blue Cross, "MCR" → Medicare
+    // IMPACT: Accounts classified incorrectly, sent to wrong collectors
+    Meditech.Meditech.FinancialClassCrossWalkStore = new MiscCodeCrossWalkBase(
+        pConverterCmd.ProfileID,
+        "FinancialClasses",
+        GetConfigFileSpec(),
+        FinancialClassItems
+    );
+    
+    // Initialize Settings object (not scored separately, but required)
+    Settings = new ConverterSettings(GetConfigFileSpec(), pConverterCmd);
+}
+```
+
+**Validación Automatizada por CODE VALIDATOR:**
+```csharp
+public ValidationResult ValidateLoadSettings(Type formatterType)
+{
+    var result = new ValidationResult 
+    { 
+        Category = "LoadSettings", 
+        MaxScore = 8 
+    };
+    
+    // Check 1: Override exists (3 pts)
+    var method = formatterType.GetMethod("LoadSettings", 
+        BindingFlags.NonPublic | BindingFlags.Instance);
+    
+    if (method == null || method.DeclaringType == typeof(BaseConverter))
+    {
+        result.AddCriticalError(
+            "BLOCKER: LoadSettings() not overridden",
+            "Impact: Cross-walks will not load, all transactions will be unmapped",
+            "Fix: Add 'protected override void LoadSettings(ConverterCmd cmd)'"
+        );
+        return result; // Don't continue - nothing to validate
+    }
+    result.Score += 3;
+    result.AddEvidence("✓ LoadSettings() override present");
+    
+    // Decompile method body for analysis
+    var methodBody = DecompileMethodBody(method);
+    
+    // Check 2: TransCodeCrossWalkStore initialization (2.5 pts)
+    if (!methodBody.Contains("TransCodeCrossWalkStore"))
+    {
+        result.AddCriticalError(
+            "BLOCKER: TransCodeCrossWalkStore not initialized",
+            "Impact: ALL transaction codes will be unmapped",
+            "Error in production: 'Transaction code not found in cross-walk'",
+            "Fix: Add 'Meditech.TransCodeCrossWalkStore = new TransactionCodeCrossWalkBase(...)'"
+        );
+    }
+    else
+    {
+        // Verify it's using TransactionCodeCrossWalkBase
+        if (methodBody.Contains("new TransactionCodeCrossWalkBase"))
+        {
+            result.Score += 2.5;
+            result.AddEvidence("✓ TransCodeCrossWalkStore initialized correctly");
+        }
+        else
+        {
+            result.AddWarning(
+                "TransCodeCrossWalkStore initialized but not using TransactionCodeCrossWalkBase",
+                "May cause compatibility issues with framework"
+            );
+            result.Score += 1.5; // Partial credit
+        }
+    }
+    
+    // Check 3: FinancialClassCrossWalkStore initialization (2.5 pts)
+    if (!methodBody.Contains("FinancialClassCrossWalkStore"))
+    {
+        result.AddCriticalError(
+            "BLOCKER: FinancialClassCrossWalkStore not initialized",
+            "Impact: Financial classes won't map to MDS codes (SP, COM, MCR, MCD)",
+            "Business Impact: Accounts assigned to wrong collection queues",
+            "Fix: Add 'Meditech.FinancialClassCrossWalkStore = new MiscCodeCrossWalkBase(...)'"
+        );
+    }
+    else
+    {
+        if (methodBody.Contains("new MiscCodeCrossWalkBase"))
+        {
+            result.Score += 2.5;
+            result.AddEvidence("✓ FinancialClassCrossWalkStore initialized correctly");
+        }
+        else
+        {
+            result.AddWarning(
+                "FinancialClassCrossWalkStore initialized but not using MiscCodeCrossWalkBase"
+            );
+            result.Score += 1.5; // Partial credit
+        }
+    }
+    
+    return result;
+}
+```
+## 2.2 Configure Override (7 puntos)
+### Justificación del Subtotal: 7 puntos (35% de Pipeline)
+Por qué 7 puntos:
+
+- Controla la UI de configuración que usan Mitch y Shawna
+- Sin Configure, el formatter no es configurable por el usuario
+- BaseConfigurationForm es el estándar MDS - custom forms causan bugs
+
+Cálculo:
+
+```
+Criticidad: 4/5 (Formatter no configurable)
+Impacto: 4/5 (Afecta experiencia de usuario)
+Frecuencia: 4/5 (Común usar custom forms)
+Score = (4 × 4 × 4) / 9.1 = 7 puntos
+```
 
 | Criterio | Puntos | Justificación del Puntaje | Forma de Validación | Penalización por Incumplimiento |
 |----------|--------|---------------------------|---------------------|--------------------------------|
-| GetConverter() implementado | 5 | 50% del subtotal<br>• CRÍTICO: Es el router que devuelve el handler apropiado<br>• Sin él, ningún archivo se procesa<br>• Llamado por el pipeline en ProcessFile()<br>• Método abstracto - obligatorio | Método existe, no es abstracto,<br>retorna BaseConversionClass<br>según InputType | BLOQUEANTE: Compilation error |
-| GetConverter() cubre todos InputTypes | 2 | 20% del subtotal<br>• IMPORTANTE: Debe manejar todos los tipos de archivo del cliente<br>• InputTypes no manejados = archivos ignorados silenciosamente<br>• Común error: solo implementar Demographics, olvidar Inventory | Switch/if cubre todos los valores<br>retornados por QualifyFile() | Archivos del cliente no procesados sin error visible |
-| QualifyFile() implementado | 3 | 30% del subtotal<br>• CRÍTICO: Clasifica archivos entrantes por nombre/contenido<br>• Sin él, todos los archivos son InputType.Unknown<br>• Método abstracto - obligatorio | Método existe,<br>retorna InputType<br>basado en análisis de archivo | BLOQUEANTE: Compilation error |
+| Usa BaseConfigurationForm | 3 | 42.8% del subtotal<br>• IMPORTANTE: BaseConfigurationForm proporciona UI estándar<br>• Incluye logging, validación y persistencia automática<br>• Custom Windows Forms causan inconsistencias UX<br>• Feedback del MVP: "confusing variable naming" en UI custom | Instancia BaseConfigurationForm<br>en método Configure | UI inconsistente,<br>bugs de persistencia,<br>UX fragmentada |
+| Agrega cross-walk de Transaction Codes | 2 | 28.6% del subtotal<br>• CRÍTICO: Sin este tab, usuarios no pueden configurar mapeos<br>• Mitch/Shawna necesitan esto para setup inicial del cliente<br>• Cada cliente tiene códigos únicos que deben mapearse | ConfigForm.AddCrossWalk(<br>TransCodes, "Transaction Codes") | BLOQUEANTE: Configuración imposible,<br>formatter inutilizable sin intervención del desarrollador |
+| Agrega cross-walk de Financial Classes | 2 | 28.6% del subtotal<br>• CRÍTICO: Sin este tab, no se pueden mapear financial classes<br>• Requerido para clasificación correcta de cuentas<br>• Setup inicial del cliente | ConfigForm.AddCrossWalk(<br>MiscCodes, "Financial Classes") | BLOQUEANTE: Configuración imposible,<br>clasificación de cuentas falla |
 
 
-
-Código de Referencia con Anotaciones:
-
+**Código de Referencia con Anotaciones:**
 ```csharp
-// [5 pts] - GetConverter implementation
-public override BaseConversionClass GetConverter(ProcessFile pFile)
+// [7 pts total] - Configure override
+protected override bool Configure(ConverterCmd pConverterCmd)
 {
-    // WHY CRITICAL: This is the routing logic for all file processing
-    // IMPACT: If a case is missing, that file type is silently ignored
+    // [3 pts] - Using BaseConfigurationForm (not custom Windows Forms)
+    // WHY IMPORTANT: Standard UI, logging, validation, persistence all built-in
+    // ANTI-PATTERN: Creating custom Form causes bugs (per MVP feedback)
+    // MVP ISSUE: "Confusing variable naming" in custom UIs
+    BaseConfigurationForm ConfigForm = new BaseConfigurationForm(pConverterCmd);
     
-    switch (pFile.FileType)
-    {
-        case InputType.Collections:  // [+0.5 pt] Demographics handler
-            return new DemographicsHandler(this, pFile);
-            
-        case InputType.Inventory:    // [+0.5 pt] Inventory handler
-            return new InventoryHandler(this, pFile, typeof(InventoryRecordType));
-            
-        case InputType.Insurance:    // [+0.5 pt] Insurance handler (if applicable)
-            return new InsuranceHandler(this, pFile);
-            
-        case InputType.Skip:         // [+0.5 pt] Known files to skip
-            return null; // Explicitly ignored
-            
-        default:
-            return null;
-    }
-    // [+2 pts if all expected InputTypes covered]
-}
-
-// [3 pts] - QualifyFile implementation
-protected override InputType QualifyFile(ProcessFile pFile)
-{
-    // WHY CRITICAL: Incorrect classification = wrong handler or no processing
-    // IMPACT: Client files may be processed incorrectly or not at all
+    // [2 pts] - Transaction Codes cross-walk tab
+    // WHO USES: Mitch/Shawna during client setup
+    // WHAT IT DOES: Allows mapping client codes → MDS standard codes
+    // EXAMPLE: Client code "CHG001" → MDS code "C" (Charge)
+    // WITHOUT THIS: Developers must manually edit XML files (not scalable)
+    TransCodeBrowseControl TransCodes = new TransCodeBrowseControl(
+        pConverterCmd, 
+        TransTypeSelections // Array of P, A, I, C types
+    );
+    ConfigForm.AddCrossWalk(TransCodes, "Transaction Codes");
     
-    string fileName = pFile.ShortName.ToUpper();
+    // [2 pts] - Financial Classes cross-walk tab
+    // WHO USES: Mitch/Shawna during client setup
+    // WHAT IT DOES: Maps client financial classes → MDS queues (SP, COM, MCR, MCD)
+    // BUSINESS IMPACT: Determines collection strategy per account
+    // EXAMPLE: Client "BLUECROSS" → MDS "BC" (Commercial)
+    MiscCodeBrowseControl MiscCodes = new MiscCodeBrowseControl(pConverterCmd);
+    ConfigForm.AddCrossWalk(MiscCodes, "Financial Classes");
     
-    // Pattern matching should be specific to avoid conflicts
-    if (fileName.Contains("DEMO") || fileName.Contains("PATIENT"))
-        return InputType.Collections;
-        
-    if (fileName.Contains("INV") || fileName.Contains("INVENTORY"))
-        return InputType.Inventory;
-        
-    if (fileName.Contains("INSURANCE") || fileName.Contains("INS"))
-        return InputType.Insurance;
-        
-    // Files that should be ignored (e.g., Excel exports)
-    if (fileName.EndsWith(".XLSX") || fileName.Contains("BACKUP"))
-        return InputType.Skip;
-        
-    return InputType.Unknown; // Will be logged for review
+    // Show configuration dialog to user
+    return Configure(pConverterCmd, ConfigForm);
 }
 ```
 
 **Validación Automatizada:**
-
-
 ```csharp
-public ValidationResult ValidateAbstractMethods(Type formatterType)
+public ValidationResult ValidateConfigure(Type formatterType)
 {
-    var result = new ValidationResult { Category = "Abstract Methods", MaxScore = 10 };
+    var result = new ValidationResult 
+    { 
+        Category = "Configure", 
+        MaxScore = 7 
+    };
     
-    // GetConverter validation (5 pts base + 2 pts coverage)
-    var getConverter = formatterType.GetMethod("GetConverter", 
-        BindingFlags.Public | BindingFlags.Instance);
+    var method = formatterType.GetMethod("Configure", 
+        BindingFlags.NonPublic | BindingFlags.Instance);
     
-    if (getConverter == null || getConverter.IsAbstract)
+    if (method == null)
     {
-        result.AddCriticalError(
-            "BLOCKER: GetConverter() not implemented",
-            "This is an abstract method in BaseConverter - code will not compile"
+        result.AddWarning(
+            "Configure() not overridden - using base implementation",
+            "Impact: Default configuration UI only, may miss client-specific needs"
         );
         return result;
     }
-    result.Score += 5;
-    result.AddEvidence("✓ GetConverter() implemented");
     
-    // Analyze coverage of InputTypes
-    var inputTypesCovered = AnalyzeInputTypeCoverage(getConverter);
-    var expectedTypes = DetermineExpectedInputTypes(formatterType);
+    var methodBody = DecompileMethodBody(method);
     
-    if (inputTypesCovered.Count >= expectedTypes.Count)
+    // Check 1: BaseConfigurationForm usage (3 pts)
+    if (!methodBody.Contains("BaseConfigurationForm"))
     {
-        result.Score += 2;
-        result.AddEvidence($"✓ GetConverter() handles all {expectedTypes.Count} expected InputTypes");
+        // Check if using custom Windows Forms (anti-pattern)
+        if (methodBody.Contains("new Form") || methodBody.Contains(": Form"))
+        {
+            result.AddError(
+                "Using custom Windows Forms instead of BaseConfigurationForm",
+                "Impact: Inconsistent UI, potential bugs in persistence",
+                "MVP Feedback: Custom forms had 'confusing variable naming'",
+                "Fix: Use BaseConfigurationForm for standard UI"
+            );
+        }
+        else
+        {
+            result.AddWarning("Cannot determine configuration form type");
+        }
     }
     else
     {
-        result.AddWarning(
-            $"GetConverter() only handles {inputTypesCovered.Count}/{expectedTypes.Count} InputTypes",
-            $"Missing: {string.Join(", ", expectedTypes.Except(inputTypesCovered))}"
-        );
-        // Partial credit
-        result.Score += 2.0 * (inputTypesCovered.Count / (double)expectedTypes.Count);
+        result.Score += 3;
+        result.AddEvidence("✓ Using BaseConfigurationForm (standard UI)");
     }
     
-    // QualifyFile validation (3 pts)
-    var qualifyFile = formatterType.GetMethod("QualifyFile", 
-        BindingFlags.NonPublic | BindingFlags.Instance);
+    // Check 2: Transaction Codes tab (2 pts)
+    bool hasTransCodesTab = 
+        methodBody.Contains("TransCodeBrowseControl") || 
+        (methodBody.Contains("AddCrossWalk") && methodBody.Contains("Transaction"));
     
-    if (qualifyFile == null || qualifyFile.IsAbstract)
+    if (!hasTransCodesTab)
     {
         result.AddCriticalError(
-            "BLOCKER: QualifyFile() not implemented",
-            "This is an abstract method in BaseConverter - code will not compile"
+            "Transaction Codes cross-walk tab missing",
+            "Impact: Users (Mitch/Shawna) cannot configure transaction code mappings",
+            "Result: Formatter unusable without developer intervention",
+            "Fix: Add 'ConfigForm.AddCrossWalk(TransCodes, \"Transaction Codes\")'"
         );
-        return result;
     }
-    result.Score += 3;
-    result.AddEvidence("✓ QualifyFile() implemented");
+    else
+    {
+        result.Score += 2;
+        result.AddEvidence("✓ Transaction Codes cross-walk tab present");
+    }
+    
+    // Check 3: Financial Classes tab (2 pts)
+    bool hasFinClassesTab = 
+        methodBody.Contains("MiscCodeBrowseControl") || 
+        (methodBody.Contains("AddCrossWalk") && methodBody.Contains("Financial"));
+    
+    if (!hasFinClassesTab)
+    {
+        result.AddCriticalError(
+            "Financial Classes cross-walk tab missing",
+            "Impact: Users cannot configure financial class mappings",
+            "Business Impact: Account classification will fail",
+            "Fix: Add 'ConfigForm.AddCrossWalk(MiscCodes, \"Financial Classes\")'"
+        );
+    }
+    else
+    {
+        result.Score += 2;
+        result.AddEvidence("✓ Financial Classes cross-walk tab present");
+    }
     
     return result;
 }
-
-private List<InputType> AnalyzeInputTypeCoverage(MethodInfo method)
-{
-    var covered = new List<InputType>();
-    var methodBody = DecompileMethodBody(method);
-    
-    // Analyze switch cases or if statements
-    if (methodBody.Contains("InputType.Collections")) covered.Add(InputType.Collections);
-    if (methodBody.Contains("InputType.Inventory")) covered.Add(InputType.Inventory);
-    if (methodBody.Contains("InputType.Insurance")) covered.Add(InputType.Insurance);
-    if (methodBody.Contains("InputType.Skip")) covered.Add(InputType.Skip);
-    
-    return covered;
-}
 ```
 
+## 2.3 SaveSettings Override (5 puntos)
+### Justificación del Subtotal: 5 puntos (25% de Pipeline)
+Por qué 5 puntos:
 
+- Menor peso que LoadSettings (8) y Configure (7) porque no es bloqueante
+- Sin SaveSettings, el formatter funciona pero pierde configuración
+- Impacto en usabilidad, no en funcionalidad core
 
+Cálculo:
 
+```Criticidad: 3/5 (Pérdida de configuración, no bloqueante)
+Impacto: 3/5 (Afecta solo persistencia)
+Frecuencia: 4/5 (Frecuentemente olvidado)
+Score = (3 × 3 × 4) / 7.2 = 5 puntos
+```
+
+| Criterio | Puntos | Justificación del Puntaje | Forma de Validación | Penalización por Incumplimiento |
+|----------|--------|---------------------------|---------------------|--------------------------------|
+| Override de SaveSettings() presente | 2 | 40% del subtotal<br>• IMPORTANTE: Sin override, configuración no se persiste<br>• Usuario debe reconfigurar en cada ejecución<br>• Afecta productividad de Mitch/Shawna | Método override existe:<br>protected override void SaveSettings() | Reconfiguración manual en cada run,<br>pérdida de tiempo |
+| Guarda TransCodeCrossWalkStore | 1.5 | 30% del subtotal<br>• IMPORTANTE: Persistencia de mapeos de transaction codes<br>• Sin esto, mapeos configurados en UI se pierden | .Save() llamado en<br>TransCodeCrossWalkStore | Pérdida de configuración de transacciones entre ejecuciones |
+| Guarda FinancialClassCrossWalkStore | 1.5 | 30% del subtotal<br>• IMPORTANTE: Persistencia de mapeos de financial classes<br>• Sin esto, mapeos de clases se pierden | .Save() llamado en<br>FinancialClassCrossWalkStore | Pérdida de configuración de clases entre ejecuciones |
