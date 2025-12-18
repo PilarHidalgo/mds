@@ -794,3 +794,1924 @@ Score = (3 × 3 × 4) / 7.2 = 5 puntos
 | Override de SaveSettings() presente | 2 | 40% del subtotal<br>• IMPORTANTE: Sin override, configuración no se persiste<br>• Usuario debe reconfigurar en cada ejecución<br>• Afecta productividad de Mitch/Shawna | Método override existe:<br>protected override void SaveSettings() | Reconfiguración manual en cada run,<br>pérdida de tiempo |
 | Guarda TransCodeCrossWalkStore | 1.5 | 30% del subtotal<br>• IMPORTANTE: Persistencia de mapeos de transaction codes<br>• Sin esto, mapeos configurados en UI se pierden | .Save() llamado en<br>TransCodeCrossWalkStore | Pérdida de configuración de transacciones entre ejecuciones |
 | Guarda FinancialClassCrossWalkStore | 1.5 | 30% del subtotal<br>• IMPORTANTE: Persistencia de mapeos de financial classes<br>• Sin esto, mapeos de clases se pierden | .Save() llamado en<br>FinancialClassCrossWalkStore | Pérdida de configuración de clases entre ejecuciones |
+
+**Código de Referencia:**
+```csharp
+// [2 pts] - SaveSettings override
+protected override void SaveSettings()
+{
+    // WHY IMPORTANT: Called after user clicks "Save" in Configure dialog
+    // IMPACT: Without this, all configuration changes are lost
+    // USER IMPACT: Mitch/Shawna must reconfigure every time
+    
+    // [1.5 pts] - Save transaction codes
+    // PERSISTS TO: C:\MDS\Configs\ClientXXX.xml (TransactionCodes node)
+    if (Meditech.Meditech.TransCodeCrossWalkStore != null)
+    {
+        Meditech.Meditech.TransCodeCrossWalkStore.Save();
+    }
+    
+    // [1.5 pts] - Save financial classes
+    // PERSISTS TO: C:\MDS\Configs\ClientXXX.xml (FinancialClasses node)
+    if (Meditech.Meditech.FinancialClassCrossWalkStore != null)
+    {
+        Meditech.Meditech.FinancialClassCrossWalkStore.Save();
+    }
+    
+    // Save other settings (if any)
+    if (Settings != null)
+    {
+        Settings.Save();
+    }
+}
+```
+
+**Validación Automatizada:**
+
+```csharp
+public ValidationResult ValidateSaveSettings(Type formatterType)
+{
+    var result = new ValidationResult 
+    { 
+        Category = "SaveSettings", 
+        MaxScore = 5 
+    };
+    
+    // Check 1: Override exists (2 pts)
+    var method = formatterType.GetMethod("SaveSettings", 
+        BindingFlags.NonPublic | BindingFlags.Instance);
+    
+    if (method == null || method.DeclaringType == typeof(BaseConverter))
+    {
+        result.AddWarning(
+            "SaveSettings() not overridden",
+            "Impact: Configuration changes will not persist between executions",
+            "User Impact: Must reconfigure every time",
+            "Fix: Add 'protected override void SaveSettings()'"
+        );
+        return result;
+    }
+    result.Score += 2;
+    result.AddEvidence("✓ SaveSettings() override present");
+    
+    var methodBody = DecompileMethodBody(method);
+    
+    // Check 2: TransCodeCrossWalkStore saved (1.5 pts)
+    if (!methodBody.Contains("TransCodeCrossWalkStore") || !methodBody.Contains(".Save()"))
+    {
+        result.AddWarning(
+            "TransCodeCrossWalkStore not saved",
+            "Impact: Transaction code mappings will be lost after Configure dialog closes"
+        );
+    }
+    else
+    {
+        result.Score += 1.5;
+        result.AddEvidence("✓ TransCodeCrossWalkStore.Save() called");
+    }
+    
+    // Check 3: FinancialClassCrossWalkStore saved (1.5 pts)
+    if (!methodBody.Contains("FinancialClassCrossWalkStore") || !methodBody.Contains(".Save()"))
+    {
+        result.AddWarning(
+            "FinancialClassCrossWalkStore not saved",
+            "Impact: Financial class mappings will be lost after Configure dialog closes"
+        );
+    }
+    else
+    {
+        result.Score += 1.5;
+        result.AddEvidence("✓ FinancialClassCrossWalkStore.Save() called");
+    }
+    
+    return result;
+}
+```
+
+3. FILEHELPERS Y RECORD TYPES (18 puntos)
+📌 Justificación del Peso Total: 18 puntos (18% del score)
+Razón: FileHelpers es el motor de parsing que convierte archivos de texto del cliente en objetos C#. Errores aquí causan:
+
+Pérdida de datos: Campos no parseados
+Corrupción de datos: Parsing incorrecto de decimales/fechas
+Runtime exceptions: Tipos incompatibles
+Impacto de Fallo:
+
+Datos del cliente se pierden silenciosamente
+Datos incorrectos se insertan en Cupload (corrupción de DB)
+Exceptions durante procesamiento
+Evidencia de Criticidad del Contexto:
+
+"Wrong FileHelpers package and decorators" (MDS Project Follow-UP) "Schema naming inconsistencies" (MDS Project Follow-UP)
+
+Cálculo:
+
+Criticidad: 5/5 (Pérdida/corrupción de datos)
+Impacto: 4/5 (Afecta calidad de datos)
+Frecuencia: 4/5 (Errores comunes en atributos)
+Score = (5 × 4 × 4) / 4.4 = 18 puntos
+3.1 Atributos de Clase Record (6 puntos)
+Justificación del Subtotal: 6 puntos (33.3% de FileHelpers)
+Por qué 6 puntos:
+
+Atributos de clase definen el modo de parsing completo
+Sin [DelimitedRecord] o [FixedLengthRecord], FileHelpers no sabe cómo parsear
+[IgnoreEmptyLines] previene errores frecuentes en archivos médicos
+Cálculo:
+
+Criticidad: 5/5 (BLOQUEANTE sin atributo principal)
+Impacto: 5/5 (Afecta parsing completo)
+Frecuencia: 3/5 (Moderado - generadores suelen incluirlo)
+Score = (5 × 5 × 3) / 12.5 = 6 puntos
+Criterio	Puntos	Justificación del Puntaje	Forma de Validación	Penalización por Incumplimiento
+[DelimitedRecord] o [FixedLengthRecord]	3	50% del subtotal
+• CRÍTICO: Define el modo fundamental de parsing
+• Sin esto, FileHelpers lanza exception al intentar parsear
+• Debe coincidir con formato real del archivo del cliente	Atributo de clase presente:
+[DelimitedRecord("\t")] o
+[FixedLengthRecord]	BLOQUEANTE:
+FileHelpers exception:
+"Class must have DelimitedRecord or FixedLengthRecord attribute"
+[IgnoreEmptyLines]	2	33.3% del subtotal
+• IMPORTANTE: Archivos médicos frecuentemente tienen líneas vacías
+• Sin esto, FileHelpers intenta parsear líneas vacías y falla
+• Previene errores de "line too short"	Atributo presente:
+[IgnoreEmptyLines]
+(para archivos delimitados)	Parsing errors en líneas vacías:
+"Line X is too short",
+datos perdidos
+Clase sealed	1	16.7% del subtotal
+• BEST PRACTICE: Record types son DTOs, no deben heredarse
+• sealed previene uso incorrecto en futuro
+• Mejora rendimiento mínimo	public sealed class
+en declaración	Ninguna (best practice),
+posible uso incorrecto futuro
+Código de Referencia con Anotaciones:
+
+csharp
+// [3 pts] - DelimitedRecord attribute (CRITICAL)
+// WHY CRITICAL: Tells FileHelpers this is a tab-delimited file
+// ALTERNATIVES: [FixedLengthRecord] for fixed-width files
+// IMPACT: Without this, FileHelpers cannot parse the file at all
+// EXCEPTION: "Type must have DelimitedRecord or FixedLengthRecord attribute"
+[DelimitedRecord("\t")]  // Tab-delimited (common in medical exports)
+// [DelimitedRecord(",")]  // CSV
+// [DelimitedRecord("|")]  // Pipe-delimited
+// [FixedLengthRecord()]   // Fixed-width format
+
+// [2 pts] - IgnoreEmptyLines attribute (IMPORTANT)
+// WHY IMPORTANT: Medical system exports often have blank lines between records
+// REAL EXAMPLE: Meditech exports include blank line after every 100 records
+// WITHOUT THIS: FileHelpers tries to parse blank line →
+// WITHOUT THIS: FileHelpers tries to parse blank line → "Line too short" error
+// IMPACT: Data loss - processing stops at first blank line
+[IgnoreEmptyLines]
+
+// [1 pt] - Sealed class (BEST PRACTICE)
+// WHY SEALED: Record types are DTOs (Data Transfer Objects), not meant for inheritance
+// BENEFIT: Prevents future developers from incorrectly extending this class
+// PERFORMANCE: Minor performance improvement (virtual call optimization)
+public sealed class InventoryRecordType
+{
+    // Field definitions...
+}
+
+Validación Automatizada:
+
+csharp
+public ValidationResult ValidateRecordTypeClassAttributes(Type recordType)
+{
+    var result = new ValidationResult 
+    { 
+        Category = "Record Type Class Attributes", 
+        MaxScore = 6 
+    };
+    
+    // Check 1: DelimitedRecord or FixedLengthRecord (3 pts)
+    var delimitedAttr = recordType.GetCustomAttribute<DelimitedRecordAttribute>();
+    var fixedLengthAttr = recordType.GetCustomAttribute<FixedLengthRecordAttribute>();
+    
+    if (delimitedAttr == null && fixedLengthAttr == null)
+    {
+        result.AddCriticalError(
+            "BLOCKER: Missing [DelimitedRecord] or [FixedLengthRecord] attribute",
+            "Impact: FileHelpers cannot parse the file",
+            "Exception: 'Type must have DelimitedRecord or FixedLengthRecord attribute'",
+            "Fix: Add [DelimitedRecord(\"\\t\")] or [FixedLengthRecord] to class"
+        );
+        return result; // Don't continue - this is blocker
+    }
+    
+    result.Score += 3;
+    if (delimitedAttr != null)
+    {
+        result.AddEvidence($"✓ [DelimitedRecord] with delimiter: '{delimitedAttr.Delimiter}'");
+    }
+    else
+    {
+        result.AddEvidence($"✓ [FixedLengthRecord] format");
+    }
+    
+    // Check 2: IgnoreEmptyLines (2 pts) - only for delimited files
+    if (delimitedAttr != null)
+    {
+        var ignoreEmptyAttr = recordType.GetCustomAttribute<IgnoreEmptyLinesAttribute>();
+        
+        if (ignoreEmptyAttr == null)
+        {
+            result.AddWarning(
+                "Missing [IgnoreEmptyLines] attribute",
+                "Impact: Blank lines in file will cause parsing errors",
+                "Common in medical exports: Meditech includes blank lines every 100 records",
+                "Fix: Add [IgnoreEmptyLines] to class"
+            );
+        }
+        else
+        {
+            result.Score += 2;
+            result.AddEvidence("✓ [IgnoreEmptyLines] present - handles blank lines");
+        }
+    }
+    else
+    {
+        // Fixed-length files don't need IgnoreEmptyLines (full credit)
+        result.Score += 2;
+        result.AddEvidence("✓ Fixed-length format - blank line handling not needed");
+    }
+    
+    // Check 3: Sealed class (1 pt)
+    if (!recordType.IsSealed)
+    {
+        result.AddInfo(
+            "Class not sealed",
+            "Best Practice: Record types should be sealed (prevents inheritance)",
+            "Fix: Change 'public class' to 'public sealed class'"
+        );
+    }
+    else
+    {
+        result.Score += 1;
+        result.AddEvidence("✓ Class is sealed (best practice)");
+    }
+    
+    return result;
+}
+3.2 Atributos de Campo (6 puntos)
+Justificación del Subtotal: 6 puntos (33.3% de FileHelpers)
+Por qué 6 puntos:
+
+Los atributos de campo controlan el parsing de cada columna
+Configuración incorrecta = datos corruptos o exceptions
+Fechas y decimales en formatos médicos requieren conversión especial
+[FieldTrim] es crítico para matching de datos (lookups en DB)
+Cálculo:
+
+Criticidad: 5/5 (Datos corruptos/perdidos)
+Impacto: 4/5 (Afecta cada campo)
+Frecuencia: 5/5 (Muy común configurar mal)
+Score = (5 × 4 × 5) / 16.7 = 6 puntos
+Criterio	Puntos	Justificación del Puntaje	Forma de Validación	Penalización por Incumplimiento
+[FieldQuoted] o [FieldFixedLength]	2	33.3% del subtotal
+• CRÍTICO: Define cómo parsear cada campo individual
+• [FieldQuoted] para CSV - maneja comillas y delimitadores dentro del valor
+• [FieldFixedLength(X)] para fixed-width - define ancho de columna
+• Configuración incorrecta = parsing incorrecto de datos	Atributo correcto por campo:
+[FieldQuoted] para delimited
+[FieldFixedLength(10)] para fixed	Datos parseados incorrectamente,
+columnas desalineadas,
+valores truncados
+[FieldTrim(TrimMode.Both)]	1.5	25% del subtotal
+• IMPORTANTE: Archivos médicos tienen espacios extra en valores
+• Sin trim, "SMITH " ≠ "SMITH" en lookups de DB
+• Causa fallos en joins y búsquedas de cuentas
+• Aplica a todos los campos string	Presente en campos string:
+[FieldTrim(TrimMode.Both)]	Fallos en matching de datos,
+lookups no encuentran registros,
+duplicados por espacios
+[FieldConverter] para tipos especiales	1.5	25% del subtotal
+• CRÍTICO: Fechas en formatos médicos son no-estándar
+• Decimales pueden tener formato especial (sin punto decimal)
+• Sin converter correcto = exception o valor incorrecto
+• EJEMPLOS: "20231215" → DateTime, "12345" → 123.45m	[FieldConverter(typeof(MDSDecimalConverter))]
+[FieldConverter(typeof(MDSDateConverter))]
+[FieldConverter(typeof(ClarioneseDateConverter))]	BLOQUEANTE:
+FormatException al parsear,
+o datos incorrectos insertados silenciosamente
+[FieldNullValue] para defaults	1	16.7% del subtotal
+• IMPORTANTE: Campos opcionales necesitan valores por defecto
+• Sin esto, nulls causan exceptions en DB insert
+• Previene NullReferenceException en handlers
+• EJEMPLOS: decimal → 0, DateTime → DateTime.MinValue	[FieldNullValue(typeof(decimal), "0")]
+[FieldNullValue(typeof(DateTime), "1900-01-01")]	NullReferenceException en handlers,
+DB constraint violation,
+datos inconsistentes
+Código de Referencia Completo con Anotaciones:
+
+csharp
+[IgnoreEmptyLines]
+[DelimitedRecord("\t")]
+public sealed class InventoryRecordType
+{
+    // FIELD 1: Account Number (string field example)
+    
+    // [0.1 pt] - FieldQuoted (handles quotes in CSV)
+    // WHY: If account number contains delimiter (rare but possible)
+    // EXAMPLE: "ACC,123" in CSV would break without QuoteMode
+    [FieldQuoted(QuoteMode.OptionalForRead)]
+    
+    // [0.075 pt] - FieldTrim (removes spaces)
+    // WHY CRITICAL: DB lookup for "ACC123 " won't find "ACC123"
+    // REAL IMPACT: Account not found → creates duplicate instead of update
+    // MEDITECH ISSUE: Exports add trailing spaces to fixed-width fields
+    [FieldTrim(TrimMode.Both)]
+    public string AccountNum;
+    
+    // FIELD 2: Bill Balance (decimal field example)
+    
+    [FieldQuoted(QuoteMode.OptionalForRead)]
+    [FieldTrim(TrimMode.Both)]
+    
+    // [0.15 pt] - FieldConverter for decimal (CRITICAL)
+    // WHY CRITICAL: Medical systems store amounts without decimal point
+    // EXAMPLE: "12345" in file represents $123.45
+    // WITHOUT THIS: Would parse as 12345.00 (100x error!)
+    // MDSDecimalConverter divides by 100
+    [FieldConverter(typeof(MDSDecimalConverter))]
+    
+    // [0.05 pt] - FieldNullValue (handles missing values)
+    // WHY: Empty balance in file should default to 0, not null
+    // WITHOUT THIS: NullReferenceException when summing balances
+    [FieldNullValue(typeof(decimal), "0")]
+    public decimal BillBal;
+    
+    // FIELD 3: Service Date (DateTime field example)
+    
+    [FieldQuoted(QuoteMode.OptionalForRead)]
+    [FieldTrim(TrimMode.Both)]
+    
+    // [0.15 pt] - FieldConverter for DateTime (CRITICAL)
+    // WHY CRITICAL: Medical systems use non-standard date formats
+    // MEDITECH: "20231215" (yyyyMMdd) - no separators
+    // CLARION: Custom format with different separators
+    // WITHOUT THIS: FormatException "String was not recognized as valid DateTime"
+    [FieldConverter(typeof(MDSDateConverter))]
+    // OR for Clarion systems:
+    // [FieldConverter(typeof(ClarioneseDateConverter))]
+    
+    // [0.05 pt] - FieldNullValue for optional dates
+    // WHY: Missing date should default to MinValue or specific sentinel
+    [FieldNullValue(typeof(DateTime), "1900-01-01")]
+    public DateTime ServiceDate;
+    
+    // FIELD 4: Transaction Code (string, simple)
+    
+    [FieldQuoted(QuoteMode.OptionalForRead)]
+    [FieldTrim(TrimMode.Both)]
+    public string TransCode; // No converter needed - simple string
+    
+    // FIELD 5: Financial Class (string with special handling)
+    
+    [FieldQuoted(QuoteMode.OptionalForRead)]
+    [FieldTrim(TrimMode.Both)]
+    
+    // Optional: FieldNullValue for empty financial class
+    [FieldNullValue(typeof(string), "SP")] // Default to Self Pay if empty
+    public string FinClass;
+}
+Validación Automatizada Inteligente:
+
+csharp
+public ValidationResult ValidateRecordTypeFieldAttributes(Type recordType)
+{
+    var result = new ValidationResult 
+    { 
+        Category = "Field Attributes", 
+        MaxScore = 6 
+    };
+    
+    var fields = recordType.GetFields(BindingFlags.Public | BindingFlags.Instance);
+    
+    // Scoring accumulators
+    double lengthAttributeScore = 0;
+    double trimAttributeScore = 0;
+    double converterScore = 0;
+    double nullValueScore = 0;
+    
+    foreach (var field in fields)
+    {
+        // Check 1: FieldQuoted/FieldFixedLength (max 2 pts total)
+        bool hasLengthAttribute = 
+            field.GetCustomAttribute<FieldQuotedAttribute>() != null ||
+            field.GetCustomAttribute<FieldFixedLengthAttribute>() != null;
+        
+        if (!hasLengthAttribute)
+        {
+            result.AddWarning(
+                $"Field '{field.Name}' missing length attribute",
+                "Expected: [FieldQuoted] for delimited or [FieldFixedLength] for fixed-width"
+            );
+        }
+        else
+        {
+            // Award 0.1 pt per field, up to max 2 pts
+            lengthAttributeScore += Math.Min(0.1, 2.0 - lengthAttributeScore);
+        }
+        
+        // Check 2: FieldTrim for string fields (max 1.5 pts total)
+        if (field.FieldType == typeof(string))
+        {
+            var trimAttr = field.GetCustomAttribute<FieldTrimAttribute>();
+            
+            if (trimAttr == null)
+            {
+                result.AddWarning(
+                    $"String field '{field.Name}' missing [FieldTrim]",
+                    "Impact: Spaces will cause lookup failures",
+                    "Example: 'SMITH ' won't match 'SMITH' in database"
+                );
+            }
+            else if (trimAttr.TrimMode != TrimMode.Both)
+            {
+                result.AddWarning(
+                    $"Field '{field.Name}' uses TrimMode.{trimAttr.TrimMode}",
+                    "Recommendation: Use TrimMode.Both for safety"
+                );
+                trimAttributeScore += Math.Min(0.05, 1.5 - trimAttributeScore); // Partial credit
+            }
+            else
+            {
+                // Award 0.075 pt per string field, up to max 1.5 pts
+                trimAttributeScore += Math.Min(0.075, 1.5 - trimAttributeScore);
+            }
+        }
+        
+        // Check 3: FieldConverter for date/decimal fields (max 1.5 pts total)
+        if (field.FieldType == typeof(DateTime) || 
+            field.FieldType == typeof(DateTime?) ||
+            field.FieldType == typeof(decimal) || 
+            field.FieldType == typeof(decimal?))
+        {
+            var converterAttr = field.GetCustomAttribute<FieldConverterAttribute>();
+            
+            if (converterAttr == null)
+            {
+                result.AddCriticalError(
+                    $"CRITICAL: Field '{field.Name}' ({field.FieldType.Name}) missing [FieldConverter]",
+                    "Impact: Parsing will fail or produce incorrect values",
+                    field.FieldType == typeof(decimal) || field.FieldType == typeof(decimal?) 
+                        ? "Medical systems often store amounts without decimal point (12345 = $123.45)"
+                        : "Medical systems use non-standard date formats (20231215 = 2023-12-15)",
+                    $"Fix: Add [FieldConverter(typeof({GetRecommendedConverter(field.FieldType)}))]"
+                );
+            }
+            else
+            {
+                // Validate correct converter type
+                Type expectedConverter = GetExpectedConverterType(field.FieldType);
+                
+                if (converterAttr.Converter == expectedConverter ||
+                    IsAcceptableConverter(converterAttr.Converter, field.FieldType))
+                {
+                    // Award 0.15 pt per special field, up to max 1.5 pts
+                    converterScore += Math.Min(0.15, 1.5 - converterScore);
+                }
+                else
+                {
+                    result.AddWarning(
+                        $"Field '{field.Name}' uses unexpected converter: {converterAttr.Converter.Name}",
+                        $"Expected: {expectedConverter.Name} or compatible"
+                    );
+                    converterScore += Math.Min(0.08, 1.5 - converterScore); // Partial credit
+                }
+            }
+        }
+        
+        // Check 4: FieldNullValue for nullable/optional fields (max 1 pt total)
+        if (IsNullableOrOptional(field.FieldType))
+        {
+            var nullValueAttr = field.GetCustomAttribute<FieldNullValueAttribute>();
+            
+            if (nullValueAttr != null)
+            {
+                // Award 0.05 pt per field, up to max 1 pt
+                nullValueScore += Math.Min(0.05, 1.0 - nullValueScore);
+            }
+            // Note: Not warning if missing - this is optional best practice
+        }
+    }
+    
+    // Add accumulated scores
+    result.Score += lengthAttributeScore;
+    result.Score += trimAttributeScore;
+    result.Score += converterScore;
+    result.Score += nullValueScore;
+    
+    // Add summary evidence
+    result.AddEvidence($"✓ Length attributes: {lengthAttributeScore:F2}/2.0 pts");
+    result.AddEvidence($"✓ Trim attributes: {trimAttributeScore:F2}/1.5 pts");
+    result.AddEvidence($"✓ Converters: {converterScore:F2}/1.5 pts");
+    result.AddEvidence($"✓ Null values: {nullValueScore:F2}/1.0 pts");
+    
+    return result;
+}
+
+private string GetRecommendedConverter(Type fieldType)
+{
+    if (fieldType == typeof(decimal) || fieldType == typeof(decimal?))
+        return "MDSDecimalConverter";
+    if (fieldType == typeof(DateTime) || fieldType == typeof(DateTime?))
+        return "MDSDateConverter or ClarioneseDateConverter";
+    return "unknown";
+}
+
+private Type GetExpectedConverterType(Type fieldType)
+{
+    if (fieldType == typeof(decimal) || fieldType == typeof(decimal?))
+        return typeof(MDSDecimalConverter);
+    if (fieldType == typeof(DateTime) || fieldType == typeof(DateTime?))
+        return typeof(MDSDateConverter);
+    return null;
+}
+
+private bool IsAcceptableConverter(Type converterType, Type fieldType)
+{
+    // Accept multiple valid converters for DateTime
+    if (fieldType == typeof(DateTime) || fieldType == typeof(DateTime?))
+    {
+        return converterType == typeof(MDSDateConverter) ||
+               converterType == typeof(ClarioneseDateConverter);
+    }
+    return false;
+}
+
+private bool IsNullableOrOptional(Type fieldType)
+{
+    return Nullable.GetUnderlyingType(fieldType) != null || 
+           !fieldType.IsValueType;
+}
+3.3 Field Mapping a Base de Datos (6 puntos)
+Justificación del Subtotal: 6 puntos (33.3% de FileHelpers)
+Por qué 6 puntos:
+
+[FieldMapping] es el puente crítico entre archivo parseado y DB
+Sin esto, datos parseados correctamente no se persisten (pérdida total)
+TableDestination incorrecto = corrupción silenciosa de datos
+Mapeo a columnas inexistentes = runtime exception
+Cálculo:
+
+Criticidad: 5/5 (Pérdida o corrupción de datos)
+Impacto: 5/5 (Afecta persistencia completa)
+Frecuencia: 4/5 (Común mapear incorrectamente)
+Score = (5 × 5 × 4) / 16.7 = 6 puntos
+Criterio	Puntos	Justificación del Puntaje	Forma de Validación	Penalización por Incumplimiento
+[FieldMapping] attributes presentes	4	66.7% del subtotal
+• CRÍTICO: Sin esto, datos parseados NO se escriben a DB
+• Es el conector entre objeto C# y tabla Cupload
+• Cobertura mínima: 80% de campos deben estar mapeados
+• Campos no mapeados = pérdida silenciosa de datos del cliente	Atributo presente en >80% campos:
+[FieldMapping("accountnumber",
+TableDestination.Master)]	CRÍTICO:
+Datos no se persisten,
+pérdida total de información parseada
+TableDestination correctos	2	33.3% del subtotal
+• CRÍTICO: Mapeo incorrecto = tabla equivocada
+• EJEMPLO: Insurance data en Master table = corrupción
+• Validar contra schema de Cupload (uplmaster, upltrans, uplinsurance)
+• Error silencioso - no genera exception, corrompe datos	Valores correctos:
+TableDestination.Master
+TableDestination.Trans
+TableDestination.Insurance	CRÍTICO:
+Corrupción silenciosa de datos en Cupload,
+impacto en negocio
+Código de Referencia con Schema de Cupload:
+
+csharp
+[IgnoreEmptyLines]
+[DelimitedRecord("\t")]
+public sealed class InventoryRecordType
+{
+    // MASTER TABLE FIELDS (uplmaster - 60 columns)
+    
+    // [0.2 pt] - Account Number (PRIMARY KEY)
+    // SCHEMA: uplmaster.accountnumber VARCHAR(20) NOT NULL
+    // WHY CRITICAL: Primary key for account lookup
+    [FieldQuoted(QuoteMode.OptionalForRead)]
+    [FieldTrim(TrimMode.Both)]
+    [FieldMapping("accountnumber", TableDestination.Master)]
+    public string AccountNum;
+    
+    // [0.2 pt] - Member Code (REQUIRED)
+    // SCHEMA: uplmaster.membercode VARCHAR(3) NOT NULL
+    // WHY: Links to client in MDS system
+    [FieldQuoted(QuoteMode.OptionalForRead)]
+    [FieldTrim(TrimMode.Both)]
+    [FieldMapping("membercode", TableDestination.Master)]
+    public string MemberCode;
+    
+    // [0.2 pt] - Account Balance
+    // SCHEMA: uplmaster.accountbalance DECIMAL(18,2)
+    // NOTE: TableDestination.Master is correct for demographics/inventory
+    [FieldQuoted(QuoteMode.OptionalForRead)]
+    [FieldTrim(TrimMode.Both)]
+    [FieldConverter(typeof(MDSDecimalConverter))]
+    [FieldNullValue(typeof(decimal), "0")]
+    [FieldMapping("accountbalance", TableDestination.Master)]
+    public decimal BillBal;
+    
+    // [0.2 pt] - Patient Name
+    // SCHEMA: uplmaster.patientname VARCHAR(50)
+    [FieldQuoted(QuoteMode.OptionalForRead)]
+    [FieldTrim(TrimMode.Both)]
+    [FieldMapping("patientname", TableDestination.Master)]
+    public string PatientName;
+    
+    // [0.2 pt] - Financial Class
+    // SCHEMA: uplmaster.acctbaseclass VARCHAR(10)
+    // WRONG DESTINATION EXAMPLE: TableDestination.Trans would corrupt data!
+    [FieldQuoted(QuoteMode.OptionalForRead)]
+    [FieldTrim(TrimMode.Both)]
+    [FieldMapping("acctbaseclass", TableDestination.Master)]
+    public string FinClass;
+    
+    // TRANSACTION TABLE FIELDS (upltrans - if this were a transaction file)
+    // NOTE: This example shows WRONG usage - transactions should be in separate handler
+    
+    // ANTI-PATTERN (DO NOT DO THIS):
+    // [FieldMapping("transactioncode", TableDestination.Trans)] // WRONG!
+    // This field is in InventoryRecordType which maps to Master table
+    // Transactions should be in separate TransactionRecordType
+    
+    // INSURANCE TABLE FIELDS (uplinsurance)
+    // Similar principle - insurance data needs separate record type
+    
+    // UNMAPPED FIELD EXAMPLE (client-specific, not in Cupload schema)
+    
+    // [0 pts] - Not mapped (intentionally)
+    // WHY: Client has custom field not in MDS schema
+    // IMPACT: Data parsed but not persisted (acceptable if documented)
+    [FieldQuoted(QuoteMode.OptionalForRead)]
+    [FieldTrim(TrimMode.Both)]
+    // NO [FieldMapping] attribute - this field is ignored
+    public string ClientCustomField;
+}
+Schema Cupload de Referencia (para validación):
+
+csharp
+// Simplified Cupload schema for validation
+public static class CuploadSchema
+{
+    public static readonly TableSchema MasterTable = new TableSchema
+    {
+        Name = "uplmaster",
+        Columns = new[]
+        {
+            new Column("accountnumber", typeof(string), 20, required: true),
+            new Column("membercode", typeof(string), 3, required: true),
+            new Column("loadexe", typeof(string), 50, required: true),
+            new Column("accountbalance", typeof(decimal)),
+            new Column("patientname", typeof(string), 50),
+            new Column("acctbaseclass", typeof(string), 10),
+            new Column("originalcreditor", typeof(string), 50),
+            new Column("ssn", typeof(string), 11),
+            new Column("dateofbirth", typeof(DateTime)),
+            // ... 51 more columns (total 60)
+        }
+    };
+    
+    public static readonly TableSchema TransTable = new TableSchema
+    {
+        Name = "upltrans",
+        Columns = new[]
+        {
+            new Column("accountnumber", typeof(string), 20, required: true),
+            new Column("trans
+
+
+continua
+markdown
+            new Column("transactioncode", typeof(string), 10, required: true),
+            new Column("transactiondate", typeof(DateTime)),
+            new Column("transactionamount", typeof(decimal)),
+            new Column("transactiontype", typeof(string), 1),
+            // ... more transaction columns
+        }
+    };
+    
+    public static readonly TableSchema InsuranceTable = new TableSchema
+    {
+        Name = "uplinsurance",
+        Columns = new[]
+        {
+            new Column("accountnumber", typeof(string), 20, required: true),
+            new Column("insurancename", typeof(string), 50),
+            new Column("policynumber", typeof(string), 30),
+            new Column("groupnumber", typeof(string), 30),
+            new Column("insuredname", typeof(string), 50),
+            // ... more insurance columns
+        }
+    };
+}
+Validación Automatizada con Schema Check:
+
+csharp
+public ValidationResult ValidateFieldMappings(Type recordType)
+{
+    var result = new ValidationResult 
+    { 
+        Category = "Field Mappings", 
+        MaxScore = 6 
+    };
+    
+    var fields = recordType.GetFields(BindingFlags.Public | BindingFlags.Instance);
+    int totalFields = fields.Length;
+    int mappedFields = 0;
+    int correctDestination = 0;
+    int totalMappings = 0;
+    
+    var schemaErrors = new List<string>();
+    
+    foreach (var field in fields)
+    {
+        var mappingAttr = field.GetCustomAttribute<FieldMappingAttribute>();
+        
+        if (mappingAttr != null)
+        {
+            mappedFields++;
+            totalMappings++;
+            
+            // Validate column exists in target table
+            TableSchema targetSchema = GetSchemaForDestination(mappingAttr.Destination);
+            
+            if (targetSchema == null)
+            {
+                schemaErrors.Add($"Field '{field.Name}': Invalid TableDestination '{mappingAttr.Destination}'");
+                continue;
+            }
+            
+            // Check if column exists in schema
+            var column = targetSchema.FindColumn(mappingAttr.ColumnName);
+            
+            if (column == null)
+            {
+                result.AddCriticalError(
+                    $"Field '{field.Name}' maps to non-existent column '{mappingAttr.ColumnName}'",
+                    $"Table: {targetSchema.Name}",
+                    "Impact: Runtime exception during DB insert",
+                    $"Available columns: {string.Join(", ", targetSchema.GetColumnNames().Take(10))}..."
+                );
+                continue;
+            }
+            
+            correctDestination++;
+            
+            // Validate type compatibility
+            if (!IsTypeCompatible(field.FieldType, column.Type))
+            {
+                result.AddWarning(
+                    $"Field '{field.Name}' type mismatch",
+                    $"Field type: {field.FieldType.Name}, Column type: {column.Type.Name}",
+                    "May cause data truncation or conversion errors"
+                );
+            }
+            
+            // Validate required fields
+            if (column.Required && IsNullableOrOptional(field.FieldType))
+            {
+                result.AddWarning(
+                    $"Field '{field.Name}' maps to required column but is nullable",
+                    "Ensure FieldNullValue is set or handler provides default"
+                );
+            }
+        }
+    }
+    
+    // Check 1: FieldMapping coverage (4 pts)
+    double mappingCoverage = (double)mappedFields / totalFields;
+    
+    if (mappingCoverage < 0.5)
+    {
+        result.AddCriticalError(
+            $"Only {mappedFields}/{totalFields} fields ({mappingCoverage:P0}) have [FieldMapping]",
+            "Impact: Majority of parsed data will NOT be persisted to database",
+            "Minimum expected: 80% coverage",
+            "Fix: Add [FieldMapping] attributes to fields that should be saved"
+        );
+        result.Score += mappingCoverage * 4.0; // Partial credit
+    }
+    else if (mappingCoverage < 0.8)
+    {
+        result.AddWarning(
+            $"Only {mappedFields}/{totalFields} fields ({mappingCoverage:P0}) have [FieldMapping]",
+            "Expected: At least 80% coverage",
+            "Some parsed data may be lost"
+        );
+        result.Score += mappingCoverage * 4.0; // Partial credit
+    }
+    else
+    {
+        result.Score += 4.0; // Full credit
+        result.AddEvidence($"✓ {mappedFields}/{totalFields} fields ({mappingCoverage:P0}) mapped to database");
+    }
+    
+    // Check 2: TableDestination correctness (2 pts)
+    if (totalMappings == 0)
+    {
+        // Already penalized in Check 1
+    }
+    else
+    {
+        double destinationAccuracy = (double)correctDestination / totalMappings;
+        
+        if (destinationAccuracy < 0.9)
+        {
+            result.AddCriticalError(
+                $"Only {correctDestination}/{totalMappings} mappings ({destinationAccuracy:P0}) have correct TableDestination",
+                "Impact: Data written to wrong tables = silent data corruption",
+                "Example: Insurance data in Master table",
+                schemaErrors.Count > 0 ? $"Errors: {string.Join("; ", schemaErrors)}" : ""
+            );
+            result.Score += destinationAccuracy * 2.0; // Partial credit
+        }
+        else
+        {
+            result.Score += 2.0; // Full credit
+            result.AddEvidence($"✓ {correctDestination}/{totalMappings} mappings ({destinationAccuracy:P0}) have valid destinations");
+        }
+    }
+    
+    return result;
+}
+
+private TableSchema GetSchemaForDestination(TableDestination destination)
+{
+    switch (destination)
+    {
+        case TableDestination.Master:
+            return CuploadSchema.MasterTable;
+        case TableDestination.Trans:
+            return CuploadSchema.TransTable;
+        case TableDestination.Insurance:
+            return CuploadSchema.InsuranceTable;
+        default:
+            return null;
+    }
+}
+
+private bool IsTypeCompatible(Type fieldType, Type columnType)
+{
+    // Unwrap nullable types
+    var actualFieldType = Nullable.GetUnderlyingType(fieldType) ?? fieldType;
+    
+    // Exact match
+    if (actualFieldType == columnType)
+        return true;
+    
+    // String is compatible with most types (will be converted)
+    if (actualFieldType == typeof(string))
+        return true;
+    
+    // Numeric compatibility
+    if (IsNumericType(actualFieldType) && IsNumericType(columnType))
+        return true;
+    
+    return false;
+}
+
+private bool IsNumericType(Type type)
+{
+    return type == typeof(int) || type == typeof(long) || 
+           type == typeof(decimal) || type == typeof(double) || 
+           type == typeof(float);
+}
+4. HANDLERS Y LÓGICA DE NEGOCIO (17 puntos)
+📌 Justificación del Peso Total: 17 puntos (17% del score)
+Razón: Los handlers implementan la lógica de negocio específica del formatter:
+
+DemographicsHandler: Procesa cuentas, actualiza balances, maneja recall protection
+TransactionHandler: Carga transacciones en batch
+InventoryHandler: Combina parsing FileHelpers + lógica de negocio
+Impacto de Fallo:
+
+Herencia incorrecta = compilation errors
+Lógica faltante = datos incompletos o incorrectos
+Account cache no utilizado = violación de reglas de recalled accounts
+Evidencia de Criticidad del Contexto:
+
+"Handlers not inheriting from Meditech base classes" (MDS Project Follow-UP) "Incorrect transaction loading logic" (MDS Project Follow-UP)
+
+Cálculo:
+
+Criticidad: 4/5 (Impacta lógica de negocio)
+Impacto: 4/5 (Afecta procesamiento de datos)
+Frecuencia: 5/5 (Errores muy comunes en handlers)
+Score = (4 × 4 × 5) / 4.7 = 17 puntos
+4.1 DemographicsHandler (7 puntos)
+Justificación del Subtotal: 7 puntos (41.2% de Handlers)
+Por qué 7 puntos:
+
+Es el handler más crítico - procesa información de cuentas
+Recall protection es requisito legal/de negocio
+Errores aquí afectan a todas las cuentas del cliente
+Cálculo:
+
+Criticidad: 5/5 (Procesa datos críticos de cuentas)
+Impacto: 5/5 (Afecta todas las cuentas)
+Frecuencia: 4/5 (Común heredar de clase incorrecta)
+Score = (5 × 5 × 4) / 14.3 = 7 puntos
+Criterio	Puntos	Justificación del Puntaje	Forma de Validación	Penalización por Incumplimiento
+Hereda de MedBaseCollectionsHandler	3	42.8% del subtotal
+• CRÍTICO: BaseCollectionsHandler es abstracto - no usar clase base correcta
+• MedBaseCollectionsHandler tiene lógica específica de Meditech
+• Incluye: cross-walk application, field defaults, validations
+• Error del MVP: heredar de clase genérica	class DemographicsHandler :
+MedBaseCollectionsHandler	BLOQUEANTE:
+Compilation error o
+lógica de negocio faltante
+Constructor correcto	1.5	21.4% del subtotal
+• IMPORTANTE: Recibe converter reference + file context
+• Constructor incorrecto = runtime exception al instanciar	public DemographicsHandler(
+BaseConverter conv, ProcessFile file)
+: base(conv, file)	Runtime exception:
+"No suitable constructor found"
+Usa AccountCache para recall check	2.5	35.8% del subtotal
+• CRÍTICO: Violación de reglas de negocio si no se verifica
+• Recalled accounts no deben recibir nuevas transacciones
+• Legal/compliance issue en industria médica
+• EJEMPLO: Account deleted por disputa legal, no debe reactivarse	Código llama:
+if (converter.Accounts.IsRecalled(acctNum))
+return; // Skip recalled account	CRÍTICO:
+Violación de reglas de negocio,
+posibles problemas legales
+Código de Referencia con Anotaciones:
+
+csharp
+// [3 pts] - Correct inheritance
+// WHY CRITICAL: MedBaseCollectionsHandler provides 20+ methods specific to Meditech
+// INCLUDES: ApplyCrossWalks(), SetDefaults(), ValidateRequiredFields()
+// MVP ERROR: Inheriting from generic BaseCollectionsHandler = missing logic
+// IMPACT: Manual implementation of 500+ lines of standard logic
+public class DemographicsHandler : MedBaseCollectionsHandler
+{
+    // [1.5 pts] - Constructor with correct signature
+    // WHY: Framework instantiates handlers via reflection using this signature
+    // PARAMETERS:
+    //   - pBaseConverter: Reference to parent formatter (access to Settings, Accounts)
+    //   - pInputFile: File being processed (name, path, metadata)
+    // IMPACT: Wrong signature = reflection fails = runtime exception
+    public DemographicsHandler(BaseConverter pBaseConverter, ProcessFile pInputFile)
+        : base(pBaseConverter, pInputFile)
+    {
+        // Constructor body usually empty - base handles initialization
+    }
+    
+    // Override of ProcessRecord (called for each line in file)
+    protected override void ProcessRecord(object pRecord)
+    {
+        // Cast to specific record type
+        var record = pRecord as InventoryRecordType;
+        if (record == null) return;
+        
+        // [2.5 pts] - Recall protection check (CRITICAL BUSINESS RULE)
+        // WHY CRITICAL: Legal/compliance requirement
+        // SCENARIO: Account deleted due to dispute/bankruptcy/legal issue
+        // RULE: Once recalled, account cannot be reactivated by new file uploads
+        // WITHOUT THIS: System automatically reactivates recalled accounts = VIOLATION
+        var converter = BaseConverter as PriRiver; // Cast to access Accounts
+        
+        if (converter?.Accounts != null)
+        {
+            // Check if account is in recall cache (deleted accounts)
+            if (converter.Accounts.IsRecalled(record.AccountNum))
+            {
+                // Log and skip - do NOT process this account
+                LogWarning($"Account {record.AccountNum} is recalled - skipping");
+                return; // Critical - exit without processing
+            }
+        }
+        
+        // Continue with normal processing...
+        // Apply cross-walks (financial class mapping)
+        ApplyCrossWalks(record);
+        
+        // Set defaults for required fields
+        SetMandatoryDefaults(record);
+        
+        // Insert or update in Cupload database
+        SaveToDatabase(record);
+    }
+}
+Validación Automatizada:
+
+csharp
+public ValidationResult ValidateDemographicsHandler(Type handlerType)
+{
+    var result = new ValidationResult 
+    { 
+        Category = "DemographicsHandler", 
+        MaxScore = 7 
+    };
+    
+    // Check 1: Inheritance (3 pts)
+    if (!handlerType.IsSubclassOf(typeof(MedBaseCollectionsHandler)))
+    {
+        // Check if using wrong base class
+        if (handlerType.IsSubclassOf(typeof(BaseCollectionsHandler)))
+        {
+            result.AddCriticalError(
+                "Handler inherits from BaseCollectionsHandler instead of MedBaseCollectionsHandler",
+                "Impact: Missing 20+ Meditech-specific methods",
+                "Examples of missing logic: cross-walk application, field defaults, validations",
+                "Fix: Change inheritance to 'MedBaseCollectionsHandler'"
+            );
+            result.Score += 1.0; // Partial credit - at least it compiles
+        }
+        else
+        {
+            result.AddCriticalError(
+                "BLOCKER: Handler does not inherit from MedBaseCollectionsHandler",
+                "Expected: class DemographicsHandler : MedBaseCollectionsHandler",
+                "Impact: Compilation errors or completely missing business logic"
+            );
+            return result; // Blocker - don't continue
+        }
+    }
+    else
+    {
+        result.Score += 3.0;
+        result.AddEvidence("✓ Inherits from MedBaseCollectionsHandler");
+    }
+    
+    // Check 2: Constructor (1.5 pts)
+    var ctor = handlerType.GetConstructor(new[] 
+    { 
+        typeof(BaseConverter), 
+        typeof(ProcessFile) 
+    });
+    
+    if (ctor == null)
+    {
+        result.AddCriticalError(
+            "Constructor signature incorrect",
+            "Expected: public DemographicsHandler(BaseConverter conv, ProcessFile file)",
+            "Impact: Framework cannot instantiate handler via reflection",
+            "Runtime error: 'No suitable constructor found'"
+        );
+    }
+    else
+    {
+        result.Score += 1.5;
+        result.AddEvidence("✓ Constructor signature correct");
+    }
+    
+    // Check 3: Recall protection (2.5 pts)
+    var processRecordMethod = handlerType.GetMethod("ProcessRecord", 
+        BindingFlags.NonPublic | BindingFlags.Instance);
+    
+    if (processRecordMethod != null)
+    {
+        var methodBody = DecompileMethodBody(processRecordMethod);
+        
+        bool hasRecallCheck = 
+            methodBody.Contains("IsRecalled") ||
+            (methodBody.Contains("Accounts") && methodBody.Contains("recall"));
+        
+        if (!hasRecallCheck)
+        {
+            result.AddCriticalError(
+                "CRITICAL: No recall protection check in ProcessRecord",
+                "Business Rule: Recalled accounts must not be reactivated",
+                "Legal Impact: Violates compliance requirements",
+                "Example Code: if (converter.Accounts.IsRecalled(acctNum)) return;",
+                "Fix: Add recall check before processing account"
+            );
+        }
+        else
+        {
+            result.Score += 2.5;
+            result.AddEvidence("✓ Recall protection check present");
+        }
+    }
+    else
+    {
+        result.AddWarning(
+            "Cannot validate ProcessRecord method - not found or not accessible"
+        );
+    }
+    
+    return result;
+}
+4.2 TransactionHandler (5 puntos)
+Justificación del Subtotal: 5 puntos (29.4% de Handlers)
+Por qué 5 puntos:
+
+Menor peso que Demographics (7) porque las transacciones son secundarias a las cuentas
+Sin embargo, errores aquí causan pérdida completa de historial de transacciones
+LoadTransactions() es el método crítico - debe estar implementado
+Cálculo:
+
+Criticidad: 4/5 (Pérdida de datos de transacciones)
+Impacto: 4/5 (Afecta historial completo)
+Frecuencia: 4/5 (Común no implementar correctamente)
+Score = (4 × 4 × 4) / 12.8 = 5 puntos
+Criterio	Puntos	Justificación del Puntaje	Forma de Validación	Penalización por Incumplimiento
+Hereda de MedBaseTransactionHandler	2	40% del subtotal
+• IMPORTANTE: Contiene lógica de batch loading de transacciones
+• Incluye aplicación de cross-walks de trans codes
+• Validaciones de tipos de transacción (P, A, I, C)	class TransactionHandler :
+MedBaseTransactionHandler	BLOQUEANTE:
+Lógica de batch loading faltante
+Constructor correcto	1	20% del subtotal
+• IMPORTANTE: Similar a Demographics handler	public TransactionHandler(
+BaseConverter conv, ProcessFile file)
+: base(conv, file)	Runtime exception al instanciar
+Implementa LoadTransactions()	2	40% del subtotal
+• CRÍTICO: Es el método que carga transacciones en batch
+• Sin esto, transacciones se pierden completamente
+• Debe crear DataTable y llamar bulk insert	Override de LoadTransactions()
+que retorna DataTable	CRÍTICO:
+Pérdida total de transacciones,
+solo demographics se procesan
+Código de Referencia:
+
+csharp
+// [2 pts] - Correct inheritance
+// WHY: MedBaseTransactionHandler provides batch loading infrastructure
+// INCLUDES: CreateTransactionDataTable(), ApplyTransCrossWalks(), BulkInsert()
+public class TransactionHandler : MedBaseTransactionHandler
+{
+    // [1 pt] - Constructor
+    public TransactionHandler(BaseConverter pBaseConverter, ProcessFile pInputFile)
+        : base(pBaseConverter, pInputFile)
+    {
+    }
+    
+    // [2 pts] - LoadTransactions implementation (CRITICAL)
+    // WHY CRITICAL: This is THE method that actually persists transactions
+    // FLOW:
+    //   1. Create DataTable with upltrans schema
+    //   2. For each transaction in file, add row to DataTable
+    //   3. Return DataTable → framework does bulk insert
+    // WITHOUT THIS: Transactions parsed but never saved = complete data loss
+    protected override DataTable LoadTransactions()
+    {
+        // Create DataTable matching upltrans schema
+        DataTable dt = CreateTransactionDataTable();
+        
+        // Read transaction file (could be separate file or embedded in demographics)
+        foreach (var record in ReadTransactionRecords())
+        {
+            // Apply cross-walk: client code → MDS standard code
+            string mdsTransCode = ApplyTransCodeCrossWalk(record.TransCode);
+            
+            // Create row
+            DataRow row = dt.NewRow();
+            row["accountnumber"] = record.AccountNum;
+            row["transactioncode"] = mdsTransCode;
+            row["transactiondate"] = record.TransDate;
+            row["transactionamount"] = record.TransAmount;
+            row["transactiontype"] = DetermineTransType(mdsTransCode); // P, A, I, C
+            
+            dt.Rows.Add(row);
+        }
+        
+        // Framework will bulk insert this DataTable into upltrans
+        return dt;
+    }
+}
+Validación Automatizada:
+
+csharp
+public ValidationResult ValidateTransactionHandler(Type handlerType)
+{
+    var result = new ValidationResult 
+    { 
+        Category = "TransactionHandler", 
+        MaxScore = 5 
+    };
+    
+    // Check 1: Inheritance (2 pts)
+    if (!handlerType.IsSubclassOf(typeof(MedBaseTransactionHandler)))
+    {
+        result.AddCriticalError(
+            "Handler does not inherit from MedBaseTransactionHandler",
+            "Impact: Batch loading logic missing",
+            "Fix: class TransactionHandler : MedBaseTransactionHandler"
+        );
+        return result;
+    }
+    result.Score += 2.0;
+    result.AddEvidence("✓ Inherits from MedBaseTransactionHandler");
+    
+    // Check 2: Constructor (1 pt)
+    var ctor = handlerType.GetConstructor(new[] 
+    { 
+        typeof(BaseConverter), 
+        typeof(ProcessFile) 
+    });
+    
+    if (ctor == null)
+    {
+        result.AddError("Constructor signature incorrect");
+    }
+    else
+    {
+        result.Score += 1.0;
+        result.AddEvidence("✓ Constructor signature correct");
+    }
+    
+    // Check 3: LoadTransactions implementation (2 pts)
+    var method = handlerType.GetMethod("LoadTransactions", 
+        BindingFlags.NonPublic | BindingFlags.Instance);
+    
+    if (method == null || method.DeclaringType != handlerType)
+    {
+        result.AddCriticalError(
+            "CRITICAL: LoadTransactions() not implemented",
+            "Impact: Transactions will NOT be loaded - complete data loss",
+            "This is the only method that persists transactions to upltrans table",
+            "Fix: Override 'protected override DataTable LoadTransactions()'"
+        );
+    }
+    else
+    {
+        // Verify it returns DataTable
+        if (method.ReturnType != typeof(DataTable))
+        {
+            result.AddError(
+                "LoadTransactions() has wrong return type",
+                $"Expected: DataTable, Found: {method.ReturnType.Name}"
+            );
+            result.Score += 1.0; // Partial credit
+        }
+        else
+        {
+            result.Score += 2.0;
+            result.AddEvidence("✓ LoadTransactions() implemented correctly");
+        }
+    }
+    
+    return result;
+}
+4.3 InventoryHandler (si aplica) (5 puntos)
+Justificación del Subtotal: 5 puntos (29.4% de Handlers)
+Por qué 5 puntos:
+
+CONDICIONAL: Solo si el cliente tiene inventory files
+Combina FileHelpers parsing + handler logic
+Menor peso que otros handlers porque no todos los clientes lo requieren
+Cálculo:
+
+Criticidad: 3/5 (No todos los clientes lo necesitan)
+Impacto: 4/5 (Si se necesita, es crítico)
+Frecuencia: 3/5 (Moderado - ~50% clientes)
+Score = (3 × 4 × 3) / 7.2 = 5 puntos
+Criterio	Puntos	Justificación del Puntaje	Forma de Validación	Penalización por Incumplimiento
+Hereda de MedBaseGenericFileHandler	2	40% del subtotal
+• IMPORTANTE: Proporciona infraestructura de FileHelpers
+• Maneja parsing automático de record types
+• Incluye error handling y logging	class InventoryHandler :
+MedBaseGenericFileHandler<RecordType>	Lógica de parsing manual,
+código duplicado
+Constructor recibe typeof(RecordType)	1.5	30% del subtotal
+• IMPORTANTE: Le dice al handler qué record type usar para parsing
+• Sin esto, FileHelpers no sabe qué estructura esperar	public InventoryHandler(...)
+: base(conv, file, typeof(InventoryRecordType))	Runtime exception:
+"Record type not specified"
+ProcessRecord implementado	1.5	30% del subtotal
+• IMPORTANTE: Lógica específica por registro parseado
+• Aplicación de cross-walks, validaciones, inserts	Override de ProcessRecord
+con lógica de negocio	Datos parseados pero no procesados,
+no se persisten
+Código de Referencia:
+
+CONDICIONAL: Solo si el cliente tiene inventory files
+Combina FileHelpers parsing + handler logic
+Menor peso que otros handlers porque no todos los clientes lo requieren
+Cálculo:
+
+Criticidad: 3/5 (No todos los clientes lo necesitan)
+Impacto: 4/5 (Si se necesita, es crítico)
+Frecuencia: 3/5 (Moderado - ~50% clientes)
+Score = (3 × 4 × 3) / 7.2 = 5 puntos
+Criterio	Puntos	Justificación del Puntaje	Forma de Validación	Penalización por Incumplimiento
+Hereda de MedBaseGenericFileHandler	2	40% del subtotal
+• IMPORTANTE: Proporciona infraestructura de FileHelpers
+• Maneja parsing automático de record types
+• Incluye error handling y logging	class InventoryHandler :
+MedBaseGenericFileHandler<RecordType>	Lógica de parsing manual,
+código duplicado
+Constructor recibe typeof(RecordType)	1.5	30% del subtotal
+• IMPORTANTE: Le dice al handler qué record type usar para parsing
+• Sin esto, FileHelpers no sabe qué estructura esperar	public InventoryHandler(...)
+: base(conv, file, typeof(InventoryRecordType))	Runtime exception:
+"Record type not specified"
+ProcessRecord implementado	1.5	30% del subtotal
+• IMPORTANTE: Lógica específica por registro parseado
+• Aplicación de cross-walks, validaciones, inserts	Override de ProcessRecord
+con lógica de negocio	Datos parseados pero no procesados,
+no se persisten
+Código de Referencia:
+
+csharp
+// [2 pts] - Inheritance with generic record type
+// WHY: MedBaseGenericFileHandler<T> provides automatic FileHelpers parsing
+// BENEFIT: Framework automatically parses file using InventoryRecordType attributes
+// ALTERNATIVE: Manual parsing with StreamReader (300+ lines of code)
+public class InventoryHandler : MedBaseGenericFileHandler<InventoryRecordType>
+{
+    // [1.5 pts] - Constructor passes record type to base
+    // WHY: Tells FileHelpers engine which record structure to use
+    // IMPACT: Without typeof(), FileHelpers doesn't know how to parse
+    public InventoryHandler(
+        BaseConverter pBaseConverter, 
+        ProcessFile pInputFile, 
+        Type pRecordType) // Must be typeof(InventoryRecordType)
+        : base(pBaseConverter, pInputFile, pRecordType)
+    {
+    }
+    
+    // Simplified constructor that hardcodes record type (common pattern)
+    public InventoryHandler(
+        BaseConverter pBaseConverter, 
+        ProcessFile pInputFile)
+        : base(pBaseConverter, pInputFile, typeof(InventoryRecordType)) // [1.5 pts]
+    {
+    }
+    
+    // [1.5 pts] - ProcessRecord override
+    // WHY: Called by framework for each parsed record
+    // PARAMETERS: pRecord is already parsed InventoryRecordType object
+    // RESPONSIBILITY: Business logic, cross-walks, persistence
+    protected override void ProcessRecord(object pRecord)
+    {
+        var record = pRecord as InventoryRecordType;
+        if (record == null) return;
+        
+        // Apply cross-walks (financial class mapping)
+        var converter = BaseConverter as PriRiver;
+        record.FinClass = converter?.ApplyFinancialClassCrossWalk(record.FinClass) ?? record.FinClass;
+        
+        // Business logic: calculate fields, apply defaults
+        if (record.BillBal == 0 && record.PaidAmount > 0)
+        {
+            record.BillBal = record.PaidAmount; // Example business rule
+        }
+        
+        // Persist to database
+        SaveRecordToMaster(record);
+    }
+}
+Validación Automatizada:
+
+csharp
+public ValidationResult ValidateInventoryHandler(Type handlerType)
+{
+    var result = new ValidationResult 
+    { 
+        Category = "InventoryHandler", 
+        MaxScore = 5 
+    };
+    
+    // Check 1: Inheritance from generic base (2 pts)
+    Type baseType = handlerType.BaseType;
+    
+    if (baseType == null || !baseType.IsGenericType)
+    {
+        result.AddError(markdown
+        result.AddError(
+            "Handler does not inherit from MedBaseGenericFileHandler<T>",
+            "Impact: Must implement FileHelpers parsing manually (300+ lines)",
+            "Fix: class InventoryHandler : MedBaseGenericFileHandler<InventoryRecordType>"
+        );
+        return result;
+    }
+    
+    Type genericTypeDef = baseType.GetGenericTypeDefinition();
+    if (genericTypeDef != typeof(MedBaseGenericFileHandler<>))
+    {
+        result.AddWarning(
+            $"Handler inherits from unexpected base: {baseType.Name}",
+            "Expected: MedBaseGenericFileHandler<RecordType>"
+        );
+        result.Score += 1.0; // Partial credit
+    }
+    else
+    {
+        result.Score += 2.0;
+        Type recordType = baseType.GetGenericArguments()[0];
+        result.AddEvidence($"✓ Inherits from MedBaseGenericFileHandler<{recordType.Name}>");
+    }
+    
+    // Check 2: Constructor passes record type (1.5 pts)
+    var ctors = handlerType.GetConstructors();
+    bool hasCorrectCtor = false;
+    
+    foreach (var ctor in ctors)
+    {
+        var parameters = ctor.GetParameters();
+        
+        // Check for constructor with typeof() call in base()
+        // This is validated by decompiling constructor body
+        var ctorBody = DecompileConstructorBody(ctor);
+        
+        if (ctorBody.Contains("typeof(") && ctorBody.Contains("RecordType"))
+        {
+            hasCorrectCtor = true;
+            break;
+        }
+    }
+    
+    if (!hasCorrectCtor)
+    {
+        result.AddWarning(
+            "Constructor may not be passing record type to base",
+            "Expected pattern: base(conv, file, typeof(InventoryRecordType))",
+            "Impact: FileHelpers may not know which record structure to use"
+        );
+    }
+    else
+    {
+        result.Score += 1.5;
+        result.AddEvidence("✓ Constructor passes record type to base");
+    }
+    
+    // Check 3: ProcessRecord implementation (1.5 pts)
+    var method = handlerType.GetMethod("ProcessRecord", 
+        BindingFlags.NonPublic | BindingFlags.Instance);
+    
+    if (method == null || method.DeclaringType != handlerType)
+    {
+        result.AddWarning(
+            "ProcessRecord() not overridden",
+            "Impact: Parsed records won't be processed or persisted",
+            "Fix: Override 'protected override void ProcessRecord(object pRecord)'"
+        );
+    }
+    else
+    {
+        result.Score += 1.5;
+        result.AddEvidence("✓ ProcessRecord() implemented");
+    }
+    
+    return result;
+}
+5. CROSS-WALKS Y CONFIGURACIÓN (12 puntos)
+📌 Justificación del Peso Total: 12 puntos (12% del score)
+Razón: Cross-walks son mapeos configurables entre códigos del cliente y códigos estándar MDS:
+
+Transaction Codes: Mapean códigos de transacción del cliente a tipos MDS (P, A, I, C)
+Financial Classes: Mapean clases financieras del cliente a queues MDS (SP, COM, MCR, MCD)
+Impacto de Fallo:
+
+Sin cross-walks: 100% de códigos sin mapear → datos rechazados
+Arrays vacíos: Configuración imposible → formatter inutilizable sin developer
+Estructura incorrecta: Runtime exceptions al cargar configuración
+Evidencia de Criticidad del Contexto:
+
+"Identifies required converters" (proc_mds2) "Verifies all sample codes are mapped" (mds_act2)
+
+Cálculo:
+
+Criticidad: 4/5 (Datos sin mapear son rechazados)
+Impacto: 4/5 (Afecta todas las transacciones/cuentas)
+Frecuencia: 3/5 (Moderado - estructuras conocidas)
+Score = (4 × 4 × 3) / 4 = 12 puntos
+5.1 Transaction Code Items (6 puntos)
+Justificación del Subtotal: 6 puntos (50% de Cross-Walks)
+Por qué 6 puntos:
+
+Mayor peso que Financial Classes porque cada transacción requiere mapeo
+Sin estos mapeos, todas las transacciones fallan validación en Cupload
+Estructura incorrecta causa runtime exception al cargar cross-walks
+Cálculo:
+
+Criticidad: 5/5 (Todas las transacciones fallan sin esto)
+Impacto: 5/5 (Afecta historial completo de transacciones)
+Frecuencia: 3/5 (Estructura conocida pero errores comunes)
+Score = (5 × 5 × 3) / 12.5 = 6 puntos
+Criterio	Puntos	Justificación del Puntaje	Forma de Validación	Penalización por Incumplimiento
+Array TransactionCodeItems existe	2	33.3% del subtotal
+• CRÍTICO: Sin este array, cross-walk no se puede configurar
+• LoadSettings lanza NullReferenceException
+• Usado por TransCodeCrossWalkStore	Array estático presente:
+private static TransactionCodeItem[]
+TransactionCodeItems	BLOQUEANTE:
+NullReferenceException en LoadSettings,
+formatter no arranca
+Array tiene elementos iniciales	2	33.3% del subtotal
+• IMPORTANTE: Sin códigos sample, usuarios no saben qué mapear
+• Best practice: incluir los 5-10 códigos más comunes del cliente
+• Facilita configuración inicial	Array tiene al menos 3 elementos:
+new TransactionCodeItem[] {
+  new(...), new(...), ...
+}	Configuración difícil para usuarios,
+múltiples iteraciones de setup
+Estructura correcta de items	2	33.3% del subtotal
+• IMPORTANTE: Cada item debe tener ClientCode y TransType
+• TransType debe ser P, A, I, o C (Payment, Adjustment, Info, Charge)
+• ClientCode debe ser string válido del sistema del cliente	Items con estructura:
+new TransactionCodeItem(
+  "CHG", // ClientCode
+  "C",   // TransType
+  "Charge")	Runtime exception al aplicar cross-walk,
+validación falla
+Código de Referencia con Anotaciones:
+
+csharp
+public class PriRiver : BaseConverter, IConverterSettings, IAccountCache
+{
+    // [2 pts] - Array declaration (CRITICAL)
+    // WHY CRITICAL: This array is referenced by LoadSettings()
+    // USED BY: TransactionCodeCrossWalkStore initialization
+    // WITHOUT THIS: NullReferenceException when formatter starts
+    // STRUCTURE: Array of TransactionCodeItem objects
+    private static TransactionCodeItem[] TransactionCodeItems =
+    {
+        // [Each item contributes to 2 pts for "has initial elements"]
+        // [Each item validates structure for 2 pts "correct structure"]
+        
+        // CHARGE transactions (TransType = "C")
+        // WHY INCLUDE: Most common transaction type in medical billing
+        // CLIENT CODES: These are examples from client's system
+        new TransactionCodeItem(
+            "CHG",        // [Structure check] Client code (what appears in their file)
+            "C",          // [Structure check] Trans type: C = Charge
+            "Charge"      // Description (for UI display)
+        ),
+        new TransactionCodeItem("CHGADJ", "C", "Charge Adjustment"),
+        new TransactionCodeItem("CHRG", "C", "Charge Alternate Code"),
+        
+        // PAYMENT transactions (TransType = "P")
+        // EXAMPLES: Self Pay, Insurance, Medicare, Medicaid
+        new TransactionCodeItem(
+            "PSP",        // Payment Self Pay
+            "P",          // Trans type: P = Payment
+            "Payment Self Pay"
+        ),
+        new TransactionCodeItem("PINS", "P", "Payment Insurance"),
+        new TransactionCodeItem("PMCR", "P", "Payment Medicare"),
+        new TransactionCodeItem("PMCD", "P", "Payment Medicaid"),
+        
+        // ADJUSTMENT transactions (TransType = "A")
+        // EXAMPLES: Write-offs, contractual adjustments
+        new TransactionCodeItem(
+            "ADJWO",      // Adjustment Write Off
+            "A",          // Trans type: A = Adjustment
+            "Adjustment Write Off"
+        ),
+        new TransactionCodeItem("ADJCN", "A", "Contractual Adjustment"),
+        
+        // INFO transactions (TransType = "I")
+        // EXAMPLES: Balance forward, informational only
+        new TransactionCodeItem(
+            "BALFWD",     // Balance Forward
+            "I",          // Trans type: I = Info
+            "Balance Forward"
+        ),
+        
+        // ANTI-PATTERNS TO AVOID:
+        // ❌ new TransactionCodeItem("", "C", "Empty Code") // Empty ClientCode
+        // ❌ new TransactionCodeItem("CHG", "X", "Invalid") // Invalid TransType (not P/A/I/C)
+        // ❌ new TransactionCodeItem(null, "C", "Null")     // Null ClientCode
+    };
+    
+    // Similar pattern for Financial Class Items (see next section)
+    private static MiscCodeItem[] FinancialClassItems = 
+    {
+        new MiscCodeItem("SP", "Self Pay"),
+        new MiscCodeItem("BC", "Blue Cross"),
+        new MiscCodeItem("MCR", "Medicare"),
+        new MiscCodeItem("MCD", "Medicaid"),
+        new MiscCodeItem("COM", "Commercial"),
+        new MiscCodeItem("WC", "Workers Comp"),
+        new MiscCodeItem("AUTO", "Auto Insurance"),
+    };
+}
+Validación Automatizada:
+
+csharp
+public ValidationResult ValidateTransactionCodeItems(Type formatterType)
+{
+    var result = new ValidationResult 
+    { 
+        Category = "Transaction Code Cross-Walk", 
+        MaxScore = 6 
+    };
+    
+    // Check 1: Array exists (2 pts)
+    var field = formatterType.GetField("TransactionCodeItems", 
+        BindingFlags.NonPublic | BindingFlags.Static);
+    
+    if (field == null)
+    {
+        result.AddCriticalError(
+            "BLOCKER: TransactionCodeItems array not found",
+            "Impact: NullReferenceException in LoadSettings()",
+            "Formatter will crash on startup",
+            "Fix: Add 'private static TransactionCodeItem[] TransactionCodeItems'"
+        );
+        return result; // Blocker
+    }
+    
+    result.Score += 2.0;
+    result.AddEvidence("✓ TransactionCodeItems array exists");
+    
+    // Get array value
+    var arrayValue = field.GetValue(null) as Array;
+    
+    if (arrayValue == null)
+    {
+        result.AddCriticalError(
+            "TransactionCodeItems is null",
+            "Impact: Cross-walk cannot be configured"
+        );
+        return result;
+    }
+    
+    // Check 2: Array has elements (2 pts)
+    int itemCount = arrayValue.Length;
+    
+    if (itemCount == 0)
+    {
+        result.AddCriticalError(
+            "TransactionCodeItems array is empty",
+            "Impact: Users have no sample codes to configure",
+            "Best Practice: Include 5-10 most common client transaction codes",
+            "Fix: Add sample codes like 'CHG' (Charge), 'PSP' (Payment Self Pay), etc."
+        );
+    }
+    else if (itemCount < 3)
+    {
+        result.AddWarning(
+            $"TransactionCodeItems has only {itemCount} items",
+            "Recommendation: Include at least 5-10 common codes for easier setup"
+        );
+        result.Score += 1.0; // Partial credit
+    }
+    else
+    {
+        result.Score += 2.0;
+        result.AddEvidence($"✓ TransactionCodeItems has {itemCount} initial codes");
+    }
+    
+    // Check 3: Structure validation (2 pts)
+    int validItems = 0;
+    int totalItems = itemCount;
+    var structureErrors = new List<string>();
+    
+    for (int i = 0; i < arrayValue.Length; i++)
+    {
+        var item = arrayValue.GetValue(i);
+        if (item == null)
+        {
+            structureErrors.Add($"Item {i}: null");
+            continue;
+        }
+        
+        // Validate ClientCode
+        var clientCodeProp = item.GetType().GetProperty("ClientCode");
+        var clientCode = clientCodeProp?.GetValue(item) as string;
+        
+        if (string.IsNullOrWhiteSpace(clientCode))
+        {
+            structureErrors.Add($"Item {i}: ClientCode is null or empty");
+            continue;
+        }
+        
+        // Validate TransType
+        var transTypeProp = item.GetType().GetProperty("TransType");
+        var transType = transTypeProp?.GetValue(item) as string;
+        
+        if (transType == null || !IsValidTransType(transType))
+        {
+            structureErrors.Add($"Item {i} ('{clientCode}'): Invalid TransType '{transType}' (must be P, A, I, or C)");
+            continue;
+        }
+        
+        validItems++;
+    }
+    
+    if (validItems == 0 && totalItems > 0)
+    {
+        result.AddCriticalError(
+            "All TransactionCodeItems have invalid structure",
+            "Errors: " + string.Join("; ", structureErrors.Take(5)),
+            "Fix: Ensure format: new TransactionCodeItem(\"CODE\", \"P\", \"Description\")"
+        );
+    }
+    else if (validItems < totalItems)
+    {
+        result.AddWarning(
+            $"Only {validItems}/{totalItems} items have valid structure",
+            "First errors: " + string.Join("; ", structureErrors.Take(3))
+        );
+        // Partial credit based on percentage valid
+        result.Score += 2.0 * (validItems / (double)totalItems);
+    }
+    else
+    {
+        result.Score += 2.0;
+        result.AddEvidence($"✓ All {validItems} items have correct structure (ClientCode, TransType, Description)");
+    }
+    
+    return result;
+}
+
+private bool IsValidTransType(string transType)
+{
+    return transType == "P" || // Payment
+           transType == "A" || // Adjustment
+           transType == "I" || // Info
+           transType == "C";   // Charge
+}
+5.2 Financial Class Items (6 puntos)
+Justificación del Subtotal: 6 puntos (50% de Cross-Walks)
+Por qué 6 puntos:
+
+Igual peso que Transaction Codes porque ambos son igualmente críticos
+Financial classes determinan queue assignment (impacto directo en negocio)
+Sin mapeos, cuentas no se clasifican correctamente → estrategia de colección incorrecta
+Cálculo:
+
+Criticidad: 5/5 (Clasificación incorrecta = estrategia incorrecta)
+Impacto: 5/5 (Afecta todas las cuentas)
+Frecuencia: 3/5 (Estructura conocida)
+Score = (5 × 5 × 3) / 12.5 = 6 puntos
+Criterio	Puntos	Justificación del Puntaje	Forma de Validación	Penalización por Incumplimiento
+Array FinancialClassItems existe	2	33.3% del subtotal
+• CRÍTICO: Sin este array, financial class cross-walk no funciona
+• LoadSettings lanza NullReferenceException
+• Usado por FinancialClassCrossWalkStore	Array estático presente:
+private static MiscCodeItem[]
+FinancialClassItems	BLOQUEANTE:
+NullReferenceException en LoadSettings
+Array tiene elementos iniciales	2	33.3% del subtotal
+• IMPORTANTE: Debe incluir las clases más comunes
+• EJEMPLOS: SP, COM, MCR, MCD
+• Facilita setup inicial por parte de Mitch/Shawna	Array tiene al menos 4 elementos:
+SP, COM, MCR, MCD	Configuración difícil,
+múltiples iteraciones
+Estructura correcta de items	2	33.3% del subtotal
+• IMPORTANTE: Cada item debe tener ClientCode y Description
+• ClientCode se mapea a MDS standard codes	Items con estructura:
+new MiscCodeItem(
+  "SP",        // ClientCode
+  "Self Pay")  // Description	Runtime exception al configurar,
+mapeos no funcionan
+Código de Referencia:
+
+Validación Automatizada:
+
+csharp
+public ValidationResult ValidateFinancialClassItems(Type formatterType)
+{
+    var result = new ValidationResult 
+    { 
+        Category = "Financial Class Cross-Walk", 
+        MaxScore = 6 
+    };
+    
+    // Check 1: Array exists (2 pts)
+    var field = formatterType.GetField("FinancialClassItems", 
+        BindingFlags.NonPublic | BindingFlags.Static);
+    
+    if (field == null)
+    {
+        result.AddCriticalError(
+            "BLOCKER: FinancialClassItems array not found",
+            "Impact: Financial class cross-walk cannot be configured",
+            "Business Impact: Accounts cannot be assigned to correct collection queues",
+            "Fix: Add 'private static MiscCodeItem[] FinancialClassItems'"
+        );
+        return result;
+    }
+    
+    result.Score += 2.0;
+    result.AddEvidence("✓ FinancialClassItems array exists");
+    
+    // Get array value
+    var arrayValue = field.GetValue(null) as Array;
+    
+    if (arrayValue == null)
+    {
+        result.AddCriticalError(
+            "FinancialClassItems is null",
+            "Impact: Cross-walk initialization will fail"
+        );
+        return result;
+    }
+    
+    // Check 2: Array has elements (2 pts)
+    int itemCount = arrayValue.Length;
+    
+    if (itemCount == 0)
+    {
+        result.AddCriticalError(
+            "FinancialClassItems array is empty",
+            "Impact: No sample classes for users to configure",
+            "Best Practice: Include common classes (SP, COM, MCR, MCD, WC, AUTO)",
+            "Fix: Add sample codes for Self Pay, Commercial, Medicare, Medicaid"
+        );
+    }
+    else if (itemCount < 4)
+    {
+        result.AddWarning(
+            $"FinancialClassItems has only {itemCount} items",
+            "Recommendation: Include at least SP, COM, MCR, MCD (4 main types)"
+        );
+        result.Score += 1.0; // Partial credit
+    }
+    else
+    {
+        result.Score += 2.0;
+        result.AddEvidence($"✓ FinancialClassItems has {itemCount} initial codes");
+        
+        // Bonus validation: Check if common codes are present
+        var commonCodes = new[] { "SP", "COM", "MCR", "MCD" };
+        var presentCodes = new List<string>();
+        
+        for (int i = 0; i < arrayValue.Length; i++)
+        {
+            var item = arrayValue.GetValue(i);
+            var clientCodeProp = item?.GetType().GetProperty("ClientCode");
+            var clientCode = clientCodeProp?.GetValue(item) as string;
+            
+            if (commonCodes.Contains(clientCode?.ToUpper()))
+            {
+                presentCodes.Add(clientCode.ToUpper());
+            }
+        }
+        
+        if (presentCodes.Count >= 3)
+        {
+            result.AddEvidence($"✓ Includes {presentCodes.Count}/4 common codes: {string.Join(", ", presentCodes)}");
+        }
+    }
+    
+    // Check 3: Structure validation (2 pts)
+    int validItems = 0;
+    int totalItems = itemCount;
+    var structureErrors = new List<string>();
+    
+    for (int i = 0; i < arrayValue.Length; i++)
+    {
+        var item = arrayValue.GetValue(i);
+        if (item == null)
+        {
+            structureErrors.Add($"Item {i}: null");
+            continue;
+        }
+        
+        // Validate ClientCode
+        var clientCodeProp = item.GetType().GetProperty("ClientCode");
+        var clientCode = clientCodeProp?.GetValue(item) as string;
+        
+        if (string.IsNullOrWhiteSpace(clientCode))
+        {
+            structureErrors.Add($"Item {i}: ClientCode is null or empty");
+            continue;
+        }
+        
+        // Validate Description (optional but recommended)
+        var descriptionProp = item.GetType().GetProperty("Description");
+        var description = descriptionProp?.GetValue(item) as string;
+        
+        if (string.IsNullOrWhiteSpace(description))
+        {
+            structureErrors.Add($"Item {i} ('{clientCode}'): Description is empty (not critical but recommended)");
+            // Don't fail validation for missing description
+        }
+        
+        validItems++;
+    }
+    
+    if (validItems == 0 && totalItems > 0)
+    {
+        result.AddCriticalError(
+            "All FinancialClassItems have invalid structure",
+            "Errors: " + string.Join("; ", structureErrors.Take(5)),
+            "Fix: Ensure format: new MiscCodeItem(\"CODE\", \"Description\")"
+        );
+    }
+    else if (validItems < totalItems)
+    {
+        result.AddWarning(
+            $"Only {validItems}/{totalItems} items have valid ClientCode",
+            "First errors: " + string.Join("; ", structureErrors.Take(3))
+        );
+        result.Score += 2.0 * (validItems / (double)totalItems);
+    }
+    else
+    {
+        result.Score += 2.0;
+        result.AddEvidence($"✓ All {validItems} items have valid structure (ClientCode, Description)");
+    }
+    
+    return result;
+}
+6. ROBUSTEZ Y EDGE CASES (8 puntos)
+📌 Justificación del Peso Total: 8 puntos (8% del score)
+Razón: Esta sección cubre defensividad del código y manejo de **
+
+
+
