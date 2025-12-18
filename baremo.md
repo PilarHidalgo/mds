@@ -229,6 +229,7 @@ protected override InputType QualifyFile(ProcessFile pFile)
     return InputType.Unknown; // Will be logged for review
 }
 ```
+
 ** Validación Automatizada:**
 
 ```csharp
@@ -300,7 +301,8 @@ private List<InputType> AnalyzeInputTypeCoverage(MethodInfo method)
     if (methodBody.Contains("InputType.Skip")) covered.Add(InputType.Skip);
     
     return covered;
-} ```
+}
+```
 
 
 ## 1.3 Propiedades y Constantes del Framework (5 puntos)
@@ -489,6 +491,7 @@ Impacto: 5/5 (Afecta todas las transacciones)
 Frecuencia: 5/5 (Muy común olvidarlo)
 Score = (5 × 5 × 5) / 15.6 = 8 puntos
 ```
+
 
 
 
