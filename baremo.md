@@ -151,6 +151,7 @@ public ValidationResult ValidateBaseArchitecture(Type formatterType)
     return result;
 }
 ```
+
 ## 1.2 Implementación de Métodos Abstractos Obligatorios (10 puntos)
 ### Justificación del Subtotal: 10 puntos (40% de Arquitectura)
 Por qué 10 puntos:
@@ -159,14 +160,12 @@ Por qué 10 puntos:
 - Sin implementación, el código no compila
 - Son el punto de entrada al procesamiento de archivos
 - Errores aquí resultan en archivos ignorados silenciosamente
-
 Cálculo:
-```
-Criticidad: 5/5 (Compilation error)
+
+```Criticidad: 5/5 (Compilation error)
 Impacto: 5/5 (Ningún archivo se procesa)
 Frecuencia: 4/5 (Común en generación automática)
 Score = (5 × 5 × 4) / 10 = 10 puntos
-
 ```
 
 | Criterio | Puntos | Justificación del Puntaje | Forma de Validación | Penalización por Incumplimiento |
@@ -175,9 +174,9 @@ Score = (5 × 5 × 4) / 10 = 10 puntos
 | GetConverter() cubre todos InputTypes | 2 | 20% del subtotal<br>• IMPORTANTE: Debe manejar todos los tipos de archivo del cliente<br>• InputTypes no manejados = archivos ignorados silenciosamente<br>• Común error: solo implementar Demographics, olvidar Inventory | Switch/if cubre todos los valores<br>retornados por QualifyFile() | Archivos del cliente no procesados sin error visible |
 | QualifyFile() implementado | 3 | 30% del subtotal<br>• CRÍTICO: Clasifica archivos entrantes por nombre/contenido<br>• Sin él, todos los archivos son InputType.Unknown<br>• Método abstracto - obligatorio | Método existe,<br>retorna InputType<br>basado en análisis de archivo | BLOQUEANTE: Compilation error |
 
-Código de Referencia con Anotaciones:
+** Código de Referencia con Anotaciones: **
 
-csharp
+```csharp
 // [5 pts] - GetConverter implementation
 public override BaseConversionClass GetConverter(ProcessFile pFile)
 {
@@ -230,7 +229,7 @@ protected override InputType QualifyFile(ProcessFile pFile)
 }
 
 ```
-Validación Automatizada:
+** Validación Automatizada:**
 
 ```csharp
 public ValidationResult ValidateAbstractMethods(Type formatterType)
@@ -329,7 +328,7 @@ Score = (3 × 3 × 4) / 7.2 = 5 puntos
 
 
 
-Código de Referencia:
+**Código de Referencia:**
 
 ```csharp
 public class PriRiver : BaseConverter, IConverterSettings, IAccountCache
@@ -365,7 +364,7 @@ public class PriRiver : BaseConverter, IConverterSettings, IAccountCache
 }
 
 ```
-Validación Automatizada:
+**Validación Automatizada:**
 
 ```csharp
 public ValidationResult ValidatePropertiesAndConstants(Type formatterType)
@@ -490,5 +489,6 @@ Impacto: 5/5 (Afecta todas las transacciones)
 Frecuencia: 5/5 (Muy común olvidarlo)
 Score = (5 × 5 × 5) / 15.6 = 8 puntos
 ```
+
 
 
