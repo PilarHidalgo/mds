@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plan de Capacitación: MDS Formatter Builder</title>
+    <title>Training Plan: MDS Formatter Builder</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -165,493 +165,339 @@
 </head>
 <body>
     <div class="container">
-        <h1>Plan de Capacitación: Despliegue del Sistema Multi-Agente MDS Formatter Builder</h1>
+        <h1>Training Plan: Multi-Agent System Deployment MDS Formatter Builder</h1>
         
         <div class="header-info">
-            <h3>📋 Información General</h3>
-            <p><strong>Audiencia Objetivo:</strong> Equipo de IT de MDS, ingenieros de operaciones, desarrolladores de formatters y personal técnico involucrado en el procesamiento de Collection Upload</p>
-            <p><strong>Objetivo General:</strong> Capacitar al equipo de MDS para desplegar, operar, verificar y mantener el sistema MDS Formatter Builder, que utiliza agentes de IA especializados para la generación automática de formatters de carga de colecciones médicas, asegurando alineación con estándares MDS y compliance PHI.</p>
+            <h3>📋 General Information</h3>
+            <p><strong>Target Audience:</strong> MDS IT team, operations engineers, formatter developers, and technical staff involved in Collection Upload processing</p>
+            <p><strong>General Objective:</strong> Train the MDS team to deploy, operate, verify, and maintain the MDS Formatter Builder system, which uses specialized AI agents for automatic generation of medical collection upload formatters, ensuring alignment with MDS standards and PHI compliance.</p>
         </div>
 
         <div class="total-duration">
-            🕒 Duración Total del Programa: Aproximadamente 30 horas distribuidas en 15 módulos especializados
+            🕒 Total Program Duration: Approximately 30 hours distributed across 15 specialized modules
         </div>
 
         <div class="toc">
-            <h3>📚 Índice de Módulos</h3>
+            <h3>📚 Module Index</h3>
             <ul>
-                <li><a href="#module1">Módulo 1: Introducción al Sistema (1.5h)</a></li>
-                <li><a href="#module2">Módulo 2: Requisitos de Infraestructura (2h)</a></li>
-                <li><a href="#module3">Módulo 3: Workflow del Usuario (2.5h)</a></li>
-                <li><a href="#module4">Módulo 4: Agentes de IA (3h)</a></li>
-                <li><a href="#module5">Módulo 5: Knowledge Base y Templates (2h)</a></li>
-                <li><a href="#module6">Módulo 6: Proceso de Despliegue (2.5h)</a></li>
-                <li><a href="#module7">Módulo 7: Verificación y Testing (2.5h)</a></li>
-                <li><a href="#module8">Módulo 8: Resolución de Problemas (2h)</a></li>
-                <li><a href="#module9">Módulo 9: Monitoreo y Logging (2h)</a></li>
-                <li><a href="#module10">Módulo 10: Integración con Workflow (1.5h)</a></li>
-                <li><a href="#module11">Módulo 11: Client-Specific Rules (2h)</a></li>
-                <li><a href="#module12">Módulo 12: Compliance PHI (1.5h)</a></li>
-                <li><a href="#module13">Módulo 13: Optimización de Costos (1.5h)</a></li>
-                <li><a href="#module14">Módulo 14: Roadmap y Evolución (1h)</a></li>
-                <li><a href="#module15">Módulo 15: Práctica Final (3h)</a></li>
+                <li><a href="#module1">Module 1: System Introduction (1.5h)</a></li>
+                <li><a href="#module2">Module 2: Infrastructure Requirements (2h)</a></li>
+                <li><a href="#module3">Module 3: User Workflow (2.5h)</a></li>
+                <li><a href="#module4">Module 4: AI Agents (3h)</a></li>
+                <li><a href="#module5">Module 5: Knowledge Base and Templates (2h)</a></li>
+                <li><a href="#module6">Module 6: Deployment Process (2.5h)</a></li>
+                <li><a href="#module7">Module 7: Verification and Testing (2.5h)</a></li>
+                <li><a href="#module8">Module 8: Troubleshooting (2h)</a></li>
+                <li><a href="#module9">Module 9: Monitoring and Logging (2h)</a></li>
+                <li><a href="#module10">Module 10: Workflow Integration (1.5h)</a></li>
+                <li><a href="#module11">Module 11: Client-Specific Rules (2h)</a></li>
+                <li><a href="#module12">Module 12: PHI Compliance (1.5h)</a></li>
+                <li><a href="#module13">Module 13: Cost Optimization (1.5h)</a></li>
+                <li><a href="#module14">Module 14: Roadmap and Evolution (1h)</a></li>
+                <li><a href="#module15">Module 15: Final Practice (3h)</a></li>
             </ul>
         </div>
 
-        <!-- Módulo 1 -->
+        <!-- Module 1 -->
         <div class="module" id="module1">
             <div class="module-header">
-                <div class="module-title">Módulo 1: Introducción al Sistema MDS Formatter Builder y Arquitectura Multi-Agente</div>
-                <div class="duration">1.5 horas</div>
+                <div class="module-title">Module 1: Introduction to MDS Formatter Builder System and Multi-Agent Architecture</div>
+                <div class="duration">1.5 hours</div>
             </div>
             
             <div class="objective">
-                <strong>🎯 Objetivo:</strong> Comprender el contexto de negocio, la arquitectura del sistema, el rol de cada agente de IA y cómo reemplazan el flujo de trabajo manual actual.
+                <strong>🎯 Objective:</strong> Understand the business context, system architecture, the role of each AI agent, and how they replace the current manual workflow.
             </div>
 
             <div class="topics">
-                <h4>📋 Temas:</h4>
+                <h4>📋 Topics:</h4>
                 <ul>
-                    <li>Contexto de negocio: Procesamiento de Collection Upload en MDS (proveedores médicos, tipos de archivo: Meditech, Epic, Cerner)</li>
-                    <li>Problema actual: Generación manual de formatters (PriXXXX.cs) y sus desafíos</li>
-                    <li>Visión general del sistema: De un solo agente a arquitectura multi-agente especializada</li>
-                    <li><strong>Los 4 agentes principales y sus responsabilidades:</strong>
+                    <li>Business context: Collection Upload processing in MDS (medical providers, file types: Meditech, Epic, Cerner)</li>
+                    <li>Current problem: Manual formatter generation (PriXXXX.cs) and its challenges</li>
+                    <li>System overview: From single agent to specialized multi-agent architecture</li>
+                    <li><strong>The 4 main agents and their responsibilities:</strong>
                         <div class="sub-topics">
-                            - <strong>Match Specs:</strong> Auditor técnico de especificaciones<br>
-                            - <strong>File Analyzer:</strong> Analizador de estructura de archivos<br>
-                            - <strong>Code Generator:</strong> Generador de código C# con templates<br>
-                            - <strong>Code Validator:</strong> Validador de compilación y estructura<br>
-                            - <strong>Issue Resolver:</strong> Resolución interactiva de problemas
+                            - <strong>Match Specs:</strong> Technical specification auditor<br>
+                            - <strong>File Analyzer:</strong> File structure analyzer<br>
+                            - <strong>Code Generator:</strong> C# code generator with templates<br>
+                            - <strong>Code Validator:</strong> Compilation and structure validator<br>
+                            - <strong>Issue Resolver:</strong> Interactive problem resolution
                         </div>
                     </li>
-                    <li>Fases del proceso: Análisis → Generación → Validación → Resolución Interactiva → Entrega</li>
-                    <li>Beneficios esperados: Velocidad, consistencia, reducción de errores, alineación con estándares MDS</li>
+                    <li>Process phases: Analysis → Generation → Validation → Interactive Resolution → Delivery</li>
+                    <li>Expected benefits: Speed, consistency, error reduction, alignment with MDS standards</li>
                 </ul>
             </div>
 
             <div class="methodology">
-                <strong>🔧 Metodología:</strong> Presentación con diagramas del flujo (UML), demostración del sistema en ambiente de prueba, discusión de casos de uso reales de MDS.
+                <strong>🔧 Methodology:</strong> Presentation with flow diagrams (UML), system demonstration in test environment, discussion of real MDS use cases.
             </div>
         </div>
 
-        <!-- Módulo 2 -->
+        <!-- Module 2 -->
         <div class="module" id="module2">
             <div class="module-header">
-                <div class="module-title">Módulo 2: Requisitos de Infraestructura y Configuración On-Premise</div>
-                <div class="duration">2 horas</div>
+                <div class="module-title">Module 2: Infrastructure Requirements and On-Premise Configuration</div>
+                <div class="duration">2 hours</div>
             </div>
             
             <div class="objective">
-                <strong>🎯 Objetivo:</strong> Identificar y validar todos los requisitos de hardware, software y configuración necesarios para el despliegue en infraestructura MDS.
+                <strong>🎯 Objective:</strong> Identify and validate all hardware, software, and configuration requirements necessary for deployment in MDS infrastructure.
             </div>
 
             <div class="topics">
-                <h4>📋 Temas:</h4>
+                <h4>📋 Topics:</h4>
                 <ul>
-                    <li><strong>Especificaciones de infraestructura on-premise:</strong>
+                    <li><strong>On-premise infrastructure specifications:</strong>
                         <div class="sub-topics">
                             - Oracle Linux Server 9.7<br>
                             - Intel Xeon Silver 4210 CPUs<br>
-                            - 16 GiB memoria<br>
-                            - 250 GB disco con volúmenes LVM dedicados
+                            - 16 GiB memory<br>
+                            - 250 GB disk with dedicated LVM volumes
                         </div>
                     </li>
-                    <li><strong>Estructura de volúmenes LVM:</strong>
+                    <li><strong>LVM volume structure:</strong>
                         <div class="sub-topics">
-                            - <code>/logs</code> (almacenamiento de logs del sistema)<br>
-                            - <code>/backups</code> (respaldos automáticos)<br>
-                            - <code>/temp</code> (archivos temporales de procesamiento)<br>
-                            - <code>/output</code> (formatters generados)<br>
-                            - <code>/uploads</code> (archivos de entrada del cliente)<br>
-                            - <code>/postgres</code> (base de datos)
+                            - <code>/logs</code> (system log storage)<br>
+                            - <code>/backups</code> (automatic backups)<br>
+                            - <code>/temp</code> (processing temporary files)<br>
+                            - <code>/output</code> (generated formatters)<br>
+                            - <code>/uploads</code> (client input files)<br>
+                            - <code>/postgres</code> (database)
                         </div>
                     </li>
-                    <li><strong>Requisitos de software:</strong>
+                    <li><strong>Software requirements:</strong>
                         <div class="sub-topics">
-                            - PostgreSQL para almacenamiento<br>
-                            - .NET SDK para compilación<br>
-                            - Dependencias del framework CoreUpload
+                            - PostgreSQL for storage<br>
+                            - .NET SDK for compilation<br>
+                            - CoreUpload framework dependencies
                         </div>
                     </li>
-                    <li>Gestión de credenciales y accesos: Políticas de seguridad MDS, compliance PHI</li>
-                    <li>Configuración de red y firewall</li>
-                    <li>Variables de entorno y configuración de paths</li>
+                    <li>Credential and access management: MDS security policies, PHI compliance</li>
+                    <li>Network and firewall configuration</li>
+                    <li>Environment variables and path configuration</li>
                 </ul>
             </div>
 
             <div class="methodology">
-                <strong>🔧 Metodología:</strong> Demostración en vivo del servidor, lista de verificación práctica con checks técnicos, sesión de Q&A sobre políticas IT de MDS.
+                <strong>🔧 Methodology:</strong> Live server demonstration, practical checklist with technical checks, Q&A session on MDS IT policies.
             </div>
         </div>
 
-        <!-- Módulo 3 -->
+        <!-- Module 3 -->
         <div class="module" id="module3">
             <div class="module-header">
-                <div class="module-title">Módulo 3: Workflow del Usuario: De Upload a Formatter Validado</div>
-                <div class="duration">2.5 horas</div>
+                <div class="module-title">Module 3: User Workflow: From Upload to Validated Formatter</div>
+                <div class="duration">2.5 hours</div>
             </div>
-            
-            <div class="objective">
-                <strong>🎯 Objetivo:</strong> Dominar el flujo de trabajo completo desde la perspectiva del usuario, comprendiendo cada paso del proceso interactivo.
+                        <div class="objective">
+                <strong>🎯 Objective:</strong> Master the complete workflow from the user's perspective, understanding each step of the interactive process.
             </div>
 
             <div class="topics">
-                <h4>📋 Temas:</h4>
+                <h4>📋 Topics:</h4>
                 <ul>
-                    <li><strong>Paso 1 - Upload & Select Client:</strong> Carga de archivo y selección de cliente</li>
-                    <li><strong>Paso 2 - Spec Match & Bounds:</strong> Mapeo automático de columnas y validación contra checklist</li>
-                    <li><strong>Paso 3 - Business Logic (Client Hints):</strong> Incorporación de reglas de negocio específicas del cliente (ej. ADJ-NEG sign inversion, Clarion date normalization)</li>
-                    <li><strong>Paso 4 - Generated Record Classes:</strong> Revisión de clases FileHelpers generadas</li>
-                    <li><strong>Paso 5 - Formatter Code:</strong> Código C# completo del formatter</li>
-                    <li><strong>Paso 6 - Test Run (Local/Test DB):</strong> Ejecución de pruebas en base de datos de prueba</li>
-                    <li><strong>Paso 7 - Review & Partial Rewrite:</strong> Revisión de resultados, identificación de issues, regeneración parcial</li>
-                    <li><strong>Paso 8 - Approve & Sign in Place:</strong> Aprobación final y firma electrónica</li>
-                    <li>Panel de Issues & Uncertainties: Interpretación de advertencias del sistema</li>
-                    <li>QA Agent Context: Uso del contexto de QA para debugging</li>
+                    <li><strong>Step 1 - Upload & Select Client:</strong> File upload and client selection</li>
+                    <li><strong>Step 2 - Spec Match & Bounds:</strong> Automatic column mapping and validation against checklist</li>
+                    <li><strong>Step 3 - Business Logic (Client Hints):</strong> Incorporation of client-specific business rules (e.g., ADJ-NEG sign inversion, Clarion date normalization)</li>
+                    <li><strong>Step 4 - Generated Record Classes:</strong> Review of generated FileHelpers classes</li>
+                    <li><strong>Step 5 - Formatter Code:</strong> Complete C# formatter code</li>
+                    <li><strong>Step 6 - Test Run (Local/Test DB):</strong> Test execution on test database</li>
+                    <li><strong>Step 7 - Review & Partial Rewrite:</strong> Results review, issue identification, partial regeneration</li>
+                    <li><strong>Step 8 - Approve & Sign in Place:</strong> Final approval and electronic signature</li>
+                    <li>Issues & Uncertainties Panel: Interpretation of system warnings</li>
+                    <li>QA Agent Context: Using QA context for debugging</li>
                 </ul>
             </div>
 
             <div class="methodology">
-                <strong>🔧 Metodología:</strong> Práctica guiada paso a paso con archivo real de cliente MDS, simulación de escenarios problemáticos (columnas ambiguas, insurers desconocidos), ejercicios de resolución.
+                <strong>🔧 Methodology:</strong> Step-by-step guided practice with real MDS client file, simulation of problematic scenarios (ambiguous columns, unknown insurers), resolution exercises.
             </div>
         </div>
 
-        <!-- Módulo 4 -->
+        <!-- Module 4 -->
         <div class="module" id="module4">
             <div class="module-header">
-                <div class="module-title">Módulo 4: Agentes de IA: Funcionamiento Técnico y Prompts</div>
-                <div class="duration">3 horas</div>
+                <div class="module-title">Module 4: AI Agents: Technical Operation and Prompts</div>
+                <div class="duration">3 hours</div>
             </div>
             
             <div class="objective">
-                <strong>🎯 Objetivo:</strong> Comprender cómo funcionan técnicamente los agentes de IA, qué prompts utilizan y cómo interpretar sus outputs.
+                <strong>🎯 Objective:</strong> Understand how AI agents work technically, what prompts they use, and how to interpret their outputs.
             </div>
 
             <div class="topics">
-                <h4>📋 Temas:</h4>
+                <h4>📋 Topics:</h4>
                 <ul>
                     <li><strong>Match Specs Agent:</strong>
                         <div class="sub-topics">
-                            - Análisis de PDF de especificaciones<br>
-                            - Análisis de archivos de datos reales<br>
-                            - Cross-validación PDF vs Data<br>
-                            - Generación de JSON de especificación<br>
-                            - Evidencia específica y niveles de confianza
+                            - PDF specification analysis<br>
+                            - Real data file analysis<br>
+                            - Cross-validation PDF vs Data<br>
+                            - Specification JSON generation<br>
+                            - Specific evidence and confidence levels
                         </div>
                     </li>
                     <li><strong>File Analyzer Agent:</strong>
                         <div class="sub-topics">
-                            - Detección de formato (delimitado, fixed-width, Excel, multi-record)<br>
-                            - Identificación de tipos de registro (01, 10, 20A, 30, 55, 60A, 70, 99)<br>
-                            - Mapeo a tablas MDS target<br>
-                            - Identificación de converters necesarios
+                            - Format detection (delimited, fixed-width, Excel, multi-record)<br>
+                            - Record type identification (01, 10, 20A, 30, 55, 60A, 70, 99)<br>
+                            - MDS target table mapping<br>
+                            - Required converter identification
                         </div>
                     </li>
                     <li><strong>Code Generator Agent:</strong>
                         <div class="sub-topics">
-                            - Selección de Knowledge Base (Meditech/Epic/Cerner templates)<br>
-                            - Generación de clases principales (PriXXXX.cs)<br>
-                            - Generación de handlers especializados (Demographics, Transaction, Inventory)<br>
-                            - Generación de Record Types con FileHelpers<br>
-                            - Configuración de cross-walks
+                            - Knowledge Base selection (Meditech/Epic/Cerner templates)<br>
+                            - Main class generation (PriXXXX.cs)<br>
+                            - Specialized handler generation (Demographics, Transaction, Inventory)<br>
+                            - Record Types generation with FileHelpers<br>
+                            - Cross-walks configuration
                         </div>
                     </li>
                     <li><strong>Code Validator Agent:</strong>
                         <div class="sub-topics">
-                            - Validación de compilación (dotnet build)<br>
-                            - Validación de estructura (herencia correcta de BaseConverter)<br>
-                            - Validación contra schema de base de datos<br>
-                            - Generación y ejecución de test suite completo
+                            - Compilation validation (dotnet build)<br>
+                            - Structure validation (correct BaseConverter inheritance)<br>
+                            - Database schema validation<br>
+                            - Complete test suite generation and execution
                         </div>
                     </li>
                     <li><strong>Issue Resolver Agent:</strong>
                         <div class="sub-topics">
-                            - Presentación de resultados de tests<br>
-                            - Interface para custom prompts del usuario<br>
-                            - Ciclo de regeneración iterativo<br>
-                            - Logging de mejoras iterativas
+                            - Test results presentation<br>
+                            - Interface for user custom prompts<br>
+                            - Iterative regeneration cycle<br>
+                            - Iterative improvement logging
                         </div>
                     </li>
                 </ul>
             </div>
 
             <div class="methodology">
-                <strong>🔧 Metodología:</strong> Presentación teórica con ejemplos de prompts reales, demostración de cada agente en acción, análisis de outputs JSON y código generado, ejercicios de interpretación.
+                <strong>🔧 Methodology:</strong> Theoretical presentation with real prompt examples, demonstration of each agent in action, analysis of JSON outputs and generated code, interpretation exercises.
             </div>
         </div>
 
-        <!-- Módulo 5 -->
+        <!-- Module 5 -->
         <div class="module" id="module5">
             <div class="module-header">
-                <div class="module-title">Módulo 5: Knowledge Base y Templates: Meditech, Epic, Cerner</div>
-                <div class="duration">2 horas</div>
+                <div class="module-title">Module 5: Knowledge Base and Templates: Meditech, Epic, Cerner</div>
+                <div class="duration">2 hours</div>
             </div>
             
             <div class="objective">
-                <strong>🎯 Objetivo:</strong> Entender la estructura de los templates base y cómo se adaptan según el sistema hospitalario origen.
+                <strong>🎯 Objective:</strong> Understand the structure of base templates and how they adapt according to the source hospital system.
             </div>
 
             <div class="topics">
-                <h4>📋 Temas:</h4>
+                <h4>📋 Topics:</h4>
                 <ul>
-                    <li><strong>Estructura del Knowledge Base:</strong>
+                    <li><strong>Knowledge Base structure:</strong>
                         <div class="sub-topics">
                             - <code>./context/Templates/Meditech/MeditechExtractV12/</code><br>
                             - <code>./context/Templates/Epic/EpicConverter/</code><br>
                             - <code>./context/Templates/Cerner/CernerDelimited/</code>
                         </div>
                     </li>
-                    <li><strong>Patrones específicos por sistema:</strong>
+                    <li><strong>System-specific patterns:</strong>
                         <div class="sub-topics">
                             - <strong>Meditech:</strong> BaseConverter inheritance, LoadSettings(), virtual methods<br>
-                            - <strong>Epic:</strong> Estructura de handlers específica<br>
-                            - <strong>Cerner:</strong> Formatos delimitados y conversiones
+                            - <strong>Epic:</strong> Specific handler structure<br>
+                            - <strong>Cerner:</strong> Delimited formats and conversions
                         </div>
                     </li>
-                    <li>Clases base obligatorias del framework CoreUpload</li>
+                    <li>Mandatory base classes from CoreUpload framework</li>
                     <li>FileHelpers attributes: <code>[DelimitedRecord]</code>, <code>[FixedLengthRecord]</code>, <code>[FieldMapping]</code></li>
-                    <li>Converters MDS estándar: ClarionDate, Phone normalization, Decimal handling</li>
+                    <li>Standard MDS converters: ClarionDate, Phone normalization, Decimal handling</li>
                     <li>Cross-walks configuration: Insurance name canonicalization, Member crosswalk</li>
-                    <li>Cómo agregar o modificar templates para nuevos sistemas hospitalarios</li>
+                    <li>How to add or modify templates for new hospital systems</li>
                 </ul>
             </div>
 
             <div class="methodology">
-                <strong>🔧 Metodología:</strong> Exploración práctica del directorio de templates, comparación lado a lado de los 3 sistemas, modificación guiada de un template de ejemplo.
+                <strong>🔧 Methodology:</strong> Practical exploration of template directory, side-by-side comparison of the 3 systems, guided modification of an example template.
             </div>
         </div>
 
-        <!-- Módulo 6 -->
+        <!-- Module 6 -->
         <div class="module" id="module6">
             <div class="module-header">
-                <div class="module-title">Módulo 6: Proceso de Despliegue del Sistema</div>
-                <div class="duration">2.5 horas</div>
+                <div class="module-title">Module 6: System Deployment Process</div>
+                <div class="duration">2.5 hours</div>
             </div>
             
             <div class="objective">
-                <strong>🎯 Objetivo:</strong> Ejecutar el proceso de despliegue completo del sistema MDS Formatter Builder de forma segura y validada.
+                <strong>🎯 Objective:</strong> Execute the complete deployment process of the MDS Formatter Builder system safely and validated.
             </div>
 
             <div class="topics">
-                <h4>📋 Temas:</h4>
+                <h4>📋 Topics:</h4>
                 <ul>
-                    <li>Pre-requisitos de despliegue: Checklist de validación de infraestructura</li>
-                    <li><strong>Instalación de componentes:</strong>
+                    <li>Deployment prerequisites: Infrastructure validation checklist</li>
+                    <li><strong>Component installation:</strong>
                         <div class="sub-topics">
-                            - Base de datos PostgreSQL<br>
-                            - Aplicación web (frontend UI)<br>
-                            - Backend de orquestación de agentes<br>
-                            - APIs de integración con LLM
+                            - PostgreSQL database<br>
+                            - Web application (frontend UI)<br>
+                            - Agent orchestration backend<br>
+                            - LLM integration APIs
                         </div>
                     </li>
-                    <li>Configuración de volúmenes LVM y permisos</li>
-                    <li>Configuración de variables de entorno y secrets</li>
-                    <li>Despliegue de Knowledge Base y templates</li>
-                    <li>Configuración de logging y monitoring</li>
-                    <li>Scripts de despliegue automatizado</li>
-                    <li>Estrategias de rollback en caso de fallos</li>
-                    <li>Validación post-despliegue: Health checks</li>
+                    <li>LVM volume configuration and permissions</li>
+                    <li>Environment variables and secrets configuration</li>
+                    <li>Knowledge Base and templates deployment</li>
+                    <li>Logging and monitoring configuration</li>
+                    <li>Automated deployment scripts</li>
+                    <li>Rollback strategies in case of failures</li>
+                    <li>Post-deployment validation: Health checks</li>
                 </ul>
             </div>
 
             <div class="methodology">
-                <strong>🔧 Metodología:</strong> Práctica guiada en ambiente de staging, ejecución de scripts paso a paso, simulación de escenario de rollback, documentación de proceso.
+                <strong>🔧 Methodology:</strong> Guided practice in staging environment, step-by-step script execution, rollback scenario simulation, process documentation.
             </div>
         </div>
 
-        <!-- Módulo 7 -->
+        <!-- Module 7 -->
         <div class="module" id="module7">
             <div class="module-header">
-                <div class="module-title">Módulo 7: Verificación, Testing y Validación de Formatters Generados</div>
-                <div class="duration">2.5 horas</div>
+                <div class="module-title">Module 7: Verification, Testing and Validation of Generated Formatters</div>
+                <div class="duration">2.5 hours</div>
             </div>
             
             <div class="objective">
-                <strong>🎯 Objetivo:</strong> Validar que los formatters generados cumplen con todos los estándares MDS y funcionan correctamente en ambiente de prueba.
+                <strong>🎯 Objective:</strong> Validate that generated formatters meet all MDS standards and work correctly in test environment.
             </div>
 
             <div class="topics">
-                <h4>📋 Temas:</h4>
+                <h4>📋 Topics:</h4>
                 <ul>
-                    <li>Pruebas de compilación: Verificación de errores de sintaxis, using statements, referencias</li>
-                    <li>Pruebas de estructura: Validación de herencia correcta, métodos abstractos, handlers base</li>
-                    <li>Pruebas de schema: Mapeo correcto a tablas MDS, tipos compatibles, longitudes máximas</li>
-                    <li>Pruebas de cross-walks: Validación de mappings de insurance, provider codes</li>
-                    <li>Pruebas unitarias automáticas: NUnit tests generados</li>
-                    <li>Pruebas de integración: Procesamiento end-to-end en test DB</li>
-                    <li>Análisis de test results: Interpretación de fallos, warnings, issues</li>
-                    <li>Criterios de aceptación: Cuándo un formatter está listo para producción</li>
-                    <li>Documentación de resultados: Validation report, issue resolution log</li>
+                    <li>Compilation tests: Verification of syntax errors, using statements, references</li>
+                    <li>Structure tests: Validation of correct inheritance, abstract methods, base handlers</li>
+                    <li>Schema tests: Correct mapping to MDS tables, compatible types, maximum lengths</li>
+                    <li>Cross-walks tests: Validation of insurance mappings, provider codes</li>
+                    <li>Automatic unit tests: Generated NUnit tests</li>
+                    <li>Integration tests: End-to-end processing in test DB</li>
+                    <li>Test results analysis: Interpretation of failures, warnings, issues</li>
+                    <li>Acceptance criteria: When a formatter is ready for production</li>
+                    <li>Results documentation: Validation report, issue resolution log</li>
                 </ul>
             </div>
 
             <div class="methodology">
-                <strong>🔧 Metodología:</strong> Ejercicios prácticos con formatters generados, análisis de logs de testing, identificación de problemas comunes, práctica de debugging.
+                <strong>🔧 Methodology:</strong> Practical exercises with generated formatters, testing log analysis, common problem identification, debugging practice.
             </div>
         </div>
 
-        <!-- Módulo 8 -->
+        <!-- Module 8 -->
         <div class="module" id="module8">
             <div class="module-header">
-                <div class="module-title">Módulo 8: Resolución Interactiva de Problemas y Custom Prompts</div>
-                <div class="duration">2 horas</div>
+                <div class="module-title">Module 8: Interactive Problem Resolution and Custom Prompts</div>
+                <div class="duration">2 hours</div>
             </div>
             
             <div class="objective">
-                <strong>🎯 Objetivo:</strong> Dominar el uso del Issue Resolver Agent para corregir problemas específicos mediante prompts personalizados.
-            </div>
-
-            <div class="topics">
-                <h4>📋 Temas:</h4>
-                <ul>
-                    <li><strong>Tipos de issues comunes:</strong>
-                        <div class="sub-topics">
-                            - Columnas ambiguas (ej. "Acct Base Class")<br>
-                            - Insurers desconocidos no en lista canónica<br>
-                            - Lógica de negocio faltante o incorrecta<br>
-                            - Errores de compilación en secciones específicas
-                        </div>
-                    </li>
-                    <li>Uso del panel "Issues & Uncertainties": Interpretación de advertencias del sistema</li>
-                    <li><strong>Cómo escribir custom prompts efectivos:</strong>
-                        <div class="sub-topics">
-                            - Ser específico sobre la sección a corregir<br>
-                            - Proporcionar contexto de negocio relevante<br>
-                            - Indicar ejemplos de comportamiento esperado
-                        </div>
-                    </li>
-                    <li><strong>Ciclo de feedback iterativo:</strong>
-                        <div class="sub-topics">
-                            - Revisión de test results<br>
-                            - Input de custom prompt<br>
-                            - Confirmación de regeneración<br>
-                            - Validación de corrección
-                        </div>
-                    </li>
-                    <li>Partial Rewrite: Regeneración selectiva de secciones sin rehacer todo el formatter</li>
-                    <li>Issue Resolution Log: Tracking de historial de mejoras iterativas</li>
-                    <li>Cuándo escalar a desarrollo manual vs usar Issue Resolver</li>
-                </ul>
-            </div>
-
-            <div class="methodology">
-                <strong>🔧 Metodología:</strong> Casos prácticos de resolución de problemas reales de MDS, ejercicios de escritura de prompts, simulación de ciclos iterativos, análisis de casos exitosos y fallidos.
-            </div>
-        </div>
-
-        <!-- Módulo 9 -->
-        <div class="module" id="module9">
-            <div class="module-header">
-                <div class="module-title">Módulo 9: Monitoreo, Logging y Troubleshooting del Sistema</div>
-                <div class="duration">2 horas</div>
-            </div>
-            
-            <div class="objective">
-                <strong>🎯 Objetivo:</strong> Configurar y utilizar herramientas de monitoreo para detectar problemas y diagnosticar fallos del sistema de agentes de IA.
-            </div>
-
-            <div class="topics">
-                <h4>📋 Temas:</h4>
-                <ul>
-                    <li><strong>Estructura de logging:</strong>
-                        <div class="sub-topics">
-                            - Logs de aplicación (<code>/logs</code>)<br>
-                            - Logs de agentes individuales<br>
-                            - Logs de generación de código<br>
-                            - Logs de testing y validación
-                        </div>
-                    </li>
-                    <li><strong>Métricas clave a monitorear:</strong>
-                        <div class="sub-topics">
-                            - Tasa de éxito de generación de formatters<br>
-                            - Tiempo promedio por fase (análisis, generación, validación)<br>
-                            - Tasa de issues detectados vs resueltos<br>
-                            - Uso de recursos (CPU, memoria, disco)
-                        </div>
-                    </li>
-                    <li>Herramientas de monitoreo: Configuración de dashboards básicos</li>
-                    <li><strong>Troubleshooting común:</strong>
-                        <div class="sub-topics">
-                            - Fallo en análisis de PDF: Formato no soportado<br>
-                            - Fallo en generación de código: Template incompleto<br>
-                            - Fallo en compilación: Referencias faltantes<br>
-                            - Fallo en testing: Conexión a test DB
-                        </div>
-                    </li>
-                    <li>Análisis de logs para diagnóstico: Patrones de error frecuentes</li>
-                    <li>Procedimientos de escalación: Cuándo contactar soporte CodeGPT</li>
-                </ul>
-            </div>
-
-            <div class="methodology">
-                <strong>🔧 Metodología:</strong> Demostración de herramientas de logging, ejercicios de análisis de logs reales, simulación de escenarios de fallo, práctica de diagnóstico.
-            </div>
-        </div>
-
-        <!-- Módulo 10 -->
-        <div class="module" id="module10">
-            <div class="module-header">
-                <div class="module-title">Módulo 10: Integración con Workflow MDS Existente y Source Control</div>
-                <div class="duration">1.5 horas</div>
-            </div>
-            
-            <div class="objective">
-                <strong>🎯 Objetivo:</strong> Integrar los formatters generados en el proceso de desarrollo y despliegue existente de MDS.
-            </div>
-
-            <div class="topics">
-                <h4>📋 Temas:</h4>
-                <ul>
-                    <li>Rol del desarrollador humano: "Owner" del formatter, supervisor final</li>
-                    <li><strong>Human-```html
-                    <li><strong>Human-in-the-loop:</strong> Puntos de supervisión obligatoria
-                        <div class="sub-topics">
-                            - Revisión de spec mapping<br>
-                            - Revisión de business logic<br>
-                            - Aprobación de código generado<br>
-                            - Sign-off final antes de commit
-                        </div>
-                    </li>
-                    <li><strong>Integración con Source Control (pendiente para Fase 2):</strong>
-                        <div class="sub-topics">
-                            - Estructura de branches<br>
-                            - Pull request workflow<br>
-                            - Code review process
-                        </div>
-                    </li>
-                    <li><strong>Deployment a producción:</strong>
-                        <div class="sub-topics">
-                            - Validación en test DB/SQLite antes de producción<br>
-                            - Criterios de Go/No-Go<br>
-                            - Procedimiento de deployment seguro
-                        </div>
-                    </li>
-                    <li><strong>Mantenimiento de formatters existentes:</strong>
-                        <div class="sub-topics">
-                            - Detección de cambios en layout de cliente (delta/update detection en Fase 2)<br>
-                            - Regeneración vs modificación manual<br>
-                            - Versionado de formatters
-                        </div>
-                    </li>
-                    <li>Documentación de decisiones: Implementation documentation, configuration notes</li>
-                </ul>
-            </div>
-
-            <div class="methodology">
-                <strong>🔧 Metodología:</strong> Presentación del workflow integrado, demostración de proceso de approval, discusión de políticas de deployment de MDS.
-            </div>
-        </div>
-
-        <!-- Módulo 11 -->
-        <div class="module" id="module11">
-            <div class="module-header">
-                <div class="module-title">Módulo 11: Client-Specific Rules y Business Logic Customization</div>
-                <div class="duration">2 horas</div>
-            </div>
-            
-            <div class="objective">
-                <strong>🎯 Objetivo:</strong> Configurar y mantener reglas específicas de clientes y lógica de negocio personalizada en el sistema.
-            </div>
+                <strong>🎯 Objective:</strong> Master the use of the Issue Resolver Agent to correct specific problems through custom prompts.
 
             <div class="topics">
                 <h4>📋 Temas:</h4>
@@ -674,7 +520,7 @@
                 </ul>
             </div>
 
-            <div class="methodology">
+          <div class="methodology">
                 <strong>🔧 Metodología:</strong> Casos de estudio de clientes MDS reales con reglas específicas, ejercicios de configuración de rules, práctica de creación de hints.
             </div>
         </div>
@@ -898,3 +744,4 @@
     </div>
 </body>
 </html>
+  
