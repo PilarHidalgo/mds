@@ -160,6 +160,7 @@ Por qué 10 puntos:
 - Sin implementación, el código no compila
 - Son el punto de entrada al procesamiento de archivos
 - Errores aquí resultan en archivos ignorados silenciosamente
+  
 Cálculo:
 
 ```Criticidad: 5/5 (Compilation error)
@@ -489,6 +490,7 @@ Impacto: 5/5 (Afecta todas las transacciones)
 Frecuencia: 5/5 (Muy común olvidarlo)
 Score = (5 × 5 × 5) / 15.6 = 8 puntos
 ```
+
 
 
 
