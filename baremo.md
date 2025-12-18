@@ -77,8 +77,12 @@ Donde:
 - Es el error más frecuente en el MVP (según feedback de MDS)
 
 **Cálculo:**
-Criticidad: 5/5 (BLOQUEANTE) Impacto: 5/5 (Afecta sistema completo) Frecuencia: 5/5 (Error común en MVP) Score = (5 × 5 × 5) / 12.5 = 10 puntos
-
+```
+Criticidad: 5/5 (BLOQUEANTE) 
+Impacto: 5/5 (Afecta sistema completo) 
+Frecuencia: 5/5 (Error común en MVP) 
+Score = (5 × 5 × 5) / 12.5 = 10 puntos
+```
 
 | Criterio | Puntos | Justificación del Puntaje | Forma de Validación | Penalización por Incumplimiento |
 |----------|--------|---------------------------|---------------------|--------------------------------|
@@ -3499,6 +3503,7 @@ public class FormatterValidationReport
         return new string('█', blocks) + new string('░', 10 - blocks);
     }
 }
+
 
 
 
