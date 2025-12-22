@@ -154,7 +154,56 @@
                     type: "phase",
                     children: [
                         {
-                            name: "1.1 Data File Analysis",
+                            name: "1.1 PDF Document Analysis",
+                            type: "stage",
+                            children: [
+                                {
+                                    name: "🔍 MATCH SPECS",
+                                    type: "agent",
+                                    children: [
+                                        { name: "Reads PDF document structure", type: "task" },
+                                        { name: "Determines file type", type: "task" },
+                                        { name: "Evaluates checklist elements", type: "task" },
+                                        { name: "Cites specific evidence", type: "task" }
+                                    ]
+                                },
+                                {
+                                    name: "Artifacts",
+                                    type: "artifacts",
+                                    children: [
+                                        { name: "JSON with fileType and direction", type: "artifact" },
+                                        { name: "List of missing fields", type: "artifact" },
+                                        { name: "Recommendations", type: "artifact" }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            name: "1.2 Data File Analysis",
+                            type: "stage",
+                            children: [
+                                {
+                                    name: "🔍 MATCH SPECS",
+                                    type: "agent",
+                                    children: [
+                                        { name: "Identifies record types", type: "task" },
+                                        { name: "Locates specific fields", type: "task" },
+                                        { name: "Validates against checklist", type: "task" },
+                                        { name: "Provides exact locations", type: "task" }
+                                    ]
+                                },
+                                {
+                                    name: "Artifacts",
+                                    type: "artifacts",
+                                    children: [
+                                        { name: "Record Type Mapping", type: "artifact" },
+                                        { name: "Field locations", type: "artifact" }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            name: "1.3 JSON Specification Generation",
                             type: "stage",
                             children: [
                                 {
@@ -661,4 +710,7 @@
         svg.call(zoom);
     </script>
 </body>
-</html>      
+</html>
+
+                                             
+
