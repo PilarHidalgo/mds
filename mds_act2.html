@@ -68,23 +68,13 @@
             border-radius: 4px;
             border-left: 4px solid #4caf50;
         }
-        .agent-participation.issue-resolver {
-            background: #fef5e7;
-            border-left: 4px solid #e67e22;
-        }
         .agent-name {
             font-weight: bold;
             color: #2e7d32;
         }
-        .agent-name.issue-resolver {
-            color: #d68910;
-        }
         .agent-task {
             color: #388e3c;
             font-style: italic;
-        }
-        .agent-task.issue-resolver {
-            color: #b7950b;
         }
         .flow-arrow {
             text-align: center;
@@ -141,10 +131,9 @@
         
         <div class="legend">
             <h3>Participating Agents</h3>
-            <p><strong>Match Specs:</strong> Analyzes PDF documents and data files to validate specifications against requirements checklist</p>
+            <p><strong>File Analyzer:</strong> Analyzes MDS collection upload data files and generates structured JSON specifications for formatter code generation</p>
             <p><strong>Code Generator:</strong> Generates C# formatter code based on JSON specifications using host system specific templates</p>
             <p><strong>Code Validator:</strong> Validates generated code against CoreUpload framework and generates test cases</p>
-            <p><strong>Issue Resolver:</strong> Interactive agent for issue resolution and iterative code improvement with user feedback</p>
         </div>
 
         <!-- PHASE 1: ANALYSIS AND SPECIFICATION -->
@@ -155,50 +144,9 @@
             <div class="phase-content">
                 
                 <div class="step">
-                    <div class="step-title">1.1 PDF Document Analysis</div>
-                    <div class="step-description">
-                        Analysis of client specification documents to determine file format, data type and field structure.
-                    </div>
-                    <div class="agent-participation">
-                        <div class="agent-name">🔍 MATCH SPECS</div>
-                        <div class="agent-task">
-                            • Reads and understands PDF document structure<br>
-                            • Determines file type (Placements, Transactions, Recalls, Notes, Inventory)<br>
-                            • Determines direction (Incoming/Outgoing)<br>
-                            • Evaluates each checklist element as complete/partial/missing<br>
-                            • Cites specific evidence from document
-                        </div>
-                    </div>
-                    <div class="code-sample">
-Input: PDF + Checklist Requirements
-Output: JSON with fileType, direction, confidence, results[], missingFields[], recommendations[]
-                    </div>
-                </div>
-
-                <div class="step">
-                    <div class="step-title">1.2 Data File Analysis</div>
+                    <div class="step-title">1.1 Data File Analysis</div>
                     <div class="step-description">
                         Analysis of actual data files to validate structure against checklist requirements.
-                    </div>
-                    <div class="agent-participation">
-                        <div class="agent-name">🔍 MATCH SPECS</div>
-                        <div class="agent-task">
-                            • Identifies record types (01=Header, 10=Demographics, 20A=Guarantor, etc.)<br>
-                            • Locates specific fields in exact record types<br>
-                            • Validates data existence against checklist<br>
-                            • Provides exact location of found fields
-                        </div>
-                    </div>
-                    <div class="code-sample">
-Input: Data files + Checklist Requirements
-Output: JSON with specific field locations (e.g., "Record 20A - GuarName")
-                    </div>
-                </div>
-
-                <div class="step">
-                    <div class="step-title">1.3 JSON Specification Generation</div>
-                    <div class="step-description">
-                        Creation of detailed specification in JSON format that will serve as input for code generator.
                     </div>
                     <div class="agent-participation">
                         <div class="agent-name">📊 FILE ANALYZER</div>
@@ -402,61 +350,6 @@ Output: Test suite + execution results + issue analysis report + validation-repo
             </div>
         </div>
 
-        <div class="feedback-loop">
-            🔄 Interactive Feedback Loop
-        </div>
-
-        <!-- PHASE 3.6: INTERACTIVE ISSUE RESOLUTION -->
-        <div class="phase">
-            <div class="phase-header">
-                PHASE 3.6: INTERACTIVE ISSUE RESOLUTION
-            </div>
-            <div class="phase-content">
-
-                <div class="step interactive">
-                    <div class="step-title">3.6 Interactive Issue Resolution and Code Regeneration</div>
-                    <div class="step-description">
-                        Interactive process allowing users to review test results, provide custom feedback, and trigger iterative code improvements.
-                    </div>
-                    <div class="agent-participation issue-resolver">
-                        <div class="agent-name issue-resolver">🔄 ISSUE RESOLVER</div>
-                        <div class="agent-task issue-resolver">
-                            • <strong>Presents test execution results to user</strong><br>
-                            • Shows detailed analysis of failing tests and compilation errors<br>
-                            • <strong>Provides interface for custom prompt input</strong><br>
-                            • Allows users to specify particular areas of concern<br>
-                            • <strong>Asks: "Would you like to fix the identified issues and regenerate the code?"</strong><br>
-                            • If confirmed: incorporates user feedback and triggers Phase 2 regeneration<br>
-                            • <strong>Creates iterative improvement cycle</strong> until tests pass<br>
-                            • Maintains history of improvements and user feedback
-                        </div>
-                    </div>
-                    
-                    <div class="interactive-note">
-                        <h4>🎯 Interactive Features:</h4>
-                        <ul>
-                            <li><strong>Test Results Dashboard:</strong> Visual presentation of test failures with detailed error analysis</li>
-                            <li><strong>Custom Prompt Interface:</strong> Text input for user-specific requirements and fix instructions</li>
-                            <li><strong>Fix Confirmation Dialog:</strong> Clear Yes/No/Customize options for issue resolution</li>
-                            <li><strong>Feedback Integration:</strong> User input incorporated into code regeneration process</li>
-                            <li><strong>Iterative Cycle:</strong> Automatic return to Phase 2 → Phase 3 until satisfaction</li>
-                        </ul>
-                    </div>
-
-                    <div class="code-sample">
-User Interface Flow:
-1. Display: Test Results + Issue Analysis
-2. Input: Custom prompts and requirements  
-3. Confirm: "Fix issues and regenerate code?"
-4. If Yes → Trigger Phase 2 with user feedback
-5. Return to Phase 3 for re-validation
-6. Repeat until all tests pass or user satisfied
-                    </div>
-                </div>
-
-            </div>
-        </div>
-
         <div class="flow-arrow">⬇️</div>
 
         <!-- PHASE 4: DELIVERY AND DEPLOYMENT -->
@@ -479,8 +372,7 @@ User Interface Flow:
                         • Properties/AssemblyInfo.cs - Assembly metadata<br>
                         • packages.config - NuGet packages<br>
                         • Tests/ - Unit test cases<br>
-                        • reports/validation-report.md - Validation report<br>
-                        • <strong>issue-resolution-log.md - Interactive improvement history</strong>
+                        • reports/validation-report.md - Validation report
                     </div>
                 </div>
 
@@ -495,9 +387,7 @@ User Interface Flow:
                         • Expected file patterns<br>
                         • Configured cross-walks<br>
                         • Mapped fields and applied conversions<br>
-                        • Testing and deployment instructions<br>
-                        • <strong>User feedback integration summary</strong><br>
-                        • <strong>Iterative improvement recommendations</strong>
+                        • Testing and deployment instructions
                     </div>
                 </div>
 
@@ -506,20 +396,15 @@ User Interface Flow:
 
         <div class="legend">
             <h3>Data Flow Between Agents</h3>
-            <p><strong>Match Specs → File Analyzer:</strong> PDF and data analysis results for specification refinement</p>
             <p><strong>File Analyzer → Code Generator:</strong> Detailed JSON specification with file structure and mappings</p>
             <p><strong>Code Generator → Code Validator:</strong> Generated C# code for validation and testing</p>
-            <p><strong>Code Validator → Issue Resolver:</strong> Test results and validation issues for interactive resolution</p>
-            <p><strong>Issue Resolver → Code Generator:</strong> User feedback and fix requirements for regeneration (feedback loop)</p>
-            <p><strong>Issue Resolver → Delivery:</strong> Validated code, tests, and quality report with improvement history</p>
+            <p><strong>Code Validator → Delivery:</strong> Validated code, tests, and quality report</p>
         </div>
 
         <div class="interactive-note">
             <h4>🔄 Key Process Improvements:</h4>
             <ul>
                 <li><strong>Consolidated Testing:</strong> Combined test generation and execution in step 3.5 for efficiency</li>
-                <li><strong>Interactive Resolution:</strong> New step 3.6 provides user control over issue fixing process</li>
-                <li><strong>Feedback Loop:</strong> Automatic regeneration cycle based on user confirmation and custom requirements</li>
                 <li><strong>Iterative Enhancement:</strong> Continuous improvement until all tests pass and user requirements are met</li>
                 <li><strong>User-Centric Approach:</strong> Maintains quality while allowing custom modifications and specific fixes</li>
             </ul>
