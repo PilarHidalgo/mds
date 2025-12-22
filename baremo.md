@@ -12,6 +12,14 @@ The scoring system totals **exactly 100 points**, distributed according to the *
 3. **Framework Compliance**: Strict adherence to established MDS patterns
 4. **Maintainability**: Code that facilitates debugging, auditing, and evolution
 
+```
+Criticality Scale (1-5)
+1 - Minimal: Warning, does not affect functionality
+2 - Low: Minor issue, degraded functionality
+3 - Medium: Notable error, affects user experience
+4 - High: Severe error, compromises main functionality
+5 - Critical: Blocking, prevents complete execution
+```
 ---
 
 ## 🎯 TOTAL POINT DISTRIBUTION (100 points)
@@ -2621,6 +2629,7 @@ These conditions represent **non-negotiable quality gates**.
 - Robustness: 3 + 2 + 2 + 1 = **8 points**
 
 **GRAND TOTAL: 100 points** ✓
+
 
 
 
