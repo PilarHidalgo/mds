@@ -1,716 +1,810 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MDS Formatter Lifecycle - Interactive Graph</title>
-    <script src="https://d3js.org/d3.v7.min.js"></script>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+{
+  "name": "MDS Formatter Lifecycle",
+  "children": [
+    {
+      "name": "PHASE 1: Analysis and Specification",
+      "type": "phase",
+      "children": [
+        {
+          "name": "1.1 PDF Document Analysis",
+          "type": "stage",
+          "children": [
+            {
+              "name": "📊 FILE ANALYZER",
+              "type": "agent",
+              "children": [
+                { "name": "Reads PDF document structure", "type": "task" },
+                { "name": "Determines file type", "type": "task" },
+                { "name": "Evaluates checklist elements", "type": "task" },
+                { "name": "Cites specific evidence", "type": "task" }
+              ]
+            },
+            {
+              "name": "Artifacts",
+              "type": "artifacts",
+              "children": [
+                { "name": "JSON with fileType and direction", "type": "artifact" },
+                { "name": "Missing fields list", "type": "artifact" },
+                { "name": "Recommendations", "type": "artifact" }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "1.2 Data File Analysis",
+          "type": "stage",
+          "children": [
+            {
+              "name": "📊 FILE ANALYZER",
+              "type": "agent",
+              "children": [
+                { "name": "Identifies record types", "type": "task" },
+                { "name": "Locates specific fields", "type": "task" },
+                { "name": "Validates against checklist", "type": "task" },
+                { "name": "Provides exact locations", "type": "task" }
+              ]
+            },
+            {
+              "name": "Artifacts",
+              "type": "artifacts",
+              "children": [
+                { "name": "Record Types mapping", "type": "artifact" },
+                { "name": "Field locations", "type": "artifact" }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "1.3 JSON Specification Generation",
+          "type": "stage",
+          "children": [
+            {
+              "name": "📊 FILE ANALYZER",
+              "type": "agent",
+              "children": [
+                { "name": "Detects file format", "type": "task" },
+                { "name": "Identifies structure", "type": "task" },
+                { "name": "Maps fields to MDS tables", "type": "task" },
+                { "name": "Identifies required converters", "type": "task" }
+              ]
+            },
+            {
+              "name": "Artifacts",
+              "type": "artifacts",
+              "children": [
+                { "name": "Complete JSON specification", "type": "artifact" },
+                { "name": "File metadata", "type": "artifact" },
+                { "name": "Identified cross-walks", "type": "artifact" }
+              ]
+            }
+          ]
         }
-        
-        .container {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            padding: 20px;
-            max-width: 1400px;
-            margin: 0 auto;
+      ]
+    },
+    {
+      "name": "PHASE 2: Code Generation",
+      "type": "phase",
+      "children": [
+        {
+          "name": "2.1 Knowledge Base Selection",
+          "type": "stage",
+          "children": [
+            {
+              "name": "⚙️ CODE GENERATOR",
+              "type": "agent",
+              "children": [
+                { "name": "Reads JSON specification", "type": "task" },
+                { "name": "Selects knowledge base", "type": "task" },
+                { "name": "Reads corresponding templates", "type": "task" },
+                { "name": "Understands host patterns", "type": "task" }
+              ]
+            },
+            {
+              "name": "Knowledge Bases",
+              "type": "artifacts",
+              "children": [
+                { "name": "Meditech Templates", "type": "artifact" },
+                { "name": "Epic Templates", "type": "artifact" },
+                { "name": "Cerner Templates", "type": "artifact" },
+                { "name": "Generic Templates", "type": "artifact" }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "2.2 Main Classes Generation",
+          "type": "stage",
+          "children": [
+            {
+              "name": "⚙️ CODE GENERATOR",
+              "type": "agent",
+              "children": [
+                { "name": "Generates main PriXXXX.cs", "type": "task" },
+                { "name": "Implements required interfaces", "type": "task" },
+                { "name": "Creates specific handlers", "type": "task" },
+                { "name": "Includes cross-walks", "type": "task" }
+              ]
+            },
+            {
+              "name": "Artifacts",
+              "type": "artifacts",
+              "children": [
+                { "name": "Main Converter Class", "type": "artifact" },
+                { "name": "DemographicsHandler", "type": "artifact" },
+                { "name": "TransactionHandler", "type": "artifact" },
+                { "name": "InventoryHandler", "type": "artifact" }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "2.3 Record Types Generation",
+          "type": "stage",
+          "children": [
+            {
+              "name": "⚙️ CODE GENERATOR",
+              "type": "agent",
+              "children": [
+                { "name": "Generates FileHelpers classes", "type": "task" },
+                { "name": "Applies correct attributes", "type": "task" },
+                { "name": "Configures MDS converters", "type": "task" },
+                { "name": "Maps fields to tables", "type": "task" }
+              ]
+            },
+            {
+              "name": "Artifacts",
+              "type": "artifacts",
+              "children": [
+                { "name": "Record Type Classes", "type": "artifact" },
+                { "name": "FileHelpers Attributes", "type": "artifact" },
+                { "name": "Field Mappings", "type": "artifact" }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "2.4 Project Generation",
+          "type": "stage",
+          "children": [
+            {
+              "name": "⚙️ CODE GENERATOR",
+              "type": "agent",
+              "children": [
+                { "name": "Generates .csproj file", "type": "task" },
+                { "name": "Configures references", "type": "task" },
+                { "name": "Creates AssemblyInfo.cs", "type": "task" },
+                { "name": "Configures packages.config", "type": "task" }
+              ]
+            },
+            {
+              "name": "Artifacts",
+              "type": "artifacts",
+              "children": [
+                { "name": "Project File", "type": "artifact" },
+                { "name": "Library References", "type": "artifact" },
+                { "name": "Assembly Metadata", "type": "artifact" }
+              ]
+            }
+          ]
         }
-        
-        h1 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 30px;
-            font-size: 2.5em;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+      ]
+    },
+    {
+      "name": "PHASE 3: Validation and Testing",
+      "type": "phase",
+      "children": [
+        {
+          "name": "3.1 Compilation Validation",
+          "type": "stage",
+          "children": [
+            {
+              "name": "✅ CODE VALIDATOR",
+              "type": "agent",
+              "children": [
+                { "name": "Executes project build", "type": "task" },
+                { "name": "Identifies compilation errors", "type": "task" },
+                { "name": "Verifies using statements", "type": "task" },
+                { "name": "Validates FileHelpers attributes", "type": "task" }
+              ]
+            },
+            {
+              "name": "Validations",
+              "type": "artifacts",
+              "children": [
+                { "name": "Compilation Report", "type": "artifact" },
+                { "name": "Error List", "type": "artifact" },
+                { "name": "Code Warnings", "type": "artifact" }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "3.2 Structure Validation",
+          "type": "stage",
+          "children": [
+            {
+              "name": "✅ CODE VALIDATOR",
+              "type": "agent",
+              "children": [
+                { "name": "Verifies correct inheritance", "type": "task" },
+                { "name": "Validates abstract methods", "type": "task" },
+                { "name": "Confirms base handlers", "type": "task" },
+                { "name": "Verifies field mappings", "type": "task" }
+              ]
+            },
+            {
+              "name": "Validations",
+              "type": "artifacts",
+              "children": [
+                { "name": "Pattern Validation", "type": "artifact" },
+                { "name": "Interface Verification", "type": "artifact" }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "3.3 Database Schema Validation",
+          "type": "stage",
+          "children": [
+            {
+              "name": "✅ CODE VALIDATOR",
+              "type": "agent",
+              "children": [
+                { "name": "Validates mappings against schema", "type": "task" },
+                { "name": "Verifies required fields", "type": "task" },
+                { "name": "Confirms compatible types", "type": "task" },
+                { "name": "Validates maximum lengths", "type": "task" }
+              ]
+            },
+            {
+              "name": "Validations",
+              "type": "artifacts",
+              "children": [
+                { "name": "Table Mapping", "type": "artifact" },
+                { "name": "Type Validation", "type": "artifact" },
+                { "name": "Missing Fields", "type": "artifact" }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "3.4 Cross-Walks Validation",
+          "type": "stage",
+          "children": [
+            {
+              "name": "✅ CODE VALIDATOR",
+              "type": "agent",
+              "children": [
+                { "name": "Verifies mapped codes", "type": "task" },
+                { "name": "Confirms default handling", "type": "task" },
+                { "name": "Validates insurance types", "type": "task" },
+                { "name": "Verifies specific types", "type": "task" }
+              ]
+            },
+            {
+              "name": "Validations",
+              "type": "artifacts",
+              "children": [
+                { "name": "Cross-Walks Coverage", "type": "artifact" },
+                { "name": "Missing Codes", "type": "artifact" }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "3.5 Test Generation and Execution",
+          "type": "stage",
+          "children": [
+            {
+              "name": "✅ CODE VALIDATOR",
+              "type": "agent",
+              "children": [
+                { "name": "Generates NUnit unit tests", "type": "task" },
+                { "name": "Creates parsing tests", "type": "task" },
+                { "name": "Includes conversion tests", "type": "task" },
+                { "name": "Generates integration tests", "type": "task" },
+                { "name": "Executes test suite", "type": "task" },
+                { "name": "Analyzes test results", "type": "task" },
+                { "name": "Identifies failing tests", "type": "task" },
+                { "name": "Generates detailed validation report", "type": "task" }
+              ]
+            },
+            {
+              "name": "Artifacts",
+              "type": "artifacts",
+              "children": [
+                { "name": "Complete Test Suite", "type": "artifact" },
+                { "name": "Record Parsing Tests", "type": "artifact" },
+                { "name": "Cross-Walks Tests", "type": "artifact" },
+                { "name": "Integration Tests", "type": "artifact" },
+                { "name": "Test Execution Results", "type": "artifact" },
+                { "name": "Validation Report MD", "type": "artifact" },
+                { "name": "Quality Summary", "type": "artifact" },
+                { "name": "Issue Analysis Report", "type": "artifact" }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "3.6 Interactive Issue Resolution",
+          "type": "interactive",
+          "children": [
+            {
+              "name": "🔄 ISSUE RESOLVER",
+              "type": "agent",
+              "children": [
+                { "name": "Presents test results to user", "type": "task" },
+                { "name": "Allows custom prompt input", "type": "task" },
+                { "name": "Asks user for fix confirmation", "type": "task" },
+                { "name": "Triggers code regeneration if confirmed", "type": "task" },
+                { "name": "Incorporates user feedback", "type": "task" },
+                { "name": "Applies issue-specific corrections", "type": "task" },
+                { "name": "Returns to Phase 2 for regeneration", "type": "task" },
+                { "name": "Creates iterative improvement cycle", "type": "task" }
+              ]
+            },
+            {
+              "name": "Interactive Artifacts",
+              "type": "artifacts",
+              "children": [
+                { "name": "User Prompt Interface", "type": "artifact" },
+                { "name": "Issue Resolution Log", "type": "artifact" },
+                { "name": "User Feedback Integration", "type": "artifact" },
+                { "name": "Iterative Improvement History", "type": "artifact" },
+                { "name": "Fix Confirmation Dialog", "type": "artifact" }
+              ]
+            }
+          ]
         }
-        
-        #graph {
-            width: 100%;
-            height: 800px;
-            border: 2px solid #ddd;
-            border-radius: 10px;
-            background: #fafafa;
+      ]
+    },
+    {
+      "name": "PHASE 4: Delivery and Deployment",
+      "type": "phase",
+      "children": [
+        {
+          "name": "4.1 Final Packaging",
+          "type": "stage",
+          "children": [
+            {
+              "name": "Final Artifacts",
+              "type": "artifacts",
+              "children": [
+                { "name": "PriXXXX.cs - Main Converter", "type": "artifact" },
+                { "name": "Record Types - FileHelpers Classes", "type": "artifact" },
+                { "name": "Project File .csproj", "type": "artifact" },
+                { "name": "AssemblyInfo.cs - Metadata", "type": "artifact" },
+                { "name": "packages.config - NuGet", "type": "artifact" },
+                { "name": "Complete Test Suite", "type": "artifact" },
+                { "name": "Validation Report", "type": "artifact" }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "4.2 Documentation",
+          "type": "stage",
+          "children": [
+            {
+              "name": "Implementation Documentation",
+              "type": "artifacts",
+              "children": [
+                { "name": "Profile DB Configuration", "type": "artifact" },
+                { "name": "File Patterns", "type": "artifact" },
+                { "name": "Configured Cross-Walks", "type": "artifact" },
+                { "name": "Field Mappings", "type": "artifact" },
+                { "name": "Testing Instructions", "type": "artifact" },
+                { "name": "Deployment Guide", "type": "artifact" }
+              ]
+            }
+          ]
         }
-        
-        .node {
-            cursor: pointer;
-            transition: all 0.3s ease;
+      ]
+    }
+  ]
+}
+{
+  "name": "MDS Formatter Lifecycle",
+  "children": [
+    {
+      "name": "PHASE 1: Analysis and Specification",
+      "type": "phase",
+      "children": [
+        {
+          "name": "1.1 PDF Document Analysis",
+          "type": "stage",
+          "children": [
+            {
+              "name": "📊 FILE ANALYZER",
+              "type": "agent",
+              "children": [
+                { "name": "Reads PDF document structure", "type": "task" },
+                { "name": "Determines file type", "type": "task" },
+                { "name": "Evaluates checklist elements", "type": "task" },
+                { "name": "Cites specific evidence", "type": "task" }
+              ]
+            },
+            {
+              "name": "Artifacts",
+              "type": "artifacts",
+              "children": [
+                { "name": "JSON with fileType and direction", "type": "artifact" },
+                { "name": "Missing fields list", "type": "artifact" },
+                { "name": "Recommendations", "type": "artifact" }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "1.2 Data File Analysis",
+          "type": "stage",
+          "children": [
+            {
+              "name": "📊 FILE ANALYZER",
+              "type": "agent",
+              "children": [
+                { "name": "Identifies record types", "type": "task" },
+                { "name": "Locates specific fields", "type": "task" },
+                { "name": "Validates against checklist", "type": "task" },
+                { "name": "Provides exact locations", "type": "task" }
+              ]
+            },
+            {
+              "name": "Artifacts",
+              "type": "artifacts",
+              "children": [
+                { "name": "Record Types mapping", "type": "artifact" },
+                { "name": "Field locations", "type": "artifact" }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "1.3 JSON Specification Generation",
+          "type": "stage",
+          "children": [
+            {
+              "name": "📊 FILE ANALYZER",
+              "type": "agent",
+              "children": [
+                { "name": "Detects file format", "type": "task" },
+                { "name": "Identifies structure", "type": "task" },
+                { "name": "Maps fields to MDS tables", "type": "task" },
+                { "name": "Identifies required converters", "type": "task" }
+              ]
+            },
+            {
+              "name": "Artifacts",
+              "type": "artifacts",
+              "children": [
+                { "name": "Complete JSON specification", "type": "artifact" },
+                { "name": "File metadata", "type": "artifact" },
+                { "name": "Identified cross-walks", "type": "artifact" }
+              ]
+            }
+          ]
         }
-        
-        .node:hover {
-            stroke-width: 3px;
+      ]
+    },
+    {
+      "name": "PHASE 2: Code Generation",
+      "type": "phase",
+      "children": [
+        {
+          "name": "2.1 Knowledge Base Selection",
+          "type": "stage",
+          "children": [
+            {
+              "name": "⚙️ CODE GENERATOR",
+              "type": "agent",
+              "children": [
+                { "name": "Reads JSON specification", "type": "task" },
+                { "name": "Selects knowledge base", "type": "task" },
+                { "name": "Reads corresponding templates", "type": "task" },
+                { "name": "Understands host patterns", "type": "task" }
+              ]
+            },
+            {
+              "name": "Knowledge Bases",
+              "type": "artifacts",
+              "children": [
+                { "name": "Meditech Templates", "type": "artifact" },
+                { "name": "Epic Templates", "type": "artifact" },
+                { "name": "Cerner Templates", "type": "artifact" },
+                { "name": "Generic Templates", "type": "artifact" }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "2.2 Main Classes Generation",
+          "type": "stage",
+          "children": [
+            {
+              "name": "⚙️ CODE GENERATOR",
+              "type": "agent",
+              "children": [
+                { "name": "Generates main PriXXXX.cs", "type": "task" },
+                { "name": "Implements required interfaces", "type": "task" },
+                { "name": "Creates specific handlers", "type": "task" },
+                { "name": "Includes cross-walks", "type": "task" }
+              ]
+            },
+            {
+              "name": "Artifacts",
+              "type": "artifacts",
+              "children": [
+                { "name": "Main Converter Class", "type": "artifact" },
+                { "name": "DemographicsHandler", "type": "artifact" },
+                { "name": "TransactionHandler", "type": "artifact" },
+                { "name": "InventoryHandler", "type": "artifact" }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "2.3 Record Types Generation",
+          "type": "stage",
+          "children": [
+            {
+              "name": "⚙️ CODE GENERATOR",
+              "type": "agent",
+              "children": [
+                { "name": "Generates FileHelpers classes", "type": "task" },
+                { "name": "Applies correct attributes", "type": "task" },
+                { "name": "Configures MDS converters", "type": "task" },
+                { "name": "Maps fields to tables", "type": "task" }
+              ]
+            },
+            {
+              "name": "Artifacts",
+              "type": "artifacts",
+              "children": [
+                { "name": "Record Type Classes", "type": "artifact" },
+                { "name": "FileHelpers Attributes", "type": "artifact" },
+                { "name": "Field Mappings", "type": "artifact" }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "2.4 Project Generation",
+          "type": "stage",
+          "children": [
+            {
+              "name": "⚙️ CODE GENERATOR",
+              "type": "agent",
+              "children": [
+                { "name": "Generates .csproj file", "type": "task" },
+                { "name": "Configures references", "type": "task" },
+                { "name": "Creates AssemblyInfo.cs", "type": "task" },
+                { "name": "Configures packages.config", "type": "task" }
+              ]
+            },
+            {
+              "name": "Artifacts",
+              "type": "artifacts",
+              "children": [
+                { "name": "Project File", "type": "artifact" },
+                { "name": "Library References", "type": "artifact" },
+                { "name": "Assembly Metadata", "type": "artifact" }
+              ]
+            }
+          ]
         }
-        
-        .node text {
-            font-size: 12px;
-            font-weight: bold;
-            text-anchor: middle;
-            dominant-baseline: middle;
-            pointer-events: none;
+      ]
+    },
+    {
+      "name": "PHASE 3: Validation and Testing",
+      "type": "phase",
+      "children": [
+        {
+          "name": "3.1 Compilation Validation",
+          "type": "stage",
+          "children": [
+            {
+              "name": "✅ CODE VALIDATOR",
+              "type": "agent",
+              "children": [
+                { "name": "Executes project build", "type": "task" },
+                { "name": "Identifies compilation errors", "type": "task" },
+                { "name": "Verifies using statements", "type": "task" },
+                { "name": "Validates FileHelpers attributes", "type": "task" }
+              ]
+            },
+            {
+              "name": "Validations",
+              "type": "artifacts",
+              "children": [
+                { "name": "Compilation Report", "type": "artifact" },
+                { "name": "Error List", "type": "artifact" },
+                { "name": "Code Warnings", "type": "artifact" }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "3.2 Structure Validation",
+          "type": "stage",
+          "children": [
+            {
+              "name": "✅ CODE VALIDATOR",
+              "type": "agent",
+              "children": [
+                { "name": "Verifies correct inheritance", "type": "task" },
+                { "name": "Validates abstract methods", "type": "task" },
+                { "name": "Confirms base handlers", "type": "task" },
+                { "name": "Verifies field mappings", "type": "task" }
+              ]
+            },
+            {
+              "name": "Validations",
+              "type": "artifacts",
+              "children": [
+                { "name": "Pattern Validation", "type": "artifact" },
+                { "name": "Interface Verification", "type": "artifact" }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "3.3 Database Schema Validation",
+          "type": "stage",
+          "children": [
+            {
+              "name": "✅ CODE VALIDATOR",
+              "type": "agent",
+              "children": [
+                { "name": "Validates mappings against schema", "type": "task" },
+                { "name": "Verifies required fields", "type": "task" },
+                { "name": "Confirms compatible types", "type": "task" },
+                { "name": "Validates maximum lengths", "type": "task" }
+              ]
+            },
+            {
+              "name": "Validations",
+              "type": "artifacts",
+              "children": [
+                { "name": "Table Mapping", "type": "artifact" },
+                { "name": "Type Validation", "type": "artifact" },
+                { "name": "Missing Fields", "type": "artifact" }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "3.4 Cross-Walks Validation",
+          "type": "stage",
+          "children": [
+            {
+              "name": "✅ CODE VALIDATOR",
+              "type": "agent",
+              "children": [
+                { "name": "Verifies mapped codes", "type": "task" },
+                { "name": "Confirms default handling", "type": "task" },
+                { "name": "Validates insurance types", "type": "task" },
+                { "name": "Verifies specific types", "type": "task" }
+              ]
+            },
+            {
+              "name": "Validations",
+              "type": "artifacts",
+              "children": [
+                { "name": "Cross-Walks Coverage", "type": "artifact" },
+                { "name": "Missing Codes", "type": "artifact" }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "3.5 Test Generation and Execution",
+          "type": "stage",
+          "children": [
+            {
+              "name": "✅ CODE VALIDATOR",
+              "type": "agent",
+              "children": [
+                { "name": "Generates NUnit unit tests", "type": "task" },
+                { "name": "Creates parsing tests", "type": "task" },
+                { "name": "Includes conversion tests", "type": "task" },
+                { "name": "Generates integration tests", "type": "task" },
+                { "name": "Executes test suite", "type": "task" },
+                { "name": "Analyzes test results", "type": "task" },
+                { "name": "Identifies failing tests", "type": "task" },
+                { "name": "Generates detailed validation report", "type": "task" }
+              ]
+            },
+            {
+              "name": "Artifacts",
+              "type": "artifacts",
+              "children": [
+                { "name": "Complete Test Suite", "type": "artifact" },
+                { "name": "Record Parsing Tests", "type": "artifact" },
+                { "name": "Cross-Walks Tests", "type": "artifact" },
+                { "name": "Integration Tests", "type": "artifact" },
+                { "name": "Test Execution Results", "type": "artifact" },
+                { "name": "Validation Report MD", "type": "artifact" },
+                { "name": "Quality Summary", "type": "artifact" },
+                { "name": "Issue Analysis Report", "type": "artifact" }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "3.6 Interactive Issue Resolution",
+          "type": "interactive",
+          "children": [
+            {
+              "name": "🔄 ISSUE RESOLVER",
+              "type": "agent",
+              "children": [
+                { "name": "Presents test results to user", "type": "task" },
+                { "name": "Allows custom prompt input", "type": "task" },
+                { "name": "Asks user for fix confirmation", "type": "task" },
+                { "name": "Triggers code regeneration if confirmed", "type": "task" },
+                { "name": "Incorporates user feedback", "type": "task" },
+                { "name": "Applies issue-specific corrections", "type": "task" },
+                { "name": "Returns to Phase 2 for regeneration", "type": "task" },
+                { "name": "Creates iterative improvement cycle", "type": "task" }
+              ]
+            },
+            {
+              "name": "Interactive Artifacts",
+              "type": "artifacts",
+              "children": [
+                { "name": "User Prompt Interface", "type": "artifact" },
+                { "name": "Issue Resolution Log", "type": "artifact" },
+                { "name": "User Feedback Integration", "type": "artifact" },
+                { "name": "Iterative Improvement History", "type": "artifact" },
+                { "name": "Fix Confirmation Dialog", "type": "artifact" }
+              ]
+            }
+          ]
         }
-        
-        .link {
-            fill: none;
-            stroke-width: 2px;
-            transition: all 0.3s ease;
+      ]
+    },
+    {
+      "name": "PHASE 4: Delivery and Deployment",
+      "type": "phase",
+      "children": [
+        {
+          "name": "4.1 Final Packaging",
+          "type": "stage",
+          "children": [
+            {
+              "name": "Final Artifacts",
+              "type": "artifacts",
+              "children": [
+                { "name": "PriXXXX.cs - Main Converter", "type": "artifact" },
+                { "name": "Record Types - FileHelpers Classes", "type": "artifact" },
+                { "name": "Project File .csproj", "type": "artifact" },
+                { "name": "AssemblyInfo.cs - Metadata", "type": "artifact" },
+                { "name": "packages.config - NuGet", "type": "artifact" },
+                { "name": "Complete Test Suite", "type": "artifact" },
+                { "name": "Validation Report", "type": "artifact" }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "4.2 Documentation",
+          "type": "stage",
+          "children": [
+            {
+              "name": "Implementation Documentation",
+              "type": "artifacts",
+              "children": [
+                { "name": "Profile DB Configuration", "type": "artifact" },
+                { "name": "File Patterns", "type": "artifact" },
+                { "name": "Configured Cross-Walks", "type": "artifact" },
+                { "name": "Field Mappings", "type": "artifact" },
+                { "name": "Testing Instructions", "type": "artifact" },
+                { "name": "Deployment Guide", "type": "artifact" }
+              ]
+            }
+          ]
         }
-        
-        .controls {
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        
-        .controls button {
-            background: #667eea;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            margin: 0 5px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background 0.3s ease;
-        }
-        
-        .controls button:hover {
-            background: #5a6fd8;
-        }
-        
-        .legend {
-            position: absolute;
-            top: 30px;
-            right: 30px;
-            background: rgba(255,255,255,0.9);
-            padding: 15px;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
-        
-        .legend-item {
-            display: flex;
-            align-items: center;
-            margin-bottom: 8px;
-        }
-        
-        .legend-color {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            margin-right: 10px;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>🔄 MDS Formatter Lifecycle</h1>
-        
-        <div class="controls">
-            <button onclick="expandAll()">Expand All</button>
-            <button onclick="collapseAll()">Collapse All</button>
-            <button onclick="resetView()">Reset View</button>
-        </div>
-        
-        <div class="legend">
-            <h4>Legend</h4>
-            <div class="legend-item">
-                <div class="legend-color" style="background: #e74c3c;"></div>
-                <span>Main Phase</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-color" style="background: #3498db;"></div>
-                <span>Stage</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-color" style="background: #2ecc71;"></div>
-                <span>Agent</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-color" style="background: #f39c12;"></div>
-                <span>Task</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-color" style="background: #9b59b6;"></div>
-                <span>Artifact</span>
-            </div>
-        </div>
-        
-        <svg id="graph"></svg>
-    </div>
-
-    <script>
-        // Formatter lifecycle data
-        const data = {
-            name: "MDS Formatter Lifecycle",
-            children: [
-                {
-                    name: "PHASE 1: Analysis and Specification",
-                    type: "phase",
-                    children: [
-                        {
-                            name: "1.1 PDF Document Analysis",
-                            type: "stage",
-                            children: [
-                                {
-                                    name: "🔍 MATCH SPECS",
-                                    type: "agent",
-                                    children: [
-                                        { name: "Reads PDF document structure", type: "task" },
-                                        { name: "Determines file type", type: "task" },
-                                        { name: "Evaluates checklist elements", type: "task" },
-                                        { name: "Cites specific evidence", type: "task" }
-                                    ]
-                                },
-                                {
-                                    name: "Artifacts",
-                                    type: "artifacts",
-                                    children: [
-                                        { name: "JSON with fileType and direction", type: "artifact" },
-                                        { name: "List of missing fields", type: "artifact" },
-                                        { name: "Recommendations", type: "artifact" }
-                                    ]
-                                }
-                            ]
-                        },
-                        {
-                            name: "1.2 Data File Analysis",
-                            type: "stage",
-                            children: [
-                                {
-                                    name: "🔍 MATCH SPECS",
-                                    type: "agent",
-                                    children: [
-                                        { name: "Identifies record types", type: "task" },
-                                        { name: "Locates specific fields", type: "task" },
-                                        { name: "Validates against checklist", type: "task" },
-                                        { name: "Provides exact locations", type: "task" }
-                                    ]
-                                },
-                                {
-                                    name: "Artifacts",
-                                    type: "artifacts",
-                                    children: [
-                                        { name: "Record Type Mapping", type: "artifact" },
-                                        { name: "Field locations", type: "artifact" }
-                                    ]
-                                }
-                            ]
-                        },
-                        {
-                            name: "1.3 JSON Specification Generation",
-                            type: "stage",
-                            children: [
-                                {
-                                    name: "📊 FILE ANALYZER",
-                                    type: "agent",
-                                    children: [
-                                        { name: "Detects file format", type: "task" },
-                                        { name: "Identifies structure", type: "task" },
-                                        { name: "Maps fields to MDS tables", type: "task" },
-                                        { name: "Identifies required converters", type: "task" }
-                                    ]
-                                },
-                                {
-                                    name: "Artifacts",
-                                    type: "artifacts",
-                                    children: [
-                                        { name: "Complete JSON specification", type: "artifact" },
-                                        { name: "File metadata", type: "artifact" },
-                                        { name: "Identified cross-walks", type: "artifact" }
-                                    ]
-                                }
-                            ]
-                        }
-                    ]
-                },
-                {
-                    name: "PHASE 2: Code Generation",
-                    type: "phase",
-                    children: [
-                        {
-                            name: "2.1 Knowledge Base Selection",
-                            type: "stage",
-                            children: [
-                                {
-                                    name: "⚙️ CODE GENERATOR",
-                                    type: "agent",
-                                    children: [
-                                        { name: "Reads JSON specification", type: "task" },
-                                        { name: "Selects knowledge base", type: "task" },
-                                        { name: "Reads corresponding templates", type: "task" },
-                                        { name: "Understands host patterns", type: "task" }
-                                    ]
-                                },
-                                {
-                                    name: "Knowledge Bases",
-                                    type: "artifacts",
-                                    children: [
-                                        { name: "Meditech Templates", type: "artifact" },
-                                        { name: "Epic Templates", type: "artifact" },
-                                        { name: "Cerner Templates", type: "artifact" },
-                                        { name: "Generic Templates", type: "artifact" }
-                                    ]
-                                }
-                            ]
-                        },
-                        {
-                            name: "2.2 Main Classes Generation",
-                            type: "stage",
-                            children: [
-                                {
-                                    name: "⚙️ CODE GENERATOR",
-                                    type: "agent",
-                                    children: [
-                                        { name: "Generates main PriXXXX.cs", type: "task" },
-                                        { name: "Implements required interfaces", type: "task" },
-                                        { name: "Creates specific handlers", type: "task" },
-                                        { name: "Includes cross-walks", type: "task" }
-                                    ]
-                                },
-                                {
-                                    name: "Artifacts",
-                                    type: "artifacts",
-                                    children: [
-                                        { name: "Main Converter Class", type: "artifact" },
-                                        { name: "DemographicsHandler", type: "artifact" },
-                                        { name: "TransactionHandler", type: "artifact" },
-                                        { name: "InventoryHandler", type: "artifact" }
-                                    ]
-                                }
-                            ]
-                        },
-                        {
-                            name: "2.3 Record Types Generation",
-                            type: "stage",
-                            children: [
-                                {
-                                    name: "⚙️ CODE GENERATOR",
-                                    type: "agent",
-                                    children: [
-                                        { name: "Generates FileHelpers classes", type: "task" },
-                                        { name: "Applies correct attributes", type: "task" },
-                                        { name: "Configures MDS converters", type: "task" },
-                                        { name: "Maps fields to tables", type: "task" }
-                                    ]
-                                },
-                                {
-                                    name: "Artifacts",
-                                    type: "artifacts",
-                                    children: [
-                                        { name: "Record Type Classes", type: "artifact" },
-                                        { name: "FileHelpers Attributes", type: "artifact" },
-                                        { name: "Field Mappings", type: "artifact" }
-                                    ]
-                                }
-                            ]
-                        },
-                        {
-                            name: "2.4 Project Generation",
-                            type: "stage",
-                            children: [
-                                {
-                                    name: "⚙️ CODE GENERATOR",
-                                    type: "agent",
-                                    children: [
-                                        { name: "Generates .csproj file", type: "task" },
-                                        { name: "Configures references", type: "task" },
-                                        { name: "Creates AssemblyInfo.cs", type: "task" },
-                                        { name: "Configures packages.config", type: "task" }
-                                    ]
-                                },
-                                {
-                                    name: "Artifacts",
-                                    type: "artifacts",
-                                    children: [
-                                        { name: "Project File", type: "artifact" },
-                                        { name: "Library References", type: "artifact" },
-                                        { name: "Assembly Metadata", type: "artifact" }
-                                    ]
-                                }
-                            ]
-                        }
-                    ]
-                },
-                {
-                    name: "PHASE 3: Validation and Testing",
-                    type: "phase",
-                    children: [
-                        {
-                            name: "3.1 Compilation Validation",
-                            type: "stage",
-                            children: [
-                                {
-                                    name: "✅ CODE VALIDATOR",
-                                    type: "agent",
-                                    children: [
-                                        { name: "Executes project build", type: "task" },
-                                        { name: "Identifies compilation errors", type: "task" },
-                                        { name: "Verifies using statements", type: "task" },
-                                        { name: "Validates FileHelpers attributes", type: "task" }
-                                    ]
-                                },
-                                {
-                                    name: "Validations",
-                                    type: "artifacts",
-                                    children: [
-                                        { name: "Compilation Report", type: "artifact" },
-                                        { name: "Error List", type: "artifact" },
-                                        { name: "Code Warnings", type: "artifact" }
-                                    ]
-                                }
-                            ]
-                        },
-                        {
-                            name: "3.2 Structure Validation",
-                            type: "stage",
-                            children: [
-                                {
-                                    name: "✅ CODE VALIDATOR",
-                                    type: "agent",
-                                    children: [
-                                        { name: "Verifies correct inheritance", type: "task" },
-                                        { name: "Validates abstract methods", type: "task" },
-                                        { name: "Confirms base handlers", type: "task" },
-                                        { name: "Verifies field mappings", type: "task" }
-                                    ]
-                                },
-                                {
-                                    name: "Validations",
-                                    type: "artifacts",
-                                    children: [
-                                        { name: "Pattern Validation", type: "artifact" },
-                                        { name: "Interface Verification", type: "artifact" }
-                                    ]
-                                }
-                            ]
-                        },
-                        {
-                            name: "3.3 Schema DB Validation",
-                            type: "stage",
-                            children: [
-                                {
-                                    name: "✅ CODE VALIDATOR",
-                                    type: "agent",
-                                    children: [
-                                        { name: "Validates mappings against schema", type: "task" },
-                                        { name: "Verifies required fields", type: "task" },
-                                        { name: "Confirms compatible types", type: "task" },
-                                        { name: "Validates maximum lengths", type: "task" }
-                                    ]
-                                },
-                                {
-                                    name: "Validations",
-                                    type: "artifacts",
-                                    children: [
-                                        { name: "Table Mappings", type: "artifact" },
-                                        { name: "Type Validation", type: "artifact" },
-                                        { name: "Missing Fields", type: "artifact" }
-                                    ]
-                                }
-                            ]
-                        },
-                        {
-                            name: "3.4 Cross-Walks Validation",
-                            type: "stage",
-                            children: [
-                                {
-                                    name: "✅ CODE VALIDATOR",
-                                    type: "agent",
-                                    children: [
-                                        { name: "Verifies mapped codes", type: "task" },
-                                        { name: "Confirms default handling", type: "task" },
-                                        { name: "Validates insurance types", type: "task" },
-                                        { name: "Verifies specific types", type: "task" }
-                                    ]
-                                },
-                                {
-                                    name: "Validations",
-                                    type: "artifacts",
-                                    children: [
-                                        { name: "Cross-Walk Coverage", type: "artifact" },
-                                        { name: "Missing Codes", type: "artifact" }
-                                    ]
-                                }
-                            ]
-                        },
-                        {
-                            name: "3.5 Test Generation",
-                            type: "stage",
-                            children: [
-                                {
-                                    name: "✅ CODE VALIDATOR",
-                                    type: "agent",
-                                    children: [
-                                        { name: "Generates NUnit unit tests", type: "task" },
-                                        { name: "Creates parsing tests", type: "task" },
-                                        { name: "Includes conversion tests", type: "task" },
-                                        { name: "Generates integration tests", type: "task" }
-                                    ]
-                                },
-                                {
-                                    name: "Artifacts",
-                                    type: "artifacts",
-                                    children: [
-                                        { name: "Complete Test Suite", type: "artifact" },
-                                        { name: "Record Parsing Tests", type: "artifact" },
-                                        { name: "Cross-Walk Tests", type: "artifact" },
-                                        { name: "Integration Tests", type: "artifact" }
-                                    ]
-                                }
-                            ]
-                        },
-                        {
-                            name: "3.6 Validation Report",
-                            type: "stage",
-                            children: [
-                                {
-                                    name: "✅ CODE VALIDATOR",
-                                    type: "agent",
-                                    children: [
-                                        { name: "Generates detailed report", type: "task" },
-                                        { name: "Documents validations", type: "task" },
-                                        { name: "Lists recommendations", type: "task" },
-                                        { name: "Includes test results", type: "task" }
-                                    ]
-                                },
-                                {
-                                    name: "Artifacts",
-                                    type: "artifacts",
-                                    children: [
-                                        { name: "Validation Report MD", type: "artifact" },
-                                        { name: "Quality Summary", type: "artifact" },
-                                        { name: "Recommendation List", type: "artifact" }
-                                    ]
-                                }
-                            ]
-                        }
-                    ]
-                },
-                {
-                    name: "PHASE 4: Delivery and Deployment",
-                    type: "phase",
-                    children: [
-                        {
-                            name: "4.1 Final Packaging",
-                            type: "stage",
-                            children: [
-                                {
-                                    name: "Final Artifacts",
-                                    type: "artifacts",
-                                    children: [
-                                        { name: "PriXXXX.cs - Main Converter", type: "artifact" },
-                                        { name: "Record Types - FileHelpers Classes", type: "artifact" },
-                                        { name: "Project File .csproj", type: "artifact" },
-                                        { name: "AssemblyInfo.cs - Metadata", type: "artifact" },
-                                        { name: "packages.config - NuGet", type: "artifact" },
-                                        { name: "Complete Test Suite", type: "artifact" },
-                                        { name: "Validation Report", type: "artifact" }
-                                    ]
-                                }
-                            ]
-                        },
-                        {
-                            name: "4.2 Documentation",
-                            type: "stage",
-                            children: [
-                                {
-                                    name: "Implementation Documentation",
-                                    type: "artifacts",
-                                    children: [
-                                        { name: "Profile DB Configuration", type: "artifact" },
-                                        { name: "File Patterns", type: "artifact" },
-                                        { name: "Configured Cross-Walks", type: "artifact" },
-                                        { name: "Field Mappings", type: "artifact" },
-                                        { name: "Testing Instructions", type: "artifact" },
-                                        { name: "Deployment Guide", type: "artifact" }
-                                    ]
-                                }
-                            ]
-                        }
-                    ]
-                }
-            ]
-        };
-
-        // SVG configuration
-        const width = 1360;
-        const height = 800;
-        const svg = d3.select("#graph")
-            .attr("width", width)
-            .attr("height", height);
-
-        // Tree configuration
-        const tree = d3.tree().size([height - 100, width - 200]);
-        
-        // Colors by type
-        const colors = {
-            root: "#2c3e50",
-            phase: "#e74c3c",
-            stage: "#3498db",
-            agent: "#2ecc71",
-            task: "#f39c12",
-            artifacts: "#9b59b6",
-            artifact: "#9b59b6"
-        };
-
-        let root = d3.hierarchy(data);
-        let treeData = tree(root);
-
-        // Create groups for links and nodes
-        const g = svg.append("g")
-            .attr("transform", "translate(100,50)");
-
-        const linkGroup = g.append("g").attr("class", "links");
-        const nodeGroup = g.append("g").attr("class", "nodes");
-
-        // Global variables
-        let nodes, links;
-
-        function update() {
-            // Update tree data
-            treeData = tree(root);
-
-            // Links
-            links = linkGroup.selectAll(".link")
-                .data(treeData.links());
-
-            links.exit().remove();
-
-            const linkEnter = links.enter().append("path")
-                .attr("class", "link")
-                .attr("stroke", "#999")
-                .attr("stroke-opacity", 0.6);
-
-            links = linkEnter.merge(links);
-
-            links.attr("d", d3.linkHorizontal()
-                .x(d => d.y)
-                .y(d => d.x));
-
-            // Nodes
-            nodes = nodeGroup.selectAll(".node")
-                .data(treeData.descendants());
-
-            nodes.exit().remove();
-
-            const nodeEnter = nodes.enter().append("g")
-                .attr("class", "node")
-                .on("click", function(event, d) {
-                    if (d.children) {
-                        d._children = d.children;
-                        d.children = null;
-                    } else {
-                        d.children = d._children;
-                        d._children = null;
-                    }
-                    update();
-                });
-
-            nodeEnter.append("circle")
-                .attr("r", 8);
-
-            nodeEnter.append("text")
-                .attr("dy", "0.31em")
-                .attr("x", d => d.children ? -12 : 12)
-                .style("text-anchor", d => d.children ? "end" : "start");
-
-            nodes = nodeEnter.merge(nodes);
-
-            nodes.attr("transform", d => `translate(${d.y},${d.x})`);
-
-            nodes.select("circle")
-                .attr("r", d => {
-                    if (d.depth === 0) return 15;
-                    if (d.data.type === "phase") return 12;
-                    if (d.data.type === "stage") return 10;
-                    if (d.data.type === "agent") return 8;
-                    return 6;
-                })
-                .attr("fill", d => {
-                    if (d.depth === 0) return colors.root;
-                    return colors[d.data.type] || colors.task;
-                })
-                .attr("stroke", "#333")
-                .attr("stroke-width", 1.5);
-
-            nodes.select("text")
-                .text(d => {
-                    const name = d.data.name;
-                    return name.length > 30 ? name.substring(0, 30) + "..." : name;
-                })
-                .attr("x", d => d.children || d._children ? -18 : 18)
-                .style("text-anchor", d => d.children || d._children ? "end" : "start")
-                .style("font-size", d => {
-                    if (d.depth === 0) return "14px";
-                    if (d.data.type === "phase") return "13px";
-                    if (d.data.type === "stage") return "12px";
-                    if (d.data.type === "agent") return "11px";
-                    return "10px";
-                })
-                .style("font-weight", d => {
-                    if (d.depth <= 1) return "bold";
-                    if (d.data.type === "agent") return "bold";
-                    return "normal";
-                })
-                .style("fill", d => {
-                    if (d.data.type === "agent") return "#2ecc71";
-                    return "#333";
-                });
-        }
-
-        // Control functions
-        function expandAll() {
-            root.descendants().forEach(d => {
-                if (d._children) {
-                    d.children = d._children;
-                    d._children = null;
-                }
-            });
-            update();
-        }
-
-        function collapseAll() {
-            root.descendants().forEach(d => {
-                if (d.children && d.depth > 0) {
-                    d._children = d.children;
-                    d.children = null;
-                }
-            });
-            update();
-        }
-
-        function resetView() {
-            // Collapse all except main phases
-            root.descendants().forEach(d => {
-                if (d.children && d.depth > 1) {
-                    d._children = d.children;
-                    d.children = null;
-                }
-            });
-            update();
-        }
-
-        // Initialize with partially expanded view
-        resetView();
-        update();
-
-        // Add zoom
-        const zoom = d3.zoom()
-            .scaleExtent([0.1, 3])
-            .on("zoom", function(event) {
-                g.attr("transform", event.transform);
-            });
-
-        svg.call(zoom);
-    </script>
-</body>
-</html>
-
-                                             
-
+      ]
+    }
+  ]
+}
