@@ -49,10 +49,10 @@ The scoring system totals **exactly 100 points**, distributed according to the *
 |---------|--------|---------------|-------------------|---------| 
 | Class inherits from BaseConverter | 4 | CRITICAL: TaskLauncher requires this inheritance | `class X : BaseConverter` | BLOCKING: Formatter not executable |
 | Constructor receives ConverterCmd | 3 | CRITICAL: Execution context required | `public X(ConverterCmd cmd) : base(cmd)` | BLOCKING |
-| Implements IConverterSettings | 1.5 | Enables persistent cross-walk configuration | Interface declaration present | Configuration lost between runs |
-| Implements IAccountCache | 1.5 | Required for recall protection | Interface + `AccountCache Accounts` | Business rule violation |
+| Implements IConverterSettings | 2 | Enables persistent cross-walk configuration | Interface declaration present | Configuration lost between runs |
+| Implements IAccountCache | 1 | Required for recall protection | Interface + `AccountCache Accounts` | Business rule violation |
 
-**Total: 4 + 3 + 1.5 + 1.5 = 10 points**
+**Total: 4 + 3 + 2 + 1 = 10 points**
 
 ## 1.2 Mandatory Abstract Method Implementations (10 points)
 
@@ -418,6 +418,7 @@ These conditions represent **non-negotiable quality gates**.
 - Robustness: 3 + 2 + 2 + 1 = **8 points**
 
 **GRAND TOTAL: 100 points** ✓
+
 
 
 
