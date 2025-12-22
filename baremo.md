@@ -52,7 +52,71 @@ The scoring system totals **exactly 100 points**, distributed according to the *
 | Implements IConverterSettings | 2 | Enables persistent cross-walk configuration | Interface declaration present | Configuration lost between runs |
 | Implements IAccountCache | 1 | Required for recall protection | Interface + `AccountCache Accounts` | Business rule violation |
 
-**Total: 4 + 3 + 2 + 1 = 10 points**
+```Total: 4 + 3 + 2 + 1 = 10 points```
+
+**Validation agent logic** 
+```csharp
+public ValidationResult ValidateBaseArchitecture(Type formatterType)
+{
+    var result = new ValidationResult { Category = "Architecture", MaxScore = 10 };
+    
+    // Check 1: BaseConverter inheritance (4 pts)
+    if (!formatterType.IsSubclassOf(typeof(BaseConverter)))
+    {
+        result.AddCriticalError(
+            "BLOCKER: Class does not inherit from BaseConverter", 
+            $"Expected: class {formatterType.Name} : BaseConverter"
+        );
+        result.Score = 0; // Bloqueante - no sumar otros puntos
+        return result;
+    }
+    result.Score += 4;
+    result.AddEvidence($"✓ Inherits from BaseConverter");
+    
+    // Check 2: Constructor (3 pts)
+    var ctor = formatterType.GetConstructor(new[] { typeof(ConverterCmd) });
+    if (ctor == null)
+    {
+        result.AddCriticalError(
+            "BLOCKER: Missing constructor with ConverterCmd parameter",
+            $"Expected: public {formatterType.Name}(ConverterCmd cmd) : base(cmd)"
+        );
+        return result; // No continuar
+    }
+    result.Score += 3;
+    result.AddEvidence($"✓ Constructor accepts ConverterCmd");
+    
+    // Check 3: IConverterSettings (1.5 pts)
+    if (!typeof(IConverterSettings).IsAssignableFrom(formatterType))
+    {
+        result.AddWarning(
+            "Missing IConverterSettings interface - cross-walks won't persist",
+            "Impact: Users must reconfigure on each execution"
+        );
+    }
+    else
+    {
+        result.Score += 1.5;
+        result.AddEvidence($"✓ Implements IConverterSettings");
+    }
+    
+    // Check 4: IAccountCache (1.5 pts)
+    if (!typeof(IAccountCache).IsAssignableFrom(formatterType))
+    {
+        result.AddWarning(
+            "Missing IAccountCache - recall protection disabled",
+            "Impact: Deleted accounts may receive new transactions"
+        );
+    }
+    else
+    {
+        result.Score += 1.5;
+        result.AddEvidence($"✓ Implements IAccountCache");
+    }
+    
+    return result;
+}
+```
 
 ## 1.2 Mandatory Abstract Method Implementations (10 points)
 
@@ -68,8 +132,133 @@ The scoring system totals **exactly 100 points**, distributed according to the *
 | All InputTypes covered | 2 | Prevents silent file skipping | Switch covers all types | Data loss |
 | QualifyFile implemented | 3 | File classification logic | Method returns InputType | BLOCKING |
 
-**Total: 5 + 2 + 3 = 10 points**
+```Total: 5 + 2 + 3 = 10 points```
 
+**Validation agent logic** 
+```csharp
+public ValidationResult ValidateAbstractMethods(Type formatterType)
+{
+    var result = new ValidationResult { Category = "Abstract Methods", MaxScore = 10 };
+    
+    // GetConverter validation (5 pts base + 2 pts coverage)
+    var getConverter = formatterType.GetMethod("GetConverter", 
+        BindingFlags.Public | BindingFlags.Instance);
+    
+    if (getConverter == null || getConverter.IsAbstract)
+    {
+        result.AddCriticalError(
+            "BLOCKER: GetConverter() not implemented",
+            "This is an abstract method in BaseConverter - code will not compile"
+        );
+        return result;
+    }
+    result.Score += 5;
+    result.AddEvidence("✓ GetConverter() implemented");
+    
+    // Analyze coverage of InputTypes
+    var inputTypesCovered = AnalyzeInputTypeCoverage(getConverter);
+    var expectedTypes = DetermineExpectedInputTypes(formatterType);
+    
+    if (inputTypesCovered.Count >= expectedTypes.Count)
+    {
+        result.Score += 2;
+        result.AddEvidence($"✓ GetConverter() handles all {expectedTypes.Count} expected InputTypes");
+    }
+    else
+    {
+        result.AddWarning(
+            $"GetConverter() only handles {inputTypesCovered.Count}/{expectedTypes.Count} InputTypes",
+            $"Missing: {string.Join(", ", expectedTypes.Except(inputTypesCovered))}"
+        );
+        // Partial credit
+        result.Score += 2.0 * (inputTypesCovered.Count / (double)expectedTypes.Count);
+    }
+    
+    // QualifyFile validation (3 pts)
+    var qualifyFile = formatterType.GetMethod("QualifyFile", 
+        BindingFlags.NonPublic | BindingFlags.Instance);
+    
+    if (qualifyFile == null || qualifyFile.IsAbstract)
+    {
+        result.AddCriticalError(
+            "BLOCKER: QualifyFile() not implemented",
+            "This is an abstract method in BaseConverter - code will not compile"
+        );
+        return result;
+    }
+    result.Score += 3;
+    result.AddEvidence("✓ QualifyFile() implemented");
+    
+    return result;
+}
+
+private List<InputType> AnalyzeInputTypeCoverage(MethodInfo method)
+{
+    var covered = new List<InputType>();
+    var methodBody = DecompileMethodBody(method);
+    
+    // Analyze switch cases or if statements
+    if (methodBody.Contains("InputType.Collections")) covered.Add(InputType.Collections);
+    if (methodBody.Contains("InputType.Inventory")) covered.Add(InputType.Inventory);
+    if (methodBody.Contains("InputType.Insurance")) covered.Add(InputType.Insurance);
+    if (methodBody.Contains("InputType.Skip")) covered.Add(InputType.Skip);
+    
+    return covered;
+}
+```
+**Reference code**
+```csharp
+// [5 pts] - GetConverter implementation
+public override BaseConversionClass GetConverter(ProcessFile pFile)
+{
+    // WHY CRITICAL: This is the routing logic for all file processing
+    // IMPACT: If a case is missing, that file type is silently ignored
+    
+    switch (pFile.FileType)
+    {
+        case InputType.Collections:  // [+0.5 pt] Demographics handler
+            return new DemographicsHandler(this, pFile);
+            
+        case InputType.Inventory:    // [+0.5 pt] Inventory handler
+            return new InventoryHandler(this, pFile, typeof(InventoryRecordType));
+            
+        case InputType.Insurance:    // [+0.5 pt] Insurance handler (if applicable)
+            return new InsuranceHandler(this, pFile);
+            
+        case InputType.Skip:         // [+0.5 pt] Known files to skip
+            return null; // Explicitly ignored
+            
+        default:
+            return null;
+    }
+    // [+2 pts if all expected InputTypes covered]
+}
+
+// [3 pts] - QualifyFile implementation
+protected override InputType QualifyFile(ProcessFile pFile)
+{
+    // WHY CRITICAL: Incorrect classification = wrong handler or no processing
+    // IMPACT: Client files may be processed incorrectly or not at all
+    
+    string fileName = pFile.ShortName.ToUpper();
+    
+    // Pattern matching should be specific to avoid conflicts
+    if (fileName.Contains("DEMO") || fileName.Contains("PATIENT"))
+        return InputType.Collections;
+        
+    if (fileName.Contains("INV") || fileName.Contains("INVENTORY"))
+        return InputType.Inventory;
+        
+    if (fileName.Contains("INSURANCE") || fileName.Contains("INS"))
+        return InputType.Insurance;
+        
+    // Files that should be ignored (e.g., Excel exports)
+    if (fileName.EndsWith(".XLSX") || fileName.Contains("BACKUP"))
+        return InputType.Skip;
+        
+    return InputType.Unknown; // Will be logged for review
+}
+```
 ## 1.3 Framework Properties & Constants (5 points)
 
 **Why 5 points:**
@@ -82,9 +271,128 @@ The scoring system totals **exactly 100 points**, distributed according to the *
 | Interface properties initialized | 2 | Framework access requirement | Constructor initialization | Runtime null errors |
 | AccountType enum (conditional) | 1 | Clean business logic separation | Enum present if required | Logic coupling |
 
-**Total: 2 + 2 + 1 = 5 points**
+```Total: 2 + 2 + 1 = 5 points```
 
 ---
+
+**Validation agent logic** 
+```csharp
+public ValidationResult ValidatePropertiesAndConstants(Type formatterType)
+{
+    var result = new ValidationResult { Category = "Properties & Constants", MaxScore = 5 };
+    
+    // Check 1: ClientCode constant (2 pts)
+    var clientCodeField = formatterType.GetField("ClientCode", 
+        BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy);
+    
+    if (clientCodeField == null || !clientCodeField.IsLiteral)
+    {
+        result.AddWarning(
+            "Missing public const ClientCode",
+            "Impact: Hardcoded client codes throughout codebase cause inconsistencies"
+        );
+    }
+    else
+    {
+        result.Score += 2;
+        result.AddEvidence($"✓ ClientCode defined: {clientCodeField.GetValue(null)}");
+    }
+    
+    // Check 2: Interface properties (2 pts)
+    var accountsProp = formatterType.GetProperty("Accounts");
+    var settingsProp = formatterType.GetProperty("Settings");
+    
+    if (accountsProp == null || settingsProp == null)
+    {
+        result.AddWarning(
+            "Missing Accounts or Settings properties",
+            "Impact: Framework expects these properties for IAccountCache/IConverterSettings"
+        );
+    }
+    else
+    {
+        // Verify they're initialized in constructor
+        var ctor = formatterType.GetConstructor(new[] { typeof(ConverterCmd) });
+        var ctorBody = DecompileConstructorBody(ctor);
+        
+        if (ctorBody.Contains("Accounts = new") && ctorBody.Contains("Settings"))
+        {
+            result.Score += 2;
+            result.AddEvidence("✓ Accounts and Settings properties initialized");
+        }
+        else
+        {
+            result.AddWarning(
+                "Accounts/Settings properties not initialized in constructor",
+                "Impact: May cause NullReferenceException at runtime"
+            );
+            result.Score += 1; // Partial credit for declaring properties
+        }
+    }
+    
+    // Check 3: AccountType enum (1 pt - conditional)
+    var accountTypeEnum = formatterType.GetNestedType("AccountType");
+    
+    if (HasMultipleAccountTypes(formatterType))
+    {
+        if (accountTypeEnum == null || !accountTypeEnum.IsEnum)
+        {
+            result.AddInfo(
+                "AccountType enum not found",
+                "Recommendation: Define enum for multi-type clients (EO, BD)"
+            );
+        }
+        else
+        {
+            result.Score += 1;
+            result.AddEvidence("✓ AccountType enum defined for multi-type client");
+        }
+    }
+    else
+    {
+        result.Score += 1; // Full credit if not needed
+        result.AddEvidence("✓ Single account type - enum not required");
+    }
+    
+    return result;
+}
+```
+**Reference code**
+```csharp
+public class PriRiver : BaseConverter, IConverterSettings, IAccountCache
+{
+    // [2 pts] - ClientCode constant
+    // WHY IMPORTANT: Used in logging, database queries, configuration paths
+    // IMPACT: Hardcoding causes inconsistencies across codebase
+    public const string ClientCode = "RIV";
+    
+    // [1 pt] - AccountType enum (conditional - if client has multiple types)
+    // WHY IMPORTANT: Segregates business logic cleanly
+    // IMPACT: Without this, EO and BD logic gets mixed
+    public enum AccountType
+    {
+        None = 0,
+        EO = 1,   // Early Out
+        BD = 2    // Bad Debt
+    }
+    
+    // [2 pts] - Interface properties
+    // WHY IMPORTANT: Framework accesses these directly
+    // IMPACT: NullReferenceException if not initialized
+    public AccountCache Accounts { get; set; }
+    public ConverterSettings Settings { get; set; }
+    
+    public PriRiver(ConverterCmd pConverterCmd) : base(pConverterCmd)
+    {
+        // Initialize AccountCache for recall protection
+        Accounts = new AccountDictionary(ClientCode, Collect.Connection);
+        
+        // Settings initialized in LoadSettings() override
+    }
+}
+
+```
+
 
 # 2. PROCESSING PIPELINE & FORMATTER LIFECYCLE (20 points)
 
@@ -418,6 +726,7 @@ These conditions represent **non-negotiable quality gates**.
 - Robustness: 3 + 2 + 2 + 1 = **8 points**
 
 **GRAND TOTAL: 100 points** ✓
+
 
 
 
